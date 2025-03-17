@@ -328,12 +328,12 @@ body {
 .audio-controls {
     display: flex;
     align-items: center;
-    gap: 20px;
     flex-grow: 1;
     justify-content: flex-end;
 }
 
 .volume-icon {
+	margin-right: 20px;
     font-size: 30px;
     cursor: pointer;
     display: block;
@@ -349,6 +349,7 @@ body {
 }
 
 .volume-slider {
+	margin-right: 0;
 	margin-left: -15px;
     -webkit-appearance: none;
     appearance: none;
