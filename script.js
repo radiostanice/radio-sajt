@@ -169,7 +169,7 @@ function setupDropdown() {
 }
 
 function updatePlayPauseButton() {
-    playPauseBtn.innerHTML = '<span class="material-icons">' + (audio.paused ? 'play_arrow' : 'pause') + '</span>';
+    playPauseBtn.innerHTML = '<span class="material-icons">' + (audio.paused ? 'play_arrow' : 'stop') + '</span>';
 }
 
 playPauseBtn.addEventListener("click", function() {
