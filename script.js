@@ -8,6 +8,7 @@ var audio = document.getElementById("audioctrl");
 var playPauseBtn = document.getElementById("playPauseBtn");
 var volumeIcon = document.getElementById("volumeIcon");
 var volumeSlider = document.getElementById("volumeSlider");
+var lastVolume = audio.volume || 1;
 
 function changeStation(name, link) {
     audio.pause();
@@ -65,15 +66,47 @@ function changeColor(color) {
 }
 
 function updateRecentlyPlayed(name, link) {
+    // Retrieve the recently played stations from localStorage
     var recentlyPlayed = safeParseJSON('recentlyPlayed', []);
+    
+    // Define predefined stations
+    var predefinedStations = [
+        { name: 'RADIO S1', link: 'https://stream.radios.rs:9000/;*.mp3' },
+        { name: 'PLAY RADIO', link: 'https://stream.playradio.rs:8443/play.mp3' },
+        { name: 'HIT MUSIC FM', link: 'https://streaming.hitfm.rs/hit.mp3' }
+    ];
+
+    // Check if the selected station is a predefined station
+    var isPredefined = predefinedStations.some(function(predefinedStation) {
+        return predefinedStation.link === link;
+    });
+
+    // Remove the station if it already exists in the recently played list
     recentlyPlayed = recentlyPlayed.filter(function(station) {
         return station.link !== link;
     });
-    recentlyPlayed.unshift({ name: name, link: link });
-    
-    if (recentlyPlayed.length > 11) recentlyPlayed.pop();
-    
-    localStorage.setItem('recentlyPlayed', JSON.stringify(recentlyPlayed));
+
+    // If the station is not predefined, add it to the recently played list
+    if (!isPredefined) {
+        recentlyPlayed.unshift({ name: name, link: link });
+    }
+
+    // Limit the recently played list to 11 stations
+    if (recentlyPlayed.length > 12) {
+        recentlyPlayed.pop(); // Remove the last station if we exceed 11
+    }
+
+    // Ensure that predefined stations are always present at the top of the list
+    var combinedStations = predefinedStations.concat(recentlyPlayed);
+
+    // Remove any duplicates (if the same station is added again)
+    combinedStations = combinedStations.filter(function(station, index, self) {
+        return index === self.findIndex((t) => t.link === station.link);
+    });
+
+    // Save the updated recently played list to localStorage
+    localStorage.setItem('recentlyPlayed', JSON.stringify(combinedStations));
+
     loadRecentlyPlayed();
 }
 
@@ -102,21 +135,31 @@ function loadPreferences() {
 
 function loadRecentlyPlayed() {
     var container = document.getElementById('recentlyPlayedContainer');
-    var recentlyPlayed = safeParseJSON('recentlyPlayed', []);
     
+    // Define predefined stations
     var predefinedStations = [
         { name: 'RADIO S1', link: 'https://stream.radios.rs:9000/;*.mp3' },
         { name: 'PLAY RADIO', link: 'https://stream.playradio.rs:8443/play.mp3' },
         { name: 'HIT MUSIC FM', link: 'https://streaming.hitfm.rs/hit.mp3' }
     ];
     
-    var filteredRecentlyPlayed = recentlyPlayed.filter(function(station) {
-        return !predefinedStations.some(function(pre) { return pre.link === station.link; });
-    });
+    // Load the recently played stations
+    var recentlyPlayed = safeParseJSON('recentlyPlayed', []);
     
-    container.innerHTML = predefinedStations.concat(filteredRecentlyPlayed).map(function(station) {
-        return '<div class="radio" onclick="changeStation(\'' + station.name + '\', \'' + station.link + '\')">' + station.name + '</div>';
-    }).join('');
+    // Remove any duplicate stations that may exist in both predefined and recently played
+    var allStations = predefinedStations.concat(recentlyPlayed);
+    allStations = allStations.filter(function(station, index, self) {
+        return index === self.findIndex((t) => (
+            t.link === station.link
+        ));
+    });
+
+    // Generate HTML for the stations
+    var htmlContent = '';
+    for (var i = 0; i < allStations.length; i++) {
+        htmlContent += '<div class="radio" onclick="changeStation(\'' + allStations[i].name + '\', \'' + allStations[i].link + '\')">' + allStations[i].name + '</div>';
+    }
+    container.innerHTML = htmlContent;
     
     var savedStation = safeParseJSON('lastStation', {});
     if (savedStation.name) {
@@ -169,7 +212,7 @@ function setupDropdown() {
 }
 
 function updatePlayPauseButton() {
-    playPauseBtn.innerHTML = '<span class="material-icons">' + (audio.paused ? 'play_arrow' : 'stop') + '</span>';
+    playPauseBtn.innerHTML = '<span class="material-icons">' + (audio.paused ? 'play_arrow' : 'pause') + '</span>';
 }
 
 playPauseBtn.addEventListener("click", function() {
@@ -186,21 +229,36 @@ audio.addEventListener("pause", updatePlayPauseButton);
 
 volumeSlider.addEventListener("input", function() {
     audio.volume = volumeSlider.value;
+	audio.muted = audio.volume == 0;
+    if (!audio.muted) {
+        lastVolume = audio.volume;
+    }
     updateVolumeIcon();
 });
 
 volumeIcon.addEventListener("click", function() {
-    audio.muted = !audio.muted;
+	if (audio.muted) {
+        audio.muted = false;
+        audio.volume = lastVolume;
+        volumeSlider.value = lastVolume;
+    } else {
+        lastVolume = audio.volume > 0 ? audio.volume : 1;
+        audio.muted = true;
+        volumeSlider.value = 0;
+    }
     updateVolumeIcon();
 });
 
 function updateVolumeIcon() {
     if (audio.muted || audio.volume == 0) {
         volumeIcon.innerHTML = "volume_off";
+		volumeSlider.value = 0;
     } else if (audio.volume < 0.5) {
         volumeIcon.innerHTML = "volume_down";
+		volumeSlider.value = audio.volume;
     } else {
         volumeIcon.innerHTML = "volume_up";
+		volumeSlider.value = audio.volume;
     }
 }
 
