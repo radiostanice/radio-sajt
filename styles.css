@@ -34,17 +34,27 @@ body {
 	padding-top: 70px
 }
 
+* {
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+	-ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
 .light-mode {
 	--accent-color: var(--accent-dark);
     background-color: #ffffff;
     color: #000000;
 }
 
-.light-mode .btn, .light-mode .btn span {
+.light-mode .theme-container .btn, .light-mode .theme-container .btn span {
 	color: #ffffff;
 }
 
-.dark-mode .btn, .dark-mode .btn span {
+.dark-mode .theme-container .btn, .dark-mode .theme-container .btn span {
 	color: #000000;
 }
 
@@ -69,7 +79,7 @@ body {
 }
 
 .light-mode .header {
-	background-color: #ffffff;
+	background-color: #f4f4f4;
     color: #000000;
     border-bottom: 2px solid #bdbdbd;
 }
@@ -108,7 +118,7 @@ body {
 }
 
 .light-mode .search-container input::placeholder {
-    color: #222;
+    color: #222 !important;
 }
 
 .dark-mode .search-container{
@@ -189,9 +199,7 @@ body {
     align-items: center;
     background-color: #2e2e2e;
     color: white;
-    padding: 12px 20px;
-    font-size: 18px;
-    font-weight: bold;
+    padding: 10px;
     border-bottom: 2px solid #444;
     position: fixed;
     top: 0;
@@ -201,17 +209,18 @@ body {
 }
 
 .search-container {
-    display: flex;
+    display: inline-flex;
+	position: relative;
     align-items: center;
     background-color: #1a1a1a;
     border-radius: 8px;
     border: 2px solid #aaaaaa;
     padding: 5px;
     flex-grow: 1;
-    justify-content: center;
+    justify-content: flex-start;
     max-width: 300px;
     min-width: 120px;
-	margin: -10px;
+	margin: -10px 0px;
 	margin-right: 10px;
 }
 
@@ -221,17 +230,17 @@ body {
     background-color: transparent;
     color: #ffffff;
     border: none;
-    padding: 8px 12px;
-	padding-left: 34px;
+	padding: 8px 8px 8px 28px;
     width: 100%;
     font-size: 16px;
-    border-radius: 8px;
+    border-radius: 6px;
     outline: none;
     box-sizing: border-box;
 }
 
 .search-container input::placeholder {
-    color: #eeeeee;
+    color: #eeeeee !important;
+	transform: translateY(7%);
 }
 
 .search-container input:focus,
@@ -243,14 +252,55 @@ body {
     border: 2px solid var(--accent-color) !important;
 }
 
-.search-container .material-icons {
-    position: absolute;
-	left: 22px;
-    cursor: pointer;
+#Search {
+	position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+}
+
+#clearSearch {
+	position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+	display: none;
+	cursor: pointer;
 }
 
 .theme-container {
-    margin-right: 33px;
+    margin-right: 23px;
+}
+
+.theme-container .btn {
+	display: inline-flex;
+	align-items: center;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 11px 12px;
+    font-size: 15px;
+	font-weight: bold;
+    white-space: nowrap;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.theme-container .btn:hover {
+    filter: brightness(0.9);
+}
+
+.theme-container .btn .theme-icon {
+    font-size: 18px;
+	margin-right: 2px;
+}
+
+.theme-container .btn span {
+    display: inline-block;
+    vertical-align: middle;
+
 }
 
 .dropdown {
@@ -305,6 +355,12 @@ body {
     margin: 5px;
     cursor: pointer;
     border: 2px solid #ffffff;
+}
+
+#equalizer {
+	margin-right: 10px;
+	font-size: 34px;
+
 }
 
 .audio-container {
@@ -477,32 +533,9 @@ body {
     font-size: 36px;
 }
 
-.btn {
-	display: inline-flex;
-    background-color: var(--accent-color);
-	font-weight: bold;
-    color: white;
-    border: none;
-    padding: 10px 12px;
-    font-size: 15px;
-    cursor: pointer;
-    border-radius: 8px;
-	align-items: center;
-	line-height: 1;
-}
-
-.btn:hover {
-    filter: brightness(0.9);
-}
-
-.btn .material-icons {
-	margin-right: 3px;
-}
-
 .category-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
     justify-content: center;
     margin: 20px 10px;
     border-radius: 8px;
@@ -544,6 +577,8 @@ body {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	display: inline-flex;
+	align-items: center;
 }
 
 @media (max-width: 1100px) {
@@ -565,6 +600,5 @@ body {
 	
 	.audio-player {
 		max-width: 85%;
-		
 	}
 }

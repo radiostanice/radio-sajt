@@ -7,11 +7,11 @@
     <title>Radio Stanice</title>
 </head>
 <body>
-
     <div class="header">
 		<div class="search-container">
-			<span class="material-icons search-icon">search</span>
+			<span id="Search" class="material-icons search-icon">search</span>
 			<input type="text" id="stationSearch" placeholder="Pretražite..." oninput="filterStations()">
+			<span id="clearSearch" class="material-icons clear-icon">clear</span>
 		</div>
         <div class="theme-container">
 			<div class="dropdown">
@@ -36,8 +36,8 @@
     </div>
 
 	<div class="category">
-		<span class="material-icons equalizer">equalizer</span>
-	Top radio stanice</div>
+		<span id="equalizer" class="material-icons equalizer">equalizer</span>Top radio stanice
+	</div>
 	<div class="category-container" id="recentlyPlayedContainer">
 		<div class="radio" onclick="changeStation('RADIO S1', 'https://stream.radios.rs:9000/;*.mp3')">RADIO S1</div>
 		<div class="radio" onclick="changeStation('PLAY RADIO', 'https://stream.playradio.rs:8443/play.mp3')">PLAY RADIO</div>
