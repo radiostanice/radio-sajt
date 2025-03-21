@@ -236,6 +236,7 @@ body {
     border-radius: 6px;
     outline: none;
     box-sizing: border-box;
+	
 }
 
 .search-container input::placeholder {
@@ -289,7 +290,7 @@ body {
 }
 
 .theme-container .btn:hover {
-    filter: brightness(0.9);
+    filter: brightness(0.95);
 }
 
 .theme-container .btn .theme-icon {
@@ -326,25 +327,29 @@ body {
 }
 
 .theme-option {
-    display: flex;
+    display: inline-flex;
     justify-content: center;
 	text-align: center;
-    padding: 7px 0px;
+    padding: 10px;
     cursor: pointer;
-    border-radius: 5px;
+    border-radius: 8px;
+	border: 2px solid #444;
+	margin: 0px 2px;
 }
 
 .light-mode .theme-option:hover {
 	background-color: #e4e4e4;
+	border:2px solid var(--accent-color);
 }
 
 .theme-option:hover {
 	background-color: #333333;
+	border:2px solid var(--accent-color);
 }
 
 .theme-option .material-icons {
 	font-size: 18px;
-	margin-right: 10px;
+	margin-right: 5px;
 }
 
 .color-picker {
@@ -352,15 +357,19 @@ body {
     height: 30px;
     border-radius: 50%;
     display: inline-block;
-    margin: 5px;
+    margin: 0 6px;
     cursor: pointer;
     border: 2px solid #ffffff;
+}
+
+.color-picker:hover {
+	border:2px solid var(--accent-color);
 }
 
 #equalizer {
 	margin-right: 10px;
 	font-size: 34px;
-
+    transform: translateY(-5%);
 }
 
 .audio-container {

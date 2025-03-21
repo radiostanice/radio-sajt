@@ -11,7 +11,7 @@
 		<div class="search-container">
 			<span id="Search" class="material-icons search-icon">search</span>
 			<input type="text" id="stationSearch" placeholder="Pretražite..." oninput="filterStations()">
-			<span id="clearSearch" class="material-icons clear-icon">clear</span>
+			<span id="clearSearch" class="material-icons close">close</span>
 		</div>
         <div class="theme-container">
 			<div class="dropdown">
@@ -20,10 +20,10 @@
 				</button>
 				<div class="dropdown-menu">
 					<div class="theme-option" onclick="setTheme('dark')">
-						<span class="material-icons theme-icon">dark_mode</span> Tamna Tema
+						<span class="material-icons theme-icon">dark_mode</span> Tamna
 					</div>
 					<div class="theme-option" onclick="setTheme('light')">
-						<span class="material-icons theme-icon">light_mode</span> Svetla Tema
+						<span class="material-icons theme-icon">light_mode</span> Svetla
 					</div>
 					<hr>
 					<div class="color-picker" style="background: var(--green-dark);" onclick="changeColor('green')"></div>
