@@ -14,9 +14,11 @@ function changeStation(name, link) {
     audio.pause();
     audio.src = link;
     audio.load();
-    audio.play();
+    audio.play().catch(function(error) {
+        console.error("Audio play failed: ", error);
+    });
     
-    document.getElementById('naslov').textContent = name;
+    document.getElementById('audiotext').textContent = name;
     
     localStorage.setItem('lastStation', JSON.stringify({ name: name, link: link }));
     updateRecentlyPlayed(name, link);
@@ -119,7 +121,7 @@ function loadPreferences() {
 
     if (savedStation.name && savedStation.link) {
         audio.src = savedStation.link;
-        document.getElementById('naslov').textContent = savedStation.name;
+        document.getElementById('audiotext').textContent = savedStation.name;
         updateSelectedStation(savedStation.name);
     }
 }
