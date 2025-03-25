@@ -14,11 +14,21 @@ function changeStation(name, link) {
     audio.pause();
     audio.src = link;
     audio.load();
-    audio.play().catch(function(error) {
-        console.error("Audio play failed: ", error);
-    });
-    
-    document.getElementById('audiotext').textContent = name;
+	
+	audio.oncanplay = function () {
+		var playPromise = audio.play();
+		if (playPromise !== undefined) {
+			playPromise.catch(error => {
+				console.error("Audio play failed: ", error);
+			});
+		}
+	};
+    var audioTextElement = document.getElementById('audiotext');
+	if (audioTextElement) {
+		audioTextElement.textContent = name;
+	} else {
+		console.warn("Element with ID 'audiotext' not found.");
+	}
     
     localStorage.setItem('lastStation', JSON.stringify({ name: name, link: link }));
     updateRecentlyPlayed(name, link);
