@@ -670,6 +670,9 @@ body {
     color: white;
 	font-weight: bold;
 	justify-content: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .radio:hover {
