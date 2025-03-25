@@ -340,7 +340,7 @@ body {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-    background-color: #000;
+    background-color: #121212;
 	border: 2px solid #444444;
     color: white;
     height: 40px;
@@ -387,7 +387,7 @@ body {
     display: none;
     position: absolute;
     right: 0;
-    background-color: #121212;
+    background-color: #222222;
     border-radius: 8px;
     padding: 10px;
     z-index: 1000;
@@ -411,7 +411,7 @@ body {
     border-radius: 8px;
 	border: 2px solid #444;
 	margin: 0px 2px;
-	background-color: #000000;
+	background-color: #121212;
 }
 
 .theme-option .theme-text {
