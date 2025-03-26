@@ -205,12 +205,17 @@ function loadRecentlyPlayed() {
 function filterStations() {
     var query = document.getElementById("stationSearch").value.toLowerCase();
     var categories = document.querySelectorAll(".category-container");
-    
+
     for (var i = 0; i < categories.length; i++) {
         var category = categories[i];
         var categoryHasVisibleStation = false;
-        
-        var stations = category.querySelectorAll(".radio");
+        var stations = category.getElementsByClassName("radio");
+        var categoryTitle = category.previousElementSibling;
+
+        if (!categoryTitle || categoryTitle.className.indexOf("category") === -1) {
+            continue;
+        }
+
         for (var j = 0; j < stations.length; j++) {
             var station = stations[j];
             var stationName = station.textContent.toLowerCase();
@@ -218,19 +223,54 @@ function filterStations() {
             station.style.display = isVisible ? "block" : "none";
             if (isVisible) categoryHasVisibleStation = true;
         }
-        
-        var categoryTitle = category.previousElementSibling;
-        if (categoryTitle && categoryTitle.classList.contains("category")) {
-            categoryTitle.style.display = categoryHasVisibleStation ? "block" : "none";
-        }
-        category.style.display = categoryHasVisibleStation ? "flex" : "none";
 
         var expandButton = category.querySelector(".expand-button");
-        if (expandButton) {
-            if (query !== "") {
-                expandButton.style.display = "none";
+
+        if (query !== "") {
+            if (categoryHasVisibleStation) {
+                category.style.display = "flex";
+                categoryTitle.style.display = "block"; 
             } else {
-                expandButton.style.display = categoryHasVisibleStation && stations.length > 12 ? "block" : "none";
+                category.style.display = "none";
+                categoryTitle.style.display = "none";
+            }
+
+            if (expandButton) expandButton.style.display = "none";
+            category.className = category.className.replace(" no-radius", ""); 
+        } else {
+            category.style.display = categoryHasVisibleStation ? "flex" : "none";
+            categoryTitle.style.display = categoryHasVisibleStation ? "block" : "none";
+
+            if (expandButton && categoryHasVisibleStation && stations.length > 12) {
+                expandButton.style.display = "block";
+                if (category.className.indexOf("no-radius") === -1) {
+                    category.className += " no-radius";
+                }
+            } else {
+                if (expandButton) expandButton.style.display = "none";
+                category.className = category.className.replace(" no-radius", "");
+            }
+        }
+    }
+
+    if (query === "") {
+        var expandButtons = document.getElementsByClassName("expand-button");
+        for (var i = 0; i < expandButtons.length; i++) {
+            var button = expandButtons[i];
+            button.setAttribute("data-expanded", "false");
+            button.getElementsByClassName("expand-text")[0].textContent = "Još stanica";
+            button.getElementsByClassName("material-icons")[0].textContent = "expand_more";
+
+            var category = button.closest(".category-container");
+            var categoryTitle = category ? category.previousElementSibling : null;
+
+            if (categoryTitle && categoryTitle.className.indexOf("category") !== -1) {
+                categoryTitle.style.display = "block";
+            }
+
+            var stations = category ? category.getElementsByClassName("radio") : [];
+            for (var j = 0; j < stations.length; j++) {
+                stations[j].style.display = j < 12 ? "block" : "none";
             }
         }
     }
@@ -265,8 +305,8 @@ function setupExpandableCategories() {
     for (var i = 0; i < categories.length; i++) {
         var stations = categories[i].getElementsByClassName("radio");
 
-        if (stations.length > 16) {
-            for (var j = 16; j < stations.length; j++) {
+        if (stations.length > 12) {
+            for (var j = 12; j < stations.length; j++) {
                 stations[j].style.display = "none";
             }
 
@@ -289,14 +329,14 @@ function setupExpandableCategories() {
                 return function() {
                     var expanded = button.getAttribute("data-expanded") === "true";
                     if (expanded) {
-                        for (var j = 16; j < stations.length; j++) {
+                        for (var j = 12; j < stations.length; j++) {
                             stations[j].style.display = "none";
                         }
                         button.setAttribute("data-expanded", "false");
                         icon.textContent = "expand_more";
                         text.textContent = "Još stanica";
                     } else {
-                        for (var j = 16; j < stations.length; j++) {
+                        for (var j = 12; j < stations.length; j++) {
                             stations[j].style.display = "block";
                         }
                         button.setAttribute("data-expanded", "true");
