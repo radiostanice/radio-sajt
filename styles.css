@@ -63,8 +63,8 @@ button {
 
 .scroll-list {
 	position: fixed;
-	top: 61px;
-	bottom: 159px;
+	top: 61.9px;
+	bottom: 158px;
 	left: 0;
 	right: 0;
 	overflow: hidden;
@@ -802,10 +802,6 @@ button {
 	.audio-player {
 		max-width: 85%;
 	}
-	
-	.audio-title {
-		font-size: 30px;
-	}
 }
 
 @media (max-width: 380px) {
@@ -820,4 +816,8 @@ button {
 	.audio-title {
 		font-size: 26px;
 	}
+
+    .scroll-list {
+        bottom: 153px;
+    }
 }

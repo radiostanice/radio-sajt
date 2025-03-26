@@ -12,22 +12,25 @@ var audio = document.getElementById("audioctrl"),
     volumeSlider = document.getElementById("volumeSlider"),
     lastVolume = audio.volume || 1;
 
-function changeStation(name, link) {
-    audio.pause();
-    audio.src = link;
-    audio.load();
+    function changeStation(name, link) {
+        audio.pause();
+        audio.src = link;
+        audio.load();
+        
+        audio.oncanplay = function () {
+            try { audio.play(); } catch (e) { console.error("Audio play failed:", e); }
+        };
     
-    audio.oncanplay = function () {
-        try { audio.play(); } catch (e) { console.error("Audio play failed:", e); }
-    };
-
-    var audioTextElement = document.getElementById("audiotext");
-    if (audioTextElement) audioTextElement.textContent = name;
-
-    localStorage.setItem("lastStation", JSON.stringify({ name: name, link: link }));
-    updateRecentlyPlayed(name, link);
-    updateSelectedStation(name);
-}
+        var audioTextElement = document.getElementById("audiotext");
+        if (audioTextElement) audioTextElement.textContent = name;
+    
+        localStorage.setItem("lastStation", JSON.stringify({ name: name, link: link }));
+        updateRecentlyPlayed(name, link);
+        updateSelectedStation(name);
+    
+        var searchInput = document.getElementById("searchInput");
+        if (searchInput) searchInput.focus();
+    }
 
 function updateSelectedStation(name) {
     var radios = document.querySelectorAll(".radio");
@@ -68,7 +71,7 @@ function updateRecentlyPlayed(name, link) {
     var predefinedStations = [
         { name: 'RADIO S1', link: 'https://stream.radios.rs:9000/;*.mp3' },
         { name: 'PLAY RADIO', link: 'https://stream.playradio.rs:8443/play.mp3' },
-        { name: 'HIT MUSIC FM', link: 'https://streaming.hitfm.rs/hit.mp3' }
+        { name: 'RADIO HIT FM', link: 'https://streaming.tdiradio.com/hit.mp3' }
     ];
 
     var recentlyPlayed = safeParseJSON('recentlyPlayed', []);
@@ -180,22 +183,34 @@ function loadRecentlyPlayed() {
     var predefinedStations = [
         { name: "RADIO S1", link: "https://stream.radios.rs:9000/;*.mp3" },
         { name: "PLAY RADIO", link: "https://stream.playradio.rs:8443/play.mp3" },
-        { name: "HIT MUSIC FM", link: "https://streaming.hitfm.rs/hit.mp3" }
+        { name: "RADIO HIT FM", link: "https://streaming.tdiradio.com/hit.mp3" }
     ];
     
     var recentlyPlayed = safeParseJSON("recentlyPlayed", []);
     var allStations = predefinedStations.concat(recentlyPlayed);
     
-    allStations = allStations.filter(function(station, index, self) {
-        return index === self.findIndex(function(t) { return t.link === station.link; });
-    });
+    var uniqueStations = [];
+    var seenLinks = {};
+    
+    for (var i = 0; i < allStations.length; i++) {
+        if (!seenLinks[allStations[i].link]) {
+            uniqueStations.push(allStations[i]);
+            seenLinks[allStations[i].link] = true;
+        }
+    }
 
     var htmlContent = "";
-    for (var i = 0; i < allStations.length; i++) {
-        htmlContent += '<div class="radio" onclick="changeStation(\'' + allStations[i].name + '\', \'' + allStations[i].link + '\')">' + allStations[i].name + '</div>';
+    for (var i = 0; i < uniqueStations.length; i++) {
+        htmlContent += '<div class="radio" onclick="changeStation(\'' + 
+                        uniqueStations[i].name.replace(/'/g, "\\'") + 
+                        '\', \'' + 
+                        uniqueStations[i].link.replace(/'/g, "\\'") + 
+                        '\')">' + 
+                        uniqueStations[i].name + 
+                        '</div>';
     }
     container.innerHTML = htmlContent;
-    
+
     var savedStation = safeParseJSON("lastStation", {});
     if (savedStation.name) {
         updateSelectedStation(savedStation.name);
@@ -205,6 +220,8 @@ function loadRecentlyPlayed() {
 function filterStations() {
     var query = document.getElementById("stationSearch").value.toLowerCase();
     var categories = document.querySelectorAll(".category-container");
+    var recentlyPlayedContainer = document.getElementById("recentlyPlayedContainer");
+    var recentlyPlayedTitle = document.querySelector("#recentlyPlayedContainer").previousElementSibling;
 
     for (var i = 0; i < categories.length; i++) {
         var category = categories[i];
@@ -250,6 +267,14 @@ function filterStations() {
                 if (expandButton) expandButton.style.display = "none";
                 category.className = category.className.replace(" no-radius", "");
             }
+        }
+    }
+
+    if (recentlyPlayedContainer) {
+        var hasStations = recentlyPlayedContainer.getElementsByClassName("radio").length > 0;
+        recentlyPlayedContainer.style.display = query !== "" ? "none" : "flex";
+        if (recentlyPlayedTitle) {
+            recentlyPlayedTitle.style.display = query !== "" || !hasStations ? "none" : "inline-flex";
         }
     }
 
