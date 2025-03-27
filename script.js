@@ -12,37 +12,69 @@ var audio = document.getElementById("audioctrl"),
     volumeSlider = document.getElementById("volumeSlider"),
     lastVolume = audio.volume || 1;
 
-    function changeStation(name, link) {
-        audio.pause();
-        audio.src = link;
-        audio.load();
-        
-        audio.oncanplay = function () {
-            try { audio.play(); } catch (e) { console.error("Audio play failed:", e); }
-        };
-    
-        var audioTextElement = document.getElementById("audiotext");
-        if (audioTextElement) audioTextElement.textContent = name;
-    
-        localStorage.setItem("lastStation", JSON.stringify({ name: name, link: link }));
-        updateRecentlyPlayed(name, link);
-        updateSelectedStation(name);
-    
-        var searchInput = document.getElementById("searchInput");
-        if (searchInput) searchInput.focus();
-    }
+function changeStation(name, link) {
+    audio.pause();
+    audio.src = link;
+    audio.load();
+
+    audio.oncanplay = function () {
+        try { audio.play(); } catch (e) { console.error("Audio play failed:", e); }
+    };
+
+    var audioTextElement = document.getElementById("audiotext");
+    if (audioTextElement) audioTextElement.textContent = name;
+
+    localStorage.setItem("lastStation", JSON.stringify({ name: name, link: link }));
+    updateRecentlyPlayed(name, link);
+    updateSelectedStation(name);
+
+    var searchInput = document.getElementById("searchInput");
+    if (searchInput) searchInput.focus();
+}
 
 function updateSelectedStation(name) {
     var radios = document.querySelectorAll(".radio");
+
     for (var i = 0; i < radios.length; i++) {
-        radios[i].classList.toggle("selected", radios[i].textContent.trim() === name);
+        radios[i].classList.remove("selected");
+    }
+
+    for (var i = 0; i < radios.length; i++) {
+        if (radios[i].textContent.trim() === name) {
+            radios[i].style.transition = "background-color 0.2s ease";
+			radios[i].style.webkitTransition = "background-color 0.2s ease";
+			radios[i].style.mozTransition = "background-color 0.2s ease";
+			radios[i].style.oTransition = "background-color 0.2s ease";
+			radios[i].style.msTransition = "background-color 0.2s ease";
+			radios[i].offsetHeight;
+            radios[i].classList.add("selected");
+        }
     }
 }
 
 function setTheme(mode) {
+    document.body.classList.add("no-transition");
+    var radios = document.querySelectorAll(".radio");
+    for (var i = 0; i < radios.length; i++) {
+        radios[i].classList.add("no-transition");
+    }
+
     document.body.className = mode + "-mode";
-    document.documentElement.style.setProperty("--accent-color", `var(--accent-${mode === "dark" ? "light" : "dark"})`);
+
+    if (mode === "dark") {
+        document.documentElement.style.setProperty("--accent-color", "var(--accent-light)");
+    } else {
+        document.documentElement.style.setProperty("--accent-color", "var(--accent-dark)");
+    }
+
     localStorage.setItem("theme", mode);
+
+    setTimeout(function() {
+        document.body.classList.remove("no-transition");
+        for (var i = 0; i < radios.length; i++) {
+            radios[i].classList.remove("no-transition");
+        }
+    }, 50);
 
     var themeIcons = document.getElementsByClassName("theme-icon");
     for (var i = 0; i < themeIcons.length; i++) {
@@ -84,7 +116,7 @@ function updateRecentlyPlayed(name, link) {
         recentlyPlayed.unshift({ name: name, link: link });
     }
 
-    recentlyPlayed = recentlyPlayed.slice(0, 12);
+    recentlyPlayed = recentlyPlayed.slice(0, 8);
 
     var combinedStations = predefinedStations.concat(recentlyPlayed);
     var uniqueStations = [];
@@ -310,7 +342,6 @@ searchInput.addEventListener("input", function() {
     } else {
         clearSearchIcon.style.display = "none";
     }
-
     filterStations();
 });
 
@@ -349,6 +380,23 @@ function setupExpandableCategories() {
 
             expandButton.appendChild(textSpan);
             expandButton.appendChild(iconSpan);
+
+            textSpan.style.fontSize = '0px';
+            textSpan.style.transition = 'font-size 0.05s ease-in';
+			textSpan.style.webkitTransition = 'font-size 0.05s ease-in';
+			textSpan.style.mozTransition = 'font-size 0.05s ease-in';
+			textSpan.style.oTransition = 'font-size 0.05s ease-in';
+			textSpan.style.msTransition = 'font-size 0.05s ease-in';
+
+            expandButton.addEventListener("mouseover", function() {
+                var text = this.querySelector('.expand-text');
+                text.style.fontSize = '15px';
+            });
+
+            expandButton.addEventListener("mouseout", function() {
+                var text = this.querySelector('.expand-text');
+                text.style.fontSize = '0px';
+            });
 
             expandButton.onclick = (function(button, stations, icon, text) {
                 return function() {

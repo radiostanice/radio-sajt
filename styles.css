@@ -6,13 +6,13 @@
 	--green-light: #BBF294;
 
 	--blue-dark: #00639B;
-	--blue-light: #CEE5FF;
+	--blue-light: #97CBFF;
 	
 	--yellow-dark: #ddad09;
 	--yellow-light: #FFE084;
 	
 	--red-dark: #9C4049;
-	--red-light: #FFB3B6;
+	--red-light: #FF8E88;
 }
 
 @font-face {
@@ -63,8 +63,8 @@ button {
 
 .scroll-list {
 	position: fixed;
-	top: 61.9px;
-	bottom: 158px;
+	top: 61.5px;
+	bottom: 150px;
 	left: 0;
 	right: 0;
 	overflow: hidden;
@@ -164,10 +164,8 @@ button {
     color: #555555 !important;
 }
 
-.light-mode .radio.selected {
-    background-color: var(--accent-color) !important;
+.light-mode #recentlyPlayedContainer .radio.selected {
     color: #ffffff !important;
-    border-color: var(--accent-color);
 }
 
 .light-mode .radio:hover {
@@ -275,7 +273,7 @@ button {
     color: #ffffff;
     border: none;
 	height: 31px;
-	padding: 0px 0px 0px 26px;
+	padding: 0.5px 0px 0px 26px;
     width: 100%;
     font-size: 15px;
     border-radius: 5px;
@@ -472,11 +470,12 @@ button {
 
 .audio-container {
     position: fixed;
+	height: 150px;
     bottom: 0;
     left: 0;
     width: 100%;
     background: #222222;
-    padding-top: 14px;
+    padding-top: 10px;
     text-align: center;
     z-index: 100;
     border-top: 2px solid #444;
@@ -506,8 +505,7 @@ button {
     align-items: center;
     justify-content: space-between;
     margin: 0 auto;
-    margin-bottom: 15px;
-	margin-top: 15px;
+	margin-top: 10px;
 	padding-left: 10px;
 	padding-right: 10px;
 }
@@ -664,7 +662,7 @@ button {
     margin: 10px;
     border-radius: 8px;
     background-color: #222;
-	padding: 6px 0px 6px 0px;
+	padding: 6px 10px 6px 10px;
     max-width: calc(100% - 20px);
     box-sizing: border-box;
 }
@@ -672,11 +670,12 @@ button {
 .radio {
     background-color: #121212;
     padding: 12px;
-    font-size: 1em;
+    font-size: 16px;
     text-align: center;
     cursor: pointer;
-    width: calc(25% - 32px);
-    max-width: 370px;
+    width: calc(14.285% - 20px);
+    flex-shrink: 0;
+    flex-grow: 1;
     margin: 5px;
     box-sizing: border-box;
     border: 2px solid #444;
@@ -687,6 +686,11 @@ button {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	transition: background-color 0.2s ease;
+	-moz-transition: background-color 0.2s ease;
+	-webkit-transition: background-color 0.2s ease;
+	-o-transition: background-color 0.2s ease;
+	-ms-transition: background-color 0.2s ease;
 }
 
 .radio:hover {
@@ -699,15 +703,24 @@ button {
 	-ms-transition: border-color 0.2s ease;
 }
 
-.radio.selected {
+.no-transition {
+    transition: none !important;
+}
+
+#recentlyPlayedContainer .radio.selected {
 	box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
     background-color: var(--accent-color) !important;
     color: black !important;
     border-color: var(--accent-color);
 }
 
+.radio.selected {
+	box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
+    border-bottom-color: var(--accent-color);
+}
+
 .category {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: bold;
     margin-top: 30px;
     padding-left: 10px;
@@ -721,8 +734,8 @@ button {
 #category-icon {
 	position: relative;
 	margin-right: 10px;
-	font-size: 34px;
-    bottom: 2px;
+	font-size: 30px;
+    bottom: 1px;
 }
 
 .no-radius {
@@ -738,19 +751,16 @@ button {
 }
 
 .expand-button {
-    display: block;
+    display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
     background-color: #222222;
     width: 100%;
-    height: 30px;
+    height: 35px;
     border-radius: 0px 0px 8px 8px;
-    border-top: 2px solid #444;
-    border-bottom: none;
-    border-right: none;
-    border-left: none;
-    bottom: -30px;
+	border: none;
+    bottom: -35px;
     left: 0;
     cursor: pointer;
     color: white;
@@ -758,14 +768,22 @@ button {
     padding: 0;
 }
 
+.expand-button:hover {
+	transition: box-shadow 0.2s linear;
+	-moz-transition: box-shadow 0.2s linear;
+	-webkit-transition: box-shadow 0.2s linear;
+	-o-transition: box-shadow 0.2s linear;
+	-ms-transition: box-shadow 0.2s linear;
+}
+
 .expand-button .material-icons {
     font-size: 32px;
-    line-height: 0.8;
+	transform: translateY(1px);
     vertical-align: middle;
 }
 
-.expand-button span { 
-    font-size: 15px;
+.expand-button span  {
+	font-size: 15px;
     font-weight: 400;
     vertical-align: middle;
 }
@@ -774,29 +792,59 @@ button {
     box-shadow: 0px -28px 15px rgba(240, 240, 240, 1), 10px 0px 0px rgba(255, 255, 255, 1), -10px 0px 0px rgba(255, 255, 255, 1);
 }
 
+.light-mode .expand-button[data-expanded="false"]:hover {
+    box-shadow: 0px -28px 15px rgba(240, 240, 240, 1), 10px 0px 0px rgba(255, 255, 255, 1), -10px 0px 0px rgba(255, 255, 255, 1), inset 0px -1px 0px var(--accent-color);
+}
+
 .expand-button[data-expanded="false"] {
     box-shadow: 0px -25px 15px rgba(34, 34, 34, 1), 10px 0px 0px rgba(18, 18, 18, 1), -10px 0px 0px rgba(18, 18, 18, 1);
+}
+
+.expand-button[data-expanded="false"]:hover {
+    box-shadow: 0px -25px 15px rgba(34, 34, 34, 1), 10px 0px 0px rgba(18, 18, 18, 1), -10px 0px 0px rgba(18, 18, 18, 1), inset 0px -1px 0px var(--accent-color);
 }
 
 .expand-button[data-expanded="true"] {
     box-shadow: none; 
 }
 
-@media (max-width: 1100px) {
+.expand-button[data-expanded="true"]:hover {
+    box-shadow: inset 0px 1px 0px var(--accent-color); 
+}
+
+@media (max-width: 1580px) {
     .radio {
-        width: calc(33.33% - 32px);
+        width: calc(16.66% - 20px);
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1380px) {
     .radio {
-        width: calc(50% - 32px);
+        width: calc(20% - 20px);
     }
 }
 
-@media (max-width: 520px) {
+@media (max-width: 1120px) {
     .radio {
-        width: calc(100% - 32px);
+        width: calc(25% - 20px);
+    }
+}
+
+@media (max-width: 900px) {
+    .radio {
+        width: calc(33.33% - 20px);
+    }
+}
+
+@media (max-width: 690px) {
+    .radio {
+        width: calc(50% - 20px);
+    }
+}
+
+@media (max-width: 470px) {
+    .radio {
+        width: calc(100% - 20px);
     }
 	
 	.audio-player {
@@ -818,6 +866,10 @@ button {
 	}
 
     .scroll-list {
-        bottom: 153px;
+        bottom: 140px;
     }
+	
+	.audio-container {
+		height: 140px
+	}
 }
