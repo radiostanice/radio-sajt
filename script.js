@@ -3,6 +3,15 @@ document.addEventListener("DOMContentLoaded", function() {
     loadRecentlyPlayed();
     setupDropdown();
     setupExpandableCategories();
+    setupThemeControls();
+    
+    // Initialize all radio station click handlers
+    var radios = document.querySelectorAll(".radio");
+    for (var i = 0; i < radios.length; i++) {
+        radios[i].onclick = function() {
+            changeStation(this.dataset.name, this.dataset.link);
+        };
+    }
 });
 
 // Global Elements
@@ -38,15 +47,17 @@ function updateSelectedStation(name) {
         var existingEqualizer = radios[i].querySelector(".equalizer");
         if (existingEqualizer) radios[i].removeChild(existingEqualizer);
         
-        var radioText = radios[i].querySelector(".radio-text");
-        if (radioText && radioText.textContent.trim() === name) {
+        if (radios[i].dataset.name === name) {
             radios[i].classList.add("selected");
             
             var equalizer = document.createElement("div");
             equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
             equalizer.innerHTML = "<div></div><div></div><div></div>";
             
-            radios[i].insertBefore(equalizer, radioText);
+            var radioText = radios[i].querySelector(".radio-text");
+            if (radioText) {
+                radios[i].insertBefore(equalizer, radioText);
+            }
         }
     }
 }
@@ -99,6 +110,24 @@ function changeColor(color) {
     localStorage.setItem("accentColor", color);
 }
 
+function setupThemeControls() {
+    // Theme options
+    var themeOptions = document.querySelectorAll(".theme-option");
+    for (var i = 0; i < themeOptions.length; i++) {
+        themeOptions[i].onclick = function() {
+            setTheme(this.dataset.theme);
+        };
+    }
+
+    // Color options
+    var colorPickers = document.querySelectorAll(".color-picker");
+    for (var i = 0; i < colorPickers.length; i++) {
+        colorPickers[i].onclick = function() {
+            changeColor(this.dataset.color);
+        };
+    }
+}
+
 // Recently Played Functions
 function updateRecentlyPlayed(name, link) {
     var recentlyPlayed = safeParseJSON('recentlyPlayed', []);
@@ -111,7 +140,7 @@ function updateRecentlyPlayed(name, link) {
     }
     newRecentlyPlayed.unshift({ name: name, link: link });
 
-    newRecentlyPlayed = newRecentlyPlayed.slice(0, 12);
+    newRecentlyPlayed = newRecentlyPlayed.slice(0, 7);
     localStorage.setItem('recentlyPlayed', JSON.stringify(newRecentlyPlayed));
 
     loadRecentlyPlayed();
@@ -211,7 +240,7 @@ function filterStations() {
 
         for (var j = 0; j < stations.length; j++) {
             var station = stations[j];
-            var stationName = station.textContent.toLowerCase();
+            var stationName = station.dataset.name.toLowerCase();
             var isVisible = stationName.indexOf(query) !== -1;
             station.style.display = isVisible ? "flex" : "none";
             if (isVisible) categoryHasVisibleStation = true;
@@ -304,15 +333,23 @@ function loadRecentlyPlayed() {
 
     var htmlContent = "";
     for (var i = 0; i < uniqueStations.length; i++) {
-        htmlContent += '<div class="radio" onclick="changeStation(\'' + 
-                      uniqueStations[i].name.replace(/'/g, "\\'") + 
-                      '\', \'' + 
-                      uniqueStations[i].link.replace(/'/g, "\\'") + 
-                      '\')"><div class="radio-text">' + 
+        htmlContent += '<div class="radio" data-name="' + 
+                      uniqueStations[i].name.replace(/"/g, '&quot;') + 
+                      '" data-link="' + 
+                      uniqueStations[i].link.replace(/"/g, '&quot;') + 
+                      '"><div class="radio-text">' + 
                       uniqueStations[i].name + 
                       '</div></div>';
     }
     container.innerHTML = htmlContent;
+
+    // Add click handlers to new elements
+    var recentRadios = container.querySelectorAll(".radio");
+    for (var i = 0; i < recentRadios.length; i++) {
+        recentRadios[i].onclick = function() {
+            changeStation(this.dataset.name, this.dataset.link);
+        };
+    }
 
     if (uniqueStations.length === 0) {
         container.style.display = "none";
@@ -402,6 +439,14 @@ function setupExpandableCategories() {
             categories[i].appendChild(expandButton);
             categories[i].classList.add("no-radius");
         }
+    }
+
+    // Ensure all stations have click handlers
+    var allRadios = document.querySelectorAll(".radio:not([data-name])");
+    for (var i = 0; i < allRadios.length; i++) {
+        allRadios[i].onclick = function() {
+            changeStation(this.dataset.name, this.dataset.link);
+        };
     }
 }
 
