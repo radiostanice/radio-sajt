@@ -62,7 +62,7 @@ button {
 }
 
 .scroll-list {
-	position: fixed;
+	position: absolute;
 	top: 61.5px;
 	bottom: 150px;
 	left: 0;
@@ -346,19 +346,47 @@ button {
 }
 
 .theme-container .btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-    vertical-align: middle;
+    /* Modern browsers */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Firefox ESR fallback */
+    display: -moz-inline-box;
+    -moz-box-orient: horizontal !important; /* Force horizontal layout */
+    -moz-box-align: center !important;
+    -moz-box-pack: center !important;
+    
     background-color: #121212;
-	border: 2px solid #444444;
+    border: 2px solid #444444;
     color: white;
     height: 40px;
-	width: 80px;
+    width: 80px;
     font-size: 15px;
-    white-space: nowrap;
     cursor: pointer;
     border-radius: 8px;
+    padding: 0 8px;
+    white-space: nowrap;
+    line-height: 40px; /* Added for vertical centering */
+}
+
+.theme-container .btn .material-icons {
+    font-size: 16px;
+    margin-right: 4px;
+    /* ESR specific fixes */
+    display: -moz-inline-box !important;
+    -moz-box-align: center !important;
+    vertical-align: middle !important;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+}
+
+/* Target the text node directly */
+.theme-container .btn > span:not(.material-icons) {
+    display: -moz-inline-box !important;
+    -moz-box-align: center !important;
+    vertical-align: middle !important;
 }
 
 .theme-container .btn:hover {
@@ -378,12 +406,6 @@ button {
 	-webkit-transition: border-color 0.2s ease;
 	-o-transition: border-color 0.2s ease;
 	-ms-transition: border-color 0.2s ease;
-}
-
-.theme-container .btn .material-icons {
-    font-size: 16px;
-	margin-right: 2px;
-	float: left;
 }
 
 .dropdown {
@@ -659,6 +681,7 @@ button {
     flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+	    vertical-align: middle;
     margin: 10px;
     border-radius: 8px;
     background-color: #222;
@@ -668,29 +691,38 @@ button {
 }
 
 .radio {
+	-webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px; /* Consistent padding on both sides */
     background-color: #121212;
-    padding: 12px;
     font-size: 16px;
-    text-align: center;
     cursor: pointer;
     width: calc(14.285% - 20px);
-    flex-shrink: 0;
-    flex-grow: 1;
     margin: 5px;
-    box-sizing: border-box;
     border: 2px solid #444;
     border-radius: 50px;
     color: white;
-	font-weight: bold;
-	justify-content: center;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	transition: background-color 0.2s ease;
-	-moz-transition: background-color 0.2s ease;
-	-webkit-transition: background-color 0.2s ease;
-	-o-transition: background-color 0.2s ease;
-	-ms-transition: background-color 0.2s ease;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    position: relative; /* For absolute positioning */
+	flex-grow: 1;
+	flex-shrink: 0;
+}
+.radio-text {
+    flex-grow: 1;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Compensate for equalizer space */
+    padding-left: 30px; /* equalizer width + margin */
+    padding-right: 30px; /* symmetric padding */
+   
 }
 
 .radio:hover {
@@ -707,15 +739,9 @@ button {
     transition: none !important;
 }
 
-#recentlyPlayedContainer .radio.selected {
-	box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
-    background-color: var(--accent-color) !important;
-    color: black !important;
-    border-color: var(--accent-color);
-}
-
 .radio.selected {
 	box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
+	color: var(--accent-color);
     border-bottom-color: var(--accent-color);
 }
 
@@ -751,9 +777,19 @@ button {
 }
 
 .expand-button {
+	display: flex;
+    align-items: center; /* Ensure vertical alignment */
+    justify-content: center; /* Center horizontally */
+    flex-direction: row; /* Explicitly set row direction */
+    white-space: nowrap; /* Prevent text wrapping */
+    display: -moz-box; /* Firefox old */
+    display: -webkit-flex; /* Chrome old */
+    display: -ms-flexbox; /* IE10 */
     display: flex;
+    -moz-box-align: center; /* Firefox old */
+    -webkit-align-items: center; /* Chrome old */
+    -ms-flex-align: center; /* IE10 */
     align-items: center;
-    justify-content: center;
     position: absolute;
     background-color: #222222;
     width: 100%;
@@ -780,12 +816,16 @@ button {
     font-size: 32px;
 	transform: translateY(1px);
     vertical-align: middle;
+	margin-right: 4px; /* Add spacing between icon and text */
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
-.expand-button span  {
+.expand-button .expand-text  {
 	font-size: 15px;
     font-weight: 400;
     vertical-align: middle;
+	display: inline-block; /* Ensure inline behavior */
+    vertical-align: middle; /* Align with icon */
 }
 
 .light-mode .expand-button[data-expanded="false"] {
@@ -811,6 +851,38 @@ button {
 .expand-button[data-expanded="true"]:hover {
     box-shadow: inset 0px 1px 0px var(--accent-color); 
 }
+
+.equalizer {
+    height: 16px;
+    width: 22px;
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    position: absolute;
+    left: 10px; 
+}
+
+.equalizer.displaypaused div {
+    background-color: var(--accent-color);
+	height: 3px;
+	width: 22px;
+}
+
+.equalizer.animate div {
+    width: 22px;
+    background-color: var(--accent-color);
+    animation: equalizer 1s infinite ease-in-out;
+}
+
+.equalizer div:nth-child(1) { animation-delay: -0.3s; width: 22px; }
+.equalizer div:nth-child(2) { animation-delay: -0.15s; width: 22px;}
+.equalizer div:nth-child(3) { animation-delay: 0s; width: 22px;}
+
+@keyframes equalizer {
+    0%, 100% { height: 20%; }
+    50% { height: 100%; }
+}
+
 
 @media (max-width: 1580px) {
     .radio {
