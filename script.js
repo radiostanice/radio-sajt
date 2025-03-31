@@ -255,7 +255,7 @@ function setupRecentlyPlayedToggle() {
         if (isExpanded && entries[0].target === container) {
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 60}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 70}px`;
             void container.offsetHeight; // Force reflow
         }
     });
@@ -318,8 +318,7 @@ function setupRecentlyPlayedToggle() {
             title.style.display = 'flex';
             title.style.height = 'auto';
             title.style.opacity = '1';
-            title.style.marginTop = '20px';
-            title.style.marginBottom = '30px';
+            title.style.margin = '30px 10px';
             
             // Prepare container
             container.style.display = 'flex';
@@ -332,7 +331,7 @@ function setupRecentlyPlayedToggle() {
             container.style.padding = '5px 5px 10px 5px';
             
             // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 60}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 70}px`;
         } else {
             // Animate container collapse
             container.style.maxHeight = '0';
