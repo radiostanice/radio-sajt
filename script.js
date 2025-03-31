@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     // Load all initial components
     loadPreferences();
+    const cleanupToggle = setupRecentlyPlayedToggle(); // Store cleanup function
     loadRecentlyPlayed();
     setupDropdown();
     setupGenreButtonsNavigation();
@@ -9,13 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Initialize radio station click handlers
     document.querySelectorAll(".radio").forEach(radio => {
-        radio.addEventListener("click", () => {
-            changeStation(radio.dataset.name, radio.dataset.link);
-        });
+        radio.addEventListener("click", () => changeStation(radio.dataset.name, radio.dataset.link));
     });
     
-    // Initial UI setup
     applyGenreFilter();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        cleanupToggle?.();
+    });
 });
 
 // Global Elements
@@ -25,21 +28,22 @@ const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
+let recentlyPlayedObserver;
+let resizeObserver;
+const COLLAPSED_HEIGHT = 170; // Audio container height when collapsed
 
 // Station Functions
 function changeStation(name, link) {
     audio.pause();
     audio.src = link;
     audio.load();
-
+    
     audio.oncanplay = () => {
-        try { audio.play(); } 
-        catch (e) { console.error("Audio play failed:", e); }
+        try { audio.play(); } catch (e) { console.error("Audio play failed:", e); }
     };
 
     document.getElementById("audiotext").textContent = name;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
-
     updateRecentlyPlayed(name, link);
     updateSelectedStation(name);
     updatePlayPauseButton();
@@ -47,20 +51,21 @@ function changeStation(name, link) {
 
 function updateSelectedStation(name) {
     document.querySelectorAll(".radio").forEach(radio => {
-        radio.classList.remove("selected");
+        radio.classList.toggle("selected", radio.dataset.name === name);
         const existingEqualizer = radio.querySelector(".equalizer");
-        if (existingEqualizer) radio.removeChild(existingEqualizer);
         
         if (radio.dataset.name === name) {
-            radio.classList.add("selected");
-            const equalizer = document.createElement("div");
-            equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
-            equalizer.innerHTML = "<div></div><div></div><div></div>";
-            
-            const radioText = radio.querySelector(".radio-text");
-            if (radioText) {
-                radio.insertBefore(equalizer, radioText);
+            if (existingEqualizer) {
+                existingEqualizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
+            } else {
+                const equalizer = document.createElement("div");
+                equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
+                equalizer.innerHTML = "<div></div><div></div><div></div>";
+                const radioText = radio.querySelector(".radio-text");
+                if (radioText) radio.insertBefore(equalizer, radioText);
             }
+        } else if (existingEqualizer) {
+            radio.removeChild(existingEqualizer);
         }
     });
 }
@@ -113,21 +118,18 @@ function updateCategoryVisibility() {
         categoryTitle.style.display = hasVisibleStation ? "flex" : "none";
     });
 
-    // Recently played section visibility
-    const searchQuery = document.getElementById("stationSearch").value.trim();
+    // Always show recently played section
     const recentlyPlayedContainer = document.getElementById("recentlyPlayedContainer");
     const recentlyPlayedTitle = document.querySelector("#recentlyPlayedTitle");
     
     if (recentlyPlayedContainer && recentlyPlayedTitle) {
-        const shouldShow = searchQuery === "";
-        recentlyPlayedContainer.style.display = shouldShow ? "flex" : "none";
-        recentlyPlayedTitle.style.display = shouldShow ? "flex" : "none";
+        recentlyPlayedContainer.style.display = "flex";
+        recentlyPlayedTitle.style.display = "flex";
         
-        if (shouldShow) {
-            recentlyPlayedContainer.querySelectorAll(".radio").forEach(station => {
-                station.style.display = "flex";
-            });
-        }
+        // Ensure all recently played stations are visible
+        recentlyPlayedContainer.querySelectorAll(".radio").forEach(station => {
+            station.style.display = "flex";
+        });
     }
 }
 
@@ -223,6 +225,157 @@ function setupDropdown() {
         }
     });
 }
+function setupRecentlyPlayedToggle() {
+    const container = document.getElementById("recentlyPlayedContainer");
+    const title = document.getElementById("recentlyPlayedTitle");
+    const toggle = document.getElementById("recentlyPlayedToggle") || createToggleButton();
+    const scrollList = document.querySelector('.scroll-list');
+    const COLLAPSED_HEIGHT = 170;
+    let isExpanded = false;
+    let resizeObserver;
+
+    // Initial setup
+    title.style.display = 'none';
+    title.style.height = '0';
+    title.style.opacity = '0';
+    
+    container.style.maxHeight = '0';
+    container.style.opacity = '0';
+    container.style.display = 'none';
+	container.style.padding = '0';
+
+    // Setup ResizeObserver to handle dynamic height changes
+    resizeObserver = new ResizeObserver(entries => {
+        if (isExpanded && entries[0].target === container) {
+            const containerHeight = container.scrollHeight;
+            container.style.maxHeight = `${containerHeight}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+            
+            // Force update of the container's height
+            void container.offsetHeight;
+        }
+    });
+    
+    if (container) {
+        resizeObserver.observe(container);
+    }
+
+    toggle.addEventListener('click', function() {
+        if (!container.querySelector('.radio')) return;
+        isExpanded = !isExpanded;
+        handleToggleAnimation();
+    });
+
+    function handleToggleAnimation() {
+        if (isExpanded) {
+            // Show title first
+            title.style.display = 'flex';
+            title.style.height = 'auto';
+            title.style.opacity = '1';
+            title.style.marginTop = '20px';
+			title.style.marginBottom = '10px';
+            
+            // Prepare container
+            container.style.display = 'flex';
+            
+            // Force layout recalculation
+            void container.offsetHeight;
+            
+            // Animate container
+            const containerHeight = container.scrollHeight;
+            container.style.maxHeight = `${containerHeight}px`;
+            container.style.opacity = '1';
+			container.style.padding = '10px';
+            
+            // Adjust scroll list
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+        } else {
+            // Animate container collapse
+            container.style.maxHeight = '0';
+            container.style.opacity = '0';
+			container.style.padding = '0';
+            
+            // Hide title
+            title.style.display = 'none';
+            title.style.height = '0';
+            title.style.opacity = '0';
+            title.style.marginTop = '0';
+            
+            // Adjust scroll list
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
+            
+            // Clean up
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 100);
+        }
+    }
+
+	function createToggleButton() {
+		const btn = document.createElement('button');
+		btn.id = "recentlyPlayedToggle";
+		btn.className = "recently-played-toggle";
+		document.querySelector('.audio-container').prepend(btn);
+		return btn;
+	}
+
+    // Return cleanup function
+    return function cleanup() {
+        toggle.removeEventListener('click', handleToggleAnimation);
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+        }
+    };
+}
+
+function loadRecentlyPlayed() {
+    const container = document.getElementById("recentlyPlayedContainer");
+    const toggle = document.getElementById("recentlyPlayedToggle");
+    const title = document.getElementById("recentlyPlayedTitle");
+    const scrollList = document.querySelector('.scroll-list');
+    const audioContainer = document.querySelector('.audio-container');
+    
+    if (!container || !toggle) return;
+
+    const recentlyPlayed = safeParseJSON("recentlyPlayed", []);
+    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
+
+    container.innerHTML = '';
+    uniqueStations.forEach(station => {
+        const radio = document.createElement('div');
+        radio.className = 'radio';
+        radio.dataset.name = station.name;
+        radio.dataset.link = station.link;
+        radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
+        radio.addEventListener('click', () => changeStation(station.name, station.link));
+        container.appendChild(radio);
+    });
+
+    const hasContent = container.querySelectorAll('.radio').length > 0;
+    toggle.classList.toggle('empty', !hasContent);
+    toggle.style.cursor = hasContent ? 'pointer' : 'default';
+    
+    // Reset container state when content changes
+    if (!hasContent) {
+        container.style.display = 'none';
+        container.style.maxHeight = '0';
+        container.style.opacity = '0';
+        container.classList.remove('expanded');
+        title.classList.remove('expanded');
+        scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
+        audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
+    } else {
+        // If content exists but container was previously empty
+        if (container.classList.contains('expanded')) {
+            container.style.display = 'flex';
+            const containerHeight = container.scrollHeight;
+            container.style.maxHeight = `${containerHeight}px`;
+            container.style.opacity = '1';
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight}px`;
+            audioContainer.style.height = `${COLLAPSED_HEIGHT + containerHeight}px`;
+        }
+    }
+}
 
 function createExpandButton(stations, category) {
     const expandButton = document.createElement("button");
@@ -239,7 +392,7 @@ function createExpandButton(stations, category) {
     const icon = document.createElement("span");
     icon.className = "material-icons";
     icon.textContent = "expand_more";
-    icon.style.marginRight = "4px";
+    icon.style.margin = "0px";
 
     const text = document.createElement("span");
     text.className = "expand-text";
@@ -331,12 +484,6 @@ function filterStations() {
     
     // Toggle clear search icon
     document.getElementById("clearSearch").style.display = searching ? "block" : "none";
-    
-    // Toggle recently played visibility
-    const recentContainer = document.getElementById("recentlyPlayedContainer");
-    const recentTitle = document.querySelector("#recentlyPlayedTitle");
-    if (recentContainer) recentContainer.style.display = searching ? "none" : "flex";
-    if (recentTitle) recentTitle.style.display = searching ? "none" : "flex";
 
     // Remove all expand buttons when searching
     if (searching) {
@@ -346,26 +493,15 @@ function filterStations() {
         });
     }
 
-    // Show all stations when not searching
-    if (!searching) {
-        document.querySelectorAll('.radio').forEach(station => {
-            station.style.display = 'flex';
-        });
-        applyGenreFilter();
-        return;
-    }
-
-    // Search logic
-    document.querySelectorAll('.radio').forEach(station => {
+    // Search logic - exclude recently played stations
+    document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
         const matches = station.dataset.name.toLowerCase().includes(query);
         station.style.display = matches ? 'flex' : 'none';
     });
 
-    // Update category visibility
-    document.querySelectorAll('.category-container').forEach(category => {
-        if (category.id === "recentlyPlayedContainer") return;
-        
-        const hasVisible = [...category.querySelectorAll('.radio')]
+    // Update category visibility (excluding recently played)
+    document.querySelectorAll('.category-container:not(#recentlyPlayedContainer)').forEach(category => {
+        const hasVisible = [...category.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)')]
             .some(station => station.style.display !== 'none');
         
         category.style.display = hasVisible ? 'flex' : 'none';
@@ -434,48 +570,6 @@ function loadPreferences() {
     if (savedStation.name && savedStation.link) {
         audio.src = savedStation.link;
         document.getElementById("audiotext").textContent = savedStation.name;
-        updateSelectedStation(savedStation.name);
-    }
-}
-
-function loadRecentlyPlayed() {
-    const container = document.getElementById("recentlyPlayedContainer");
-    if (!container) return;
-    
-    const recentlyPlayedTitle = container.previousElementSibling;
-    const recentlyPlayed = safeParseJSON("recentlyPlayed", []);
-
-    // Get unique stations
-    const uniqueStations = recentlyPlayed.filter((station, index, self) =>
-        index === self.findIndex(s => s.link === station.link)
-    ).slice(0, 7);
-
-    // Generate HTML content
-    container.innerHTML = uniqueStations.map(station => `
-        <div class="radio" 
-             data-name="${station.name.replace(/"/g, '&quot;')}" 
-             data-link="${station.link.replace(/"/g, '&quot;')}">
-            <div class="radio-text">${station.name}</div>
-        </div>
-    `).join("");
-
-    // Add click handlers
-    container.querySelectorAll(".radio").forEach(radio => {
-        radio.addEventListener("click", () => {
-            changeStation(radio.dataset.name, radio.dataset.link);
-        });
-    });
-
-    // Toggle visibility
-    const shouldShow = uniqueStations.length > 0;
-    container.style.display = shouldShow ? "flex" : "none";
-    if (recentlyPlayedTitle) {
-        recentlyPlayedTitle.style.display = shouldShow ? "flex" : "none";
-    }
-
-    // Update selected station if exists
-    const savedStation = safeParseJSON("lastStation", {});
-    if (savedStation.name) {
         updateSelectedStation(savedStation.name);
     }
 }
@@ -572,11 +666,12 @@ clearSearchIcon.addEventListener("click", () => {
     });
     document.querySelector('.genre-button[data-genre="all"]')?.classList.add('active');
     
-    // Show all content
-    document.querySelectorAll('.radio').forEach(station => {
+    // Show all regular stations
+    document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
         station.style.display = 'flex';
     });
     
+    // Recently played remains visible
     document.getElementById("recentlyPlayedContainer").style.display = "flex";
     document.querySelector("#recentlyPlayedTitle").style.display = "flex";
     
