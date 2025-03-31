@@ -21,16 +21,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// Global Elements
+// Global Elements and Constants
 const audio = document.getElementById("audioctrl");
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
+const COLLAPSED_HEIGHT = 170;
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
 let recentlyPlayedObserver;
 let resizeObserver;
-const COLLAPSED_HEIGHT = 170; // Audio container height when collapsed
 
 // Station Functions
 function changeStation(name, link) {
@@ -225,14 +225,16 @@ function setupDropdown() {
         }
     });
 }
+
 function setupRecentlyPlayedToggle() {
     const container = document.getElementById("recentlyPlayedContainer");
     const title = document.getElementById("recentlyPlayedTitle");
     const toggle = document.getElementById("recentlyPlayedToggle") || createToggleButton();
     const scrollList = document.querySelector('.scroll-list');
-    const COLLAPSED_HEIGHT = 170;
     let isExpanded = false;
     let resizeObserver;
+    let touchStartY = 0;
+    let touchEndY = 0;
 
     // Initial setup
     title.style.display = 'none';
@@ -242,17 +244,19 @@ function setupRecentlyPlayedToggle() {
     container.style.maxHeight = '0';
     container.style.opacity = '0';
     container.style.display = 'none';
-	container.style.padding = '0';
+    container.style.padding = '0';
 
-    // Setup ResizeObserver to handle dynamic height changes
+    // Firefox workaround for transitions
+    container.style.willChange = 'max-height, opacity, padding';
+    title.style.willChange = 'height, opacity, margin';
+
+    // Setup ResizeObserver
     resizeObserver = new ResizeObserver(entries => {
         if (isExpanded && entries[0].target === container) {
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
-            
-            // Force update of the container's height
-            void container.offsetHeight;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 60}px`;
+            void container.offsetHeight; // Force reflow
         }
     });
     
@@ -260,11 +264,53 @@ function setupRecentlyPlayedToggle() {
         resizeObserver.observe(container);
     }
 
+    // Click handler
     toggle.addEventListener('click', function() {
         if (!container.querySelector('.radio')) return;
+        toggleRecentlyPlayed();
+    });
+
+    // Mobile swipe handlers
+    container.addEventListener('touchstart', function(e) {
+        if (!isExpanded) return;
+        touchStartY = e.changedTouches[0].screenY;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', function(e) {
+        if (!isExpanded) return;
+        e.preventDefault(); // Prevent page scroll when swiping down
+        touchEndY = e.changedTouches[0].screenY;
+        
+        // Calculate swipe distance (only for downward swipes)
+        const swipeDistance = touchStartY - touchEndY;
+        if (swipeDistance > 0) {
+            // Add visual feedback during swipe
+            const progress = Math.min(swipeDistance / 100, 1);
+            container.style.transform = `translateY(-${progress * 20}px)`;
+            container.style.opacity = `${1 - progress}`;
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', function(e) {
+        if (!isExpanded) return;
+        const swipeDistance = touchStartY - touchEndY;
+        
+        // Reset transform
+        container.style.transform = '';
+        
+        // If swipe was significant enough, close the panel
+        if (swipeDistance > 50) {
+            toggleRecentlyPlayed();
+        } else {
+            // Reset opacity if swipe wasn't completed
+            container.style.opacity = '1';
+        }
+    }, { passive: true });
+
+    function toggleRecentlyPlayed() {
         isExpanded = !isExpanded;
         handleToggleAnimation();
-    });
+    }
 
     function handleToggleAnimation() {
         if (isExpanded) {
@@ -273,33 +319,31 @@ function setupRecentlyPlayedToggle() {
             title.style.height = 'auto';
             title.style.opacity = '1';
             title.style.marginTop = '20px';
-			title.style.marginBottom = '10px';
+            title.style.marginBottom = '30px';
             
             // Prepare container
             container.style.display = 'flex';
-            
-            // Force layout recalculation
-            void container.offsetHeight;
+            void container.offsetHeight; // Force reflow
             
             // Animate container
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
-			container.style.padding = '10px';
+            container.style.padding = '5px 5px 10px 5px';
             
             // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 60}px`;
         } else {
             // Animate container collapse
             container.style.maxHeight = '0';
             container.style.opacity = '0';
-			container.style.padding = '0';
+            container.style.padding = '0';
             
             // Hide title
             title.style.display = 'none';
             title.style.height = '0';
             title.style.opacity = '0';
-            title.style.marginTop = '0';
+            title.style.margin = '0';
             
             // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
@@ -311,17 +355,19 @@ function setupRecentlyPlayedToggle() {
         }
     }
 
-	function createToggleButton() {
-		const btn = document.createElement('button');
-		btn.id = "recentlyPlayedToggle";
-		btn.className = "recently-played-toggle";
-		document.querySelector('.audio-container').prepend(btn);
-		return btn;
-	}
+    function createToggleButton() {
+        const btn = document.createElement('button');
+        btn.id = "recentlyPlayedToggle";
+        btn.className = "recently-played-toggle";
+        document.querySelector('.audio-container').prepend(btn);
+        return btn;
+    }
 
-    // Return cleanup function
     return function cleanup() {
         toggle.removeEventListener('click', handleToggleAnimation);
+        container.removeEventListener('touchstart');
+        container.removeEventListener('touchmove');
+        container.removeEventListener('touchend');
         if (resizeObserver) {
             resizeObserver.disconnect();
         }
@@ -617,7 +663,7 @@ function setupGenreButtonsNavigation() {
             ? Math.max(0, start - scrollAmount)
             : Math.min(start + scrollAmount, genreButtons.scrollWidth - genreButtons.clientWidth);
         
-        const duration = 300; // milliseconds
+        const duration = 200; // milliseconds
         const startTime = performance.now();
 
         function animateScroll(currentTime) {
