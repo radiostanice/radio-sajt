@@ -1181,16 +1181,18 @@ button {
     overflow: hidden;
     opacity: 0;
     transition:
+		height 0.2s linear,
         opacity 0.2s linear,
         transform 0.2s linear;
     border: 2px solid #444;
     background: #222;
+	height: auto;
     width: 100%;
     margin: 0 10px;
     padding: 10px;
     margin-bottom: 10px;
     touch-action: pan-y;
-    will-change: max-height, opacity, padding, transform;
+    will-change: height, opacity, padding, transform;
     transform-origin: top center;
 }
 
