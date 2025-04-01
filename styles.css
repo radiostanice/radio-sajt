@@ -532,6 +532,8 @@ button {
     margin: 0 auto;
     margin-top: 10px;
     margin-bottom: 15px;
+    position: static;
+    transform: none;
 }
 
 .dark-mode .audio-player {
@@ -561,7 +563,6 @@ button {
     border-radius: 50px;
     height: 50px;
     width: 130px;
-  
 }
 
 .audio-controls:hover {
@@ -1248,7 +1249,4 @@ button {
 @media (max-width: 380px) {
     .category { font-size: 24px; }
     #category-icon { font-size: 30px; }
-    .audio-title { font-size: 26px; }
-    .scroll-list { bottom: 140px; }
-    .audio-container { height: 140px; }
 }
