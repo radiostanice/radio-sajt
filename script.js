@@ -860,7 +860,6 @@ function setupGenreCategoriesSwipe() {
         
         const diff = touchStartX - touchEndX;
         const swipeDuration = Date.now() - touchStartTime;
-        const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
         
         // Calculate momentum scroll
         const velocity = diff / swipeDuration;
@@ -875,22 +874,11 @@ function setupGenreCategoriesSwipe() {
             targetScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
         }
         
-        genreButtons.scrollLeft = targetScroll;
-        
-        // Also trigger button click if significant swipe
-        if (Math.abs(diff) > 50 && swipeDuration < 300) {
-            if (diff > 50) {
-                const rightButton = navButtons[1];
-                if (rightButton && rightButton.style.display !== 'none') {
-                    rightButton.click();
-                }
-            } else if (diff < -50) {
-                const leftButton = navButtons[0];
-                if (leftButton && leftButton.style.display !== 'none') {
-                    leftButton.click();
-                }
-            }
-        }
+        // Smooth scroll to target position
+        genreButtons.scrollTo({
+            left: targetScroll,
+            behavior: 'smooth'
+        });
     }, { passive: true });
 }
 
