@@ -727,7 +727,7 @@ button {
     color: white;
     font-weight: bold;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     flex-grow: 1;
     flex-shrink: 0;
@@ -743,7 +743,7 @@ button {
 }
 
 .radio:hover {
-    filter: contrast(0.87);
+    filter: contrast(0.9);
     box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.1), 1px 1px 1px rgba(0, 0, 0, 0.1);
     border-color: var(--accent-color);
     transition: border-color 0.2s linear, filter 0.2s linear;
@@ -758,9 +758,36 @@ button {
 }
 
 .radio.selected {
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
+	color: var(--accent-color);
+	position: relative;
+	border: 2px solid #444; 
+}
+
+.radio.selected::after {
+	content: '';
+	position: absolute;
+	bottom: -2px;
+	left: 15%;
+	right: 15%;
+	height: 2px;
+	background:
+	linear-gradient(to right, 
+      #444 0%, 
+      #444 100%
+    ),
+    linear-gradient(to right, 
+      transparent 0%,
+      var(--accent-color) 25%,
+      var(--accent-color) 75%,
+      transparent 100%
+    );
+	background-blend-mode: overlay;
+	transition: all 0.2s linear;
+}
+
+.radio.selected:hover::after {
+    left: 8%;
+	right: 8%;
 }
 
 .category {
