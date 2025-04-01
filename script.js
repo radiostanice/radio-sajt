@@ -781,65 +781,139 @@ function setupGenreCategoriesSwipe() {
     let isSwiping = false;
     let scrollLeftStart = 0;
     let touchStartTime = 0;
+    let lastScrollTime = 0;
+    let scrollTimeout;
 
+    // Disable scroll chaining on parent elements
+    genreButtons.addEventListener('touchstart', () => {
+        document.body.style.overscrollBehaviorX = 'contain';
+    });
+
+    // Handle touch start
     genreButtons.addEventListener('touchstart', function(e) {
+        if (Date.now() - lastScrollTime < 100) return; // Prevent rapid successive touches
+        
         touchStartX = e.changedTouches[0].screenX;
         scrollLeftStart = genreButtons.scrollLeft;
         touchStartTime = Date.now();
         isSwiping = true;
         genreButtons.style.scrollBehavior = 'auto';
+        genreButtons.style.cursor = 'grabbing';
+        
+        // Clear any pending momentum scroll
+        clearTimeout(scrollTimeout);
     }, { passive: true });
 
+    // Handle touch move
     genreButtons.addEventListener('touchmove', function(e) {
         if (!isSwiping) return;
+        
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchStartX - touchEndX;
         
         if (Math.abs(diff) > 5) {
             e.preventDefault();
-            genreButtons.scrollLeft = scrollLeftStart + diff;
+            e.stopPropagation();
+            
+            // Calculate new scroll position with rubber band effect at boundaries
+            let newScroll = scrollLeftStart + diff;
+            const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+            
+            // Apply rubber band effect when at boundaries
+            if (newScroll < 0) {
+                newScroll = scrollLeftStart + diff * 0.3;
+            } else if (newScroll > maxScroll) {
+                newScroll = scrollLeftStart + diff * 0.3;
+            }
+            
+            genreButtons.scrollLeft = newScroll;
         }
     }, { passive: false });
 
+    // Handle touch end
     genreButtons.addEventListener('touchend', function(e) {
         if (!isSwiping) return;
         isSwiping = false;
         genreButtons.style.scrollBehavior = 'smooth';
+        genreButtons.style.cursor = '';
+        lastScrollTime = Date.now();
         
         const diff = touchStartX - touchEndX;
         const swipeDuration = Date.now() - touchStartTime;
         const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
         
         // Calculate momentum scroll
-        const velocity = diff / swipeDuration;
-        let targetScroll = genreButtons.scrollLeft + (velocity * 200);
+        const velocity = diff / Math.max(1, swipeDuration);
+        let targetScroll = genreButtons.scrollLeft + (velocity * 300);
         
-        // Apply limits
-        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth));
+        // Apply limits with bounce effect
+        const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+        targetScroll = Math.max(-50, Math.min(targetScroll, maxScroll + 50));
         
-        // Snap to nearest button
-        const buttonWidth = genreButtons.querySelector('.genre-button')?.offsetWidth || 0;
-        if (buttonWidth > 0) {
-            targetScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
+        // Snap to nearest button with boundary checks
+        const buttons = genreButtons.querySelectorAll('.genre-button');
+        if (buttons.length > 0) {
+            const buttonWidth = buttons[0].offsetWidth + 10; // Include margin
+            let snapScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
+            
+            // Ensure we don't snap beyond boundaries
+            snapScroll = Math.max(0, Math.min(snapScroll, maxScroll));
+            
+            // Apply the snap scroll with smooth behavior
+            genreButtons.scrollTo({
+                left: snapScroll,
+                behavior: 'smooth'
+            });
+            
+            // Update navigation buttons visibility after scroll
+            scrollTimeout = setTimeout(() => {
+                updateNavButtonsVisibility();
+            }, 300);
         }
         
-        genreButtons.scrollLeft = targetScroll;
-        
-        // Also trigger button click if significant swipe
+        // Trigger navigation button click for significant swipes
         if (Math.abs(diff) > 50 && swipeDuration < 300) {
-            if (diff > 50) {
-                const rightButton = navButtons[1];
-                if (rightButton && rightButton.style.display !== 'none') {
-                    rightButton.click();
-                }
-            } else if (diff < -50) {
-                const leftButton = navButtons[0];
-                if (leftButton && leftButton.style.display !== 'none') {
-                    leftButton.click();
-                }
-            }
+            const direction = diff > 0 ? 'right' : 'left';
+            handleSwipeNavigation(direction, navButtons);
         }
     }, { passive: true });
+
+    // Helper function to handle swipe navigation
+    function handleSwipeNavigation(direction, navButtons) {
+        if (direction === 'right') {
+            const rightButton = navButtons[1];
+            if (rightButton && rightButton.style.display !== 'none') {
+                rightButton.click();
+            }
+        } else {
+            const leftButton = navButtons[0];
+            if (leftButton && leftButton.style.display !== 'none') {
+                leftButton.click();
+            }
+        }
+    }
+
+    // Helper function to update nav buttons visibility
+    function updateNavButtonsVisibility() {
+        const scrollLeft = genreButtons.scrollLeft;
+        const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+        const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
+        
+        if (navButtons[0]) {
+            navButtons[0].style.display = scrollLeft <= 10 ? 'none' : 'flex';
+        }
+        if (navButtons[1]) {
+            navButtons[1].style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
+        }
+    }
+
+    // Initialize button visibility
+    updateNavButtonsVisibility();
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        updateNavButtonsVisibility();
+    });
 }
 
 // Event Listeners
