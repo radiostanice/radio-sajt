@@ -20,6 +20,22 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener('beforeunload', () => {
         cleanupToggle?.();
     });
+
+    // Prevent container height changes on scroll
+    const audioContainer = document.querySelector('.audio-container');
+    if (audioContainer) {
+        const observer = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                if (entry.target === audioContainer) {
+                    const currentHeight = entry.contentRect.height;
+                    if (currentHeight < COLLAPSED_HEIGHT) {
+                        audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
+                    }
+                }
+            }
+        });
+        observer.observe(audioContainer);
+    }
 });
 
 // Global Elements and Constants
@@ -239,30 +255,31 @@ function setupRecentlyPlayedToggle() {
     let touchStartTime = 0;
 
     // Initial setup
-    title.style.display = 'none';
-    title.style.height = '0';
-    title.style.opacity = '0';
-	title.style.margin = '0';
-    
     container.style.maxHeight = '0';
     container.style.opacity = '0';
     container.style.display = 'none';
     container.style.padding = '0';
+    container.style.overflow = 'hidden';
+    title.style.display = 'none';
+    title.style.height = '0';
+    title.style.opacity = '0';
+    title.style.margin = '0';
+    title.style.overflow = 'hidden';
 
-    // Firefox workaround for transitions
-    container.style.willChange = 'max-height, opacity, padding';
-    title.style.willChange = 'height, opacity, margin';
-
-    // Setup ResizeObserver
+    // Setup ResizeObserver with debounce
+    let resizeTimeout;
     resizeObserver = new ResizeObserver(entries => {
-        if (isExpanded && entries[0].target === container) {
-            const containerHeight = container.scrollHeight;
-            container.style.maxHeight = `${containerHeight}px`;
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
-            void container.offsetHeight; // Force reflow
-        }
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (isExpanded && entries[0].target === container) {
+                const containerHeight = container.scrollHeight;
+                container.style.maxHeight = `${containerHeight}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
+                void container.offsetHeight; // Force reflow
+            }
+        }, 100);
     });
-    
+
     if (container) {
         resizeObserver.observe(container);
     }
@@ -273,98 +290,106 @@ function setupRecentlyPlayedToggle() {
         toggleRecentlyPlayed();
     });
 
-    // Mobile swipe down to close (on expanded container)
-    container.addEventListener('touchstart', function(e) {
+    // Touch handlers
+    function handleContainerTouchStart(e) {
         if (!isExpanded) return;
         touchStartY = e.changedTouches[0].screenY;
         touchStartTime = Date.now();
-    }, { passive: true });
+        container.style.transition = 'none';
+    }
 
-    container.addEventListener('touchmove', function(e) {
+    function handleContainerTouchMove(e) {
         if (!isExpanded) return;
         touchEndY = e.changedTouches[0].screenY;
-        
-        // Calculate swipe distance (only for downward swipes)
         const swipeDistance = touchEndY - touchStartY;
+        
         if (swipeDistance > 0) {
-            e.preventDefault(); // Prevent page scroll when swiping down
-            // Add visual feedback during swipe
+            e.preventDefault();
             const progress = Math.min(swipeDistance / 100, 1);
             container.style.transform = `translateY(${progress * 20}px)`;
             container.style.opacity = `${1 - progress}`;
         }
-    }, { passive: false });
+    }
 
-    container.addEventListener('touchend', function(e) {
+    function handleContainerTouchEnd(e) {
         if (!isExpanded) return;
         const touchEndTime = Date.now();
         const swipeDistance = touchEndY - touchStartY;
         const swipeDuration = touchEndTime - touchStartTime;
         
-        // Reset transform
         container.style.transform = '';
+        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
         
-        // If swipe was significant enough and fast enough, close the panel
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
         } else {
-            // Reset opacity if swipe wasn't completed
             container.style.opacity = '1';
         }
-    }, { passive: true });
+    }
 
-    // Mobile swipe up to expand (on closed toggle button)
-    toggle.addEventListener('touchstart', function(e) {
+    function handleToggleTouchStart(e) {
         if (isExpanded || !container.querySelector('.radio')) return;
         touchStartY = e.changedTouches[0].screenY;
         touchStartTime = Date.now();
-    }, { passive: true });
+    }
 
-    toggle.addEventListener('touchmove', function(e) {
+    function handleToggleTouchMove(e) {
         if (isExpanded || !container.querySelector('.radio')) return;
         touchEndY = e.changedTouches[0].screenY;
-        
-        // Calculate swipe distance (only for upward swipes)
         const swipeDistance = touchStartY - touchEndY;
+        
         if (swipeDistance > 0) {
-            e.preventDefault(); // Prevent page scroll when swiping up
-            // Add visual feedback during swipe
+            e.preventDefault();
             const progress = Math.min(swipeDistance / 100, 1);
             toggle.style.transform = `translateY(-${progress * 8}px)`;
         }
-    }, { passive: false });
+    }
 
-    toggle.addEventListener('touchend', function(e) {
+    function handleToggleTouchEnd(e) {
         if (isExpanded || !container.querySelector('.radio')) return;
         const touchEndTime = Date.now();
         const swipeDistance = touchStartY - touchEndY;
         const swipeDuration = touchEndTime - touchStartTime;
         
-        // Reset transform
         toggle.style.transform = '';
         
-        // If swipe was significant enough and fast enough, expand the panel
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
         }
-    }, { passive: true });
+    }
+
+    // Add event listeners
+    container.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
+    container.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
+    toggle.addEventListener('touchstart', handleToggleTouchStart, { passive: true });
+    toggle.addEventListener('touchmove', handleToggleTouchMove, { passive: false });
+    toggle.addEventListener('touchend', handleToggleTouchEnd, { passive: true });
 
     function toggleRecentlyPlayed() {
+        if (!container.querySelector('.radio')) return;
         isExpanded = !isExpanded;
         handleToggleAnimation();
     }
 
     function handleToggleAnimation() {
         if (isExpanded) {
+            // Make sure container is properly initialized
+            container.style.display = 'flex';
+            container.style.maxHeight = '0';
+            container.style.opacity = '0';
+            container.style.padding = '0';
+            container.style.overflow = 'hidden';
+            
+            // Force reflow before animation
+            void container.offsetHeight;
+            
             // Show title first
             title.style.display = 'flex';
             title.style.height = 'auto';
             title.style.opacity = '1';
             title.style.margin = '20px 10px 10px 10px';
-            
-            // Prepare container
-            container.style.display = 'flex';
-            void container.offsetHeight; // Force reflow
+            title.style.overflow = 'visible';
             
             // Animate container
             const containerHeight = container.scrollHeight;
@@ -385,14 +410,17 @@ function setupRecentlyPlayedToggle() {
             title.style.height = '0';
             title.style.opacity = '0';
             title.style.margin = '0';
+            title.style.overflow = 'hidden';
             
             // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
             
-            // Clean up
+            // Clean up after transition completes
             setTimeout(() => {
-                container.style.display = 'none';
-            }, 100);
+                if (!isExpanded) {
+                    container.style.display = 'none';
+                }
+            }, 200);
         }
     }
 
@@ -405,13 +433,13 @@ function setupRecentlyPlayedToggle() {
     }
 
     return function cleanup() {
-        toggle.removeEventListener('click', handleToggleAnimation);
-        container.removeEventListener('touchstart');
-        container.removeEventListener('touchmove');
-        container.removeEventListener('touchend');
-        toggle.removeEventListener('touchstart');
-        toggle.removeEventListener('touchmove');
-        toggle.removeEventListener('touchend');
+        toggle.removeEventListener('click', toggleRecentlyPlayed);
+        container.removeEventListener('touchstart', handleContainerTouchStart);
+        container.removeEventListener('touchmove', handleContainerTouchMove);
+        container.removeEventListener('touchend', handleContainerTouchEnd);
+        toggle.removeEventListener('touchstart', handleToggleTouchStart);
+        toggle.removeEventListener('touchmove', handleToggleTouchMove);
+        toggle.removeEventListener('touchend', handleToggleTouchEnd);
         if (resizeObserver) {
             resizeObserver.disconnect();
         }
@@ -752,11 +780,14 @@ function setupGenreCategoriesSwipe() {
     let touchEndX = 0;
     let isSwiping = false;
     let scrollLeftStart = 0;
+    let touchStartTime = 0;
 
     genreButtons.addEventListener('touchstart', function(e) {
         touchStartX = e.changedTouches[0].screenX;
         scrollLeftStart = genreButtons.scrollLeft;
+        touchStartTime = Date.now();
         isSwiping = true;
+        genreButtons.style.scrollBehavior = 'auto';
     }, { passive: true });
 
     genreButtons.addEventListener('touchmove', function(e) {
@@ -764,10 +795,8 @@ function setupGenreCategoriesSwipe() {
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchStartX - touchEndX;
         
-        // Only prevent default if we're actually swiping horizontally
         if (Math.abs(diff) > 5) {
             e.preventDefault();
-            // Add momentum scrolling effect
             genreButtons.scrollLeft = scrollLeftStart + diff;
         }
     }, { passive: false });
@@ -775,58 +804,42 @@ function setupGenreCategoriesSwipe() {
     genreButtons.addEventListener('touchend', function(e) {
         if (!isSwiping) return;
         isSwiping = false;
+        genreButtons.style.scrollBehavior = 'smooth';
         
         const diff = touchStartX - touchEndX;
+        const swipeDuration = Date.now() - touchStartTime;
         const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
         
-        // Swipe right to left (next)
-        if (diff > 50) {
-            const rightButton = navButtons[1];
-            if (rightButton && rightButton.style.display !== 'none') {
-                rightButton.click();
-            }
-        } 
-        // Swipe left to right (previous)
-        else if (diff < -50) {
-            const leftButton = navButtons[0];
-            if (leftButton && leftButton.style.display !== 'none') {
-                leftButton.click();
+        // Calculate momentum scroll
+        const velocity = diff / swipeDuration;
+        let targetScroll = genreButtons.scrollLeft + (velocity * 200);
+        
+        // Apply limits
+        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth - genreButtons.clientWidth));
+        
+        // Snap to nearest button
+        const buttonWidth = genreButtons.querySelector('.genre-button')?.offsetWidth || 0;
+        if (buttonWidth > 0) {
+            targetScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
+        }
+        
+        genreButtons.scrollLeft = targetScroll;
+        
+        // Also trigger button click if significant swipe
+        if (Math.abs(diff) > 50 && swipeDuration < 300) {
+            if (diff > 50) {
+                const rightButton = navButtons[1];
+                if (rightButton && rightButton.style.display !== 'none') {
+                    rightButton.click();
+                }
+            } else if (diff < -50) {
+                const leftButton = navButtons[0];
+                if (leftButton && leftButton.style.display !== 'none') {
+                    leftButton.click();
+                }
             }
         }
     }, { passive: true });
-
-    // Add momentum scrolling after release
-    genreButtons.addEventListener('touchend', function(e) {
-        if (!isSwiping) return;
-        const velocity = (touchStartX - touchEndX) / (Date.now() - touchStartTime);
-        if (Math.abs(velocity) > 0.5) {
-            const targetScroll = genreButtons.scrollLeft + (velocity * 100);
-            smoothScrollTo(genreButtons, targetScroll, 300);
-        }
-    }, { passive: true });
-
-    function smoothScrollTo(element, target, duration) {
-        const start = element.scrollLeft;
-        const change = target - start;
-        const startTime = performance.now();
-
-        function animateScroll(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = easeOutQuad(progress);
-            element.scrollLeft = start + (change * ease);
-            
-            if (progress < 1) {
-                requestAnimationFrame(animateScroll);
-            }
-        }
-
-        requestAnimationFrame(animateScroll);
-    }
-
-    function easeOutQuad(t) {
-        return t * (2 - t);
-    }
 }
 
 // Event Listeners

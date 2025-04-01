@@ -55,6 +55,7 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+	overscroll-behavior-y: contain;
 }
 
 * {
@@ -492,6 +493,10 @@ button {
 /* AUDIO PLAYER */
 /* ============ */
 .audio-container {
+	min-height: 170px !important;
+    height: auto !important;
+    overflow: visible !important;
+    will-change: height;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -500,10 +505,7 @@ button {
     text-align: center;
     z-index: 100;
     border: none;
-    min-height: 170px;
-    height: auto;
     transition: height 0.2s linear;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -521,7 +523,9 @@ button {
 }
 
 .audio-player {
-    position: relative;
+	
+    position: relative !important;
+    z-index: 1001 !important;
     width: 350px;
     border: 3px solid var(--accent-color);
     border-radius: 40px;
@@ -532,7 +536,6 @@ button {
     margin: 0 auto;
     margin-top: 10px;
     margin-bottom: 15px;
-    position: static;
     transform: none;
 }
 
