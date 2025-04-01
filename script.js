@@ -292,6 +292,8 @@ function setupRecentlyPlayedToggle() {
             const progress = Math.min(swipeDistance / 100, 1);
             container.style.transform = `translateY(${progress * 20}px)`;
             container.style.opacity = `${1 - progress}`;
+			title.style.transform = `translateY(${progress * 20}px)`;
+            title.style.opacity = `${1 - progress}`;
         }
     }, { passive: false });
 
@@ -330,7 +332,7 @@ function setupRecentlyPlayedToggle() {
             e.preventDefault(); // Prevent page scroll when swiping up
             // Add visual feedback during swipe
             const progress = Math.min(swipeDistance / 100, 1);
-            toggle.style.transform = `translateY(-${progress * 20}px)`;
+            toggle.style.transform = `translateY(-${progress * 4}px)`;
         }
     }, { passive: false });
 
