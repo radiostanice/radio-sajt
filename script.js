@@ -43,7 +43,7 @@ const audio = document.getElementById("audioctrl");
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
-const COLLAPSED_HEIGHT = 170;
+const COLLAPSED_HEIGHT = 160;
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
 let recentlyPlayedObserver;
@@ -274,7 +274,7 @@ function setupRecentlyPlayedToggle() {
             if (isExpanded && entries[0].target === container) {
                 const containerHeight = container.scrollHeight;
                 container.style.maxHeight = `${containerHeight}px`;
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
                 void container.offsetHeight; // Force reflow
             }
         }, 100);
@@ -341,7 +341,7 @@ function setupRecentlyPlayedToggle() {
         if (swipeDistance > 0) {
             e.preventDefault();
             const progress = Math.min(swipeDistance / 100, 1);
-            toggle.style.transform = `translateY(-${progress * 8}px)`;
+            toggle.style.transform = `translateY(-${progress * 20}px)`;
         }
     }
 
@@ -398,7 +398,7 @@ function setupRecentlyPlayedToggle() {
             container.style.padding = '5px 5px 10px 5px';
             
             // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
         } else {
             // Animate container collapse
             container.style.maxHeight = '0';
@@ -815,7 +815,7 @@ function setupGenreCategoriesSwipe() {
         let targetScroll = genreButtons.scrollLeft + (velocity * 200);
         
         // Apply limits
-        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth - genreButtons.clientWidth));
+        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth));
         
         // Snap to nearest button
         const buttonWidth = genreButtons.querySelector('.genre-button')?.offsetWidth || 0;

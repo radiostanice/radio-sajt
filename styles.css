@@ -493,7 +493,7 @@ button {
 /* AUDIO PLAYER */
 /* ============ */
 .audio-container {
-	min-height: 170px !important;
+	min-height: 160px !important;
     height: auto !important;
     overflow: visible !important;
     will-change: height;
@@ -523,19 +523,16 @@ button {
 }
 
 .audio-player {
-	
     position: relative !important;
     z-index: 1001 !important;
-    width: 350px;
+    width: 300px;
     border: 3px solid var(--accent-color);
     border-radius: 40px;
-    padding: 10px;
+    padding: 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 0 auto;
-    margin-top: 10px;
-    margin-bottom: 15px;
+    margin: 10px auto;
     transform: none;
 }
 
@@ -1113,6 +1110,10 @@ button {
     background: black;
 }
 
+.light-mode .recently-played-toggle {
+    background-color: #f0f0f0;
+}
+
 .recently-played-toggle {
     position: absolute;
     top: 0;
@@ -1123,7 +1124,7 @@ button {
     border-bottom: none;
     appearance: none;
     -moz-appearance: none;
-    background: transparent;
+    background: #222;
     outline: none;
     cursor: pointer;
     z-index: 10;
@@ -1160,7 +1161,7 @@ button {
 .scroll-list {
     position: absolute;
     top: 61.5px;
-    bottom: 170px;
+    bottom: 160px;
     left: 0;
     right: 0;
     overflow: hidden;
