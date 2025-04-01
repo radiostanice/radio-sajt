@@ -215,7 +215,28 @@ function updateRecentlyPlayed(name, link) {
     ].slice(0, 7);
     
     localStorage.setItem('recentlyPlayed', JSON.stringify(newRecentlyPlayed));
+    
+    // Get the current expanded state before loading
+    const container = document.getElementById("recentlyPlayedContainer");
+    const wasExpanded = container && container.style.maxHeight !== '0px';
+    
     loadRecentlyPlayed();
+    
+    // If it was expanded before updating, ensure it stays expanded with correct height
+    if (wasExpanded) {
+        setTimeout(() => {
+            if (container) {
+                const containerHeight = container.scrollHeight;
+                container.style.maxHeight = `${containerHeight}px`;
+                
+                // Update the scroll list position
+                const scrollList = document.querySelector('.scroll-list');
+                if (scrollList) {
+                    scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
+                }
+            }
+        }, 10); // Small timeout to allow DOM to update
+    }
 }
 
 function safeParseJSON(key, fallback) {
@@ -318,7 +339,7 @@ function setupRecentlyPlayedToggle() {
         const swipeDuration = touchEndTime - touchStartTime;
         
         container.style.transform = '';
-        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
+        container.style.transition = 'height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
         
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
@@ -458,6 +479,9 @@ function loadRecentlyPlayed() {
     const recentlyPlayed = safeParseJSON("recentlyPlayed", []);
     const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
 
+    // Store the current expanded state
+    const wasExpanded = container.style.maxHeight !== '0px';
+    
     container.innerHTML = '';
     uniqueStations.forEach(station => {
         const radio = document.createElement('div');
@@ -473,7 +497,6 @@ function loadRecentlyPlayed() {
     toggle.classList.toggle('empty', !hasContent);
     toggle.style.cursor = hasContent ? 'pointer' : 'default';
     
-    // Reset container state when content changes
     if (!hasContent) {
         container.style.display = 'none';
         container.style.maxHeight = '0';
@@ -483,14 +506,35 @@ function loadRecentlyPlayed() {
         scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
         audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
     } else {
-        // If content exists but container was previously empty
-        if (container.classList.contains('expanded')) {
+        if (wasExpanded) {
+            // If it was expanded before reloading, restore the expanded state with correct height
             container.style.display = 'flex';
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight}px`;
-            audioContainer.style.height = `${COLLAPSED_HEIGHT + containerHeight}px`;
+            
+            // Update the scroll list position
+            if (scrollList) {
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
+            }
+            
+            // Update the audio container height if needed
+            if (audioContainer) {
+                audioContainer.style.height = 'auto';
+            }
+        } else if (container.classList.contains('expanded')) {
+            container.style.display = 'flex';
+            const containerHeight = container.scrollHeight;
+            container.style.maxHeight = `${containerHeight}px`;
+            container.style.opacity = '1';
+            
+            if (scrollList) {
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight}px`;
+            }
+            
+            if (audioContainer) {
+                audioContainer.style.height = `${COLLAPSED_HEIGHT + containerHeight}px`;
+            }
         }
     }
 }
@@ -781,139 +825,65 @@ function setupGenreCategoriesSwipe() {
     let isSwiping = false;
     let scrollLeftStart = 0;
     let touchStartTime = 0;
-    let lastScrollTime = 0;
-    let scrollTimeout;
 
-    // Disable scroll chaining on parent elements
-    genreButtons.addEventListener('touchstart', () => {
-        document.body.style.overscrollBehaviorX = 'contain';
-    });
-
-    // Handle touch start
     genreButtons.addEventListener('touchstart', function(e) {
-        if (Date.now() - lastScrollTime < 100) return; // Prevent rapid successive touches
-        
         touchStartX = e.changedTouches[0].screenX;
         scrollLeftStart = genreButtons.scrollLeft;
         touchStartTime = Date.now();
         isSwiping = true;
         genreButtons.style.scrollBehavior = 'auto';
-        genreButtons.style.cursor = 'grabbing';
-        
-        // Clear any pending momentum scroll
-        clearTimeout(scrollTimeout);
     }, { passive: true });
 
-    // Handle touch move
     genreButtons.addEventListener('touchmove', function(e) {
         if (!isSwiping) return;
-        
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchStartX - touchEndX;
         
         if (Math.abs(diff) > 5) {
             e.preventDefault();
-            e.stopPropagation();
-            
-            // Calculate new scroll position with rubber band effect at boundaries
-            let newScroll = scrollLeftStart + diff;
-            const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-            
-            // Apply rubber band effect when at boundaries
-            if (newScroll < 0) {
-                newScroll = scrollLeftStart + diff * 0.3;
-            } else if (newScroll > maxScroll) {
-                newScroll = scrollLeftStart + diff * 0.3;
-            }
-            
-            genreButtons.scrollLeft = newScroll;
+            genreButtons.scrollLeft = scrollLeftStart + diff;
         }
     }, { passive: false });
 
-    // Handle touch end
     genreButtons.addEventListener('touchend', function(e) {
         if (!isSwiping) return;
         isSwiping = false;
         genreButtons.style.scrollBehavior = 'smooth';
-        genreButtons.style.cursor = '';
-        lastScrollTime = Date.now();
         
         const diff = touchStartX - touchEndX;
         const swipeDuration = Date.now() - touchStartTime;
         const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
         
         // Calculate momentum scroll
-        const velocity = diff / Math.max(1, swipeDuration);
-        let targetScroll = genreButtons.scrollLeft + (velocity * 300);
+        const velocity = diff / swipeDuration;
+        let targetScroll = genreButtons.scrollLeft + (velocity * 200);
         
-        // Apply limits with bounce effect
-        const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-        targetScroll = Math.max(-50, Math.min(targetScroll, maxScroll + 50));
+        // Apply limits
+        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth - genreButtons.clientWidth));
         
-        // Snap to nearest button with boundary checks
-        const buttons = genreButtons.querySelectorAll('.genre-button');
-        if (buttons.length > 0) {
-            const buttonWidth = buttons[0].offsetWidth + 10; // Include margin
-            let snapScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
-            
-            // Ensure we don't snap beyond boundaries
-            snapScroll = Math.max(0, Math.min(snapScroll, maxScroll));
-            
-            // Apply the snap scroll with smooth behavior
-            genreButtons.scrollTo({
-                left: snapScroll,
-                behavior: 'smooth'
-            });
-            
-            // Update navigation buttons visibility after scroll
-            scrollTimeout = setTimeout(() => {
-                updateNavButtonsVisibility();
-            }, 300);
+        // Snap to nearest button
+        const buttonWidth = genreButtons.querySelector('.genre-button')?.offsetWidth || 0;
+        if (buttonWidth > 0) {
+            targetScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
         }
         
-        // Trigger navigation button click for significant swipes
+        genreButtons.scrollLeft = targetScroll;
+        
+        // Also trigger button click if significant swipe
         if (Math.abs(diff) > 50 && swipeDuration < 300) {
-            const direction = diff > 0 ? 'right' : 'left';
-            handleSwipeNavigation(direction, navButtons);
+            if (diff > 50) {
+                const rightButton = navButtons[1];
+                if (rightButton && rightButton.style.display !== 'none') {
+                    rightButton.click();
+                }
+            } else if (diff < -50) {
+                const leftButton = navButtons[0];
+                if (leftButton && leftButton.style.display !== 'none') {
+                    leftButton.click();
+                }
+            }
         }
     }, { passive: true });
-
-    // Helper function to handle swipe navigation
-    function handleSwipeNavigation(direction, navButtons) {
-        if (direction === 'right') {
-            const rightButton = navButtons[1];
-            if (rightButton && rightButton.style.display !== 'none') {
-                rightButton.click();
-            }
-        } else {
-            const leftButton = navButtons[0];
-            if (leftButton && leftButton.style.display !== 'none') {
-                leftButton.click();
-            }
-        }
-    }
-
-    // Helper function to update nav buttons visibility
-    function updateNavButtonsVisibility() {
-        const scrollLeft = genreButtons.scrollLeft;
-        const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-        const navButtons = genreWrapper.querySelectorAll('.genre-nav-button');
-        
-        if (navButtons[0]) {
-            navButtons[0].style.display = scrollLeft <= 10 ? 'none' : 'flex';
-        }
-        if (navButtons[1]) {
-            navButtons[1].style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
-        }
-    }
-
-    // Initialize button visibility
-    updateNavButtonsVisibility();
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        updateNavButtonsVisibility();
-    });
 }
 
 // Event Listeners
