@@ -311,7 +311,7 @@ function setupRecentlyPlayedToggle() {
         toggleRecentlyPlayed();
     });
 
-    // Touch handlers
+    // Touch handlers for the entire container when expanded
     function handleContainerTouchStart(e) {
         if (!isExpanded) return;
         touchStartY = e.changedTouches[0].screenY;
@@ -339,7 +339,7 @@ function setupRecentlyPlayedToggle() {
         const swipeDuration = touchEndTime - touchStartTime;
         
         container.style.transform = '';
-        container.style.transition = 'height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
+        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
         
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
@@ -348,6 +348,7 @@ function setupRecentlyPlayedToggle() {
         }
     }
 
+    // Touch handlers for the toggle button when collapsed
     function handleToggleTouchStart(e) {
         if (isExpanded || !container.querySelector('.radio')) return;
         touchStartY = e.changedTouches[0].screenY;
@@ -387,6 +388,11 @@ function setupRecentlyPlayedToggle() {
     toggle.addEventListener('touchmove', handleToggleTouchMove, { passive: false });
     toggle.addEventListener('touchend', handleToggleTouchEnd, { passive: true });
 
+    // Also allow swiping down on the title when expanded
+    title.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
+    title.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
+    title.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
+
     function toggleRecentlyPlayed() {
         if (!container.querySelector('.radio')) return;
         isExpanded = !isExpanded;
@@ -399,7 +405,7 @@ function setupRecentlyPlayedToggle() {
             container.style.display = 'flex';
             container.style.maxHeight = '0';
             container.style.opacity = '0';
-            container.style.padding = '0';
+            container.style.padding = '5px 5px 10px 5px';
             container.style.overflow = 'hidden';
             
             // Force reflow before animation
@@ -416,7 +422,6 @@ function setupRecentlyPlayedToggle() {
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
-            container.style.padding = '5px 5px 10px 5px';
             
             // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
@@ -458,6 +463,9 @@ function setupRecentlyPlayedToggle() {
         container.removeEventListener('touchstart', handleContainerTouchStart);
         container.removeEventListener('touchmove', handleContainerTouchMove);
         container.removeEventListener('touchend', handleContainerTouchEnd);
+        title.removeEventListener('touchstart', handleContainerTouchStart);
+        title.removeEventListener('touchmove', handleContainerTouchMove);
+        title.removeEventListener('touchend', handleContainerTouchEnd);
         toggle.removeEventListener('touchstart', handleToggleTouchStart);
         toggle.removeEventListener('touchmove', handleToggleTouchMove);
         toggle.removeEventListener('touchend', handleToggleTouchEnd);

@@ -1193,7 +1193,6 @@ button {
 	height: auto;
     width: 100%;
     margin: 0 10px;
-    padding: 10px;
     margin-bottom: 10px;
     touch-action: pan-y;
     will-change: height, opacity, padding, transform;
@@ -1215,7 +1214,7 @@ button {
     overflow: hidden;
     margin: 0 10px;
     padding: 0;
-    transition: none;
+    transition: opacity 0.2s linear;
 }
 
 #recentlyPlayedTitle.expanded {
