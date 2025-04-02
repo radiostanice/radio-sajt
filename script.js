@@ -60,6 +60,8 @@ function changeStation(name, link) {
     };
 
     document.getElementById("audiotext").textContent = name;
+    document.title = `Radio | ${name}`;
+    
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     updateRecentlyPlayed(name, link);
     updateSelectedStation(name);
@@ -348,35 +350,40 @@ function setupRecentlyPlayedToggle() {
         }
     }
 
-    // Touch handlers for the toggle button when collapsed
-    function handleToggleTouchStart(e) {
-        if (isExpanded || !container.querySelector('.radio')) return;
+    // Touch handlers for the toggle button when expanded
+    function handleToggleExpandedTouchStart(e) {
+        if (!isExpanded || !container.querySelector('.radio')) return;
         touchStartY = e.changedTouches[0].screenY;
         touchStartTime = Date.now();
+        container.style.transition = 'none';
     }
 
-    function handleToggleTouchMove(e) {
-        if (isExpanded || !container.querySelector('.radio')) return;
+    function handleToggleExpandedTouchMove(e) {
+        if (!isExpanded || !container.querySelector('.radio')) return;
         touchEndY = e.changedTouches[0].screenY;
-        const swipeDistance = touchStartY - touchEndY;
+        const swipeDistance = touchEndY - touchStartY;
         
         if (swipeDistance > 0) {
             e.preventDefault();
             const progress = Math.min(swipeDistance / 100, 1);
-            toggle.style.transform = `translateY(-${progress * 20}px)`;
+            container.style.transform = `translateY(${progress * 20}px)`;
+            container.style.opacity = `${1 - progress}`;
         }
     }
 
-    function handleToggleTouchEnd(e) {
-        if (isExpanded || !container.querySelector('.radio')) return;
+    function handleToggleExpandedTouchEnd(e) {
+        if (!isExpanded || !container.querySelector('.radio')) return;
         const touchEndTime = Date.now();
-        const swipeDistance = touchStartY - touchEndY;
+        const swipeDistance = touchEndY - touchStartY;
         const swipeDuration = touchEndTime - touchStartTime;
         
-        toggle.style.transform = '';
+        container.style.transform = '';
+        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
         
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
+        } else {
+            container.style.opacity = '1';
         }
     }
 
@@ -384,14 +391,12 @@ function setupRecentlyPlayedToggle() {
     container.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
     container.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
     container.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
-    toggle.addEventListener('touchstart', handleToggleTouchStart, { passive: true });
-    toggle.addEventListener('touchmove', handleToggleTouchMove, { passive: false });
-    toggle.addEventListener('touchend', handleToggleTouchEnd, { passive: true });
-
-    // Also allow swiping down on the title when expanded
     title.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
     title.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
     title.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
+    toggle.addEventListener('touchstart', handleToggleExpandedTouchStart, { passive: true });
+    toggle.addEventListener('touchmove', handleToggleExpandedTouchMove, { passive: false });
+    toggle.addEventListener('touchend', handleToggleExpandedTouchEnd, { passive: true });
 
     function toggleRecentlyPlayed() {
         if (!container.querySelector('.radio')) return;
@@ -401,47 +406,38 @@ function setupRecentlyPlayedToggle() {
 
     function handleToggleAnimation() {
         if (isExpanded) {
-            // Make sure container is properly initialized
             container.style.display = 'flex';
             container.style.maxHeight = '0';
             container.style.opacity = '0';
             container.style.padding = '5px 5px 10px 5px';
             container.style.overflow = 'hidden';
             
-            // Force reflow before animation
             void container.offsetHeight;
             
-            // Show title first
             title.style.display = 'flex';
             title.style.height = 'auto';
             title.style.opacity = '1';
             title.style.margin = '20px 10px 10px 10px';
             title.style.overflow = 'visible';
             
-            // Animate container
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
             
-            // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
         } else {
-            // Animate container collapse
             container.style.maxHeight = '0';
             container.style.opacity = '0';
             container.style.padding = '0';
             
-            // Hide title
             title.style.display = 'none';
             title.style.height = '0';
             title.style.opacity = '0';
             title.style.margin = '0';
             title.style.overflow = 'hidden';
             
-            // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
             
-            // Clean up after transition completes
             setTimeout(() => {
                 if (!isExpanded) {
                     container.style.display = 'none';
@@ -466,9 +462,9 @@ function setupRecentlyPlayedToggle() {
         title.removeEventListener('touchstart', handleContainerTouchStart);
         title.removeEventListener('touchmove', handleContainerTouchMove);
         title.removeEventListener('touchend', handleContainerTouchEnd);
-        toggle.removeEventListener('touchstart', handleToggleTouchStart);
-        toggle.removeEventListener('touchmove', handleToggleTouchMove);
-        toggle.removeEventListener('touchend', handleToggleTouchEnd);
+        toggle.removeEventListener('touchstart', handleToggleExpandedTouchStart);
+        toggle.removeEventListener('touchmove', handleToggleExpandedTouchMove);
+        toggle.removeEventListener('touchend', handleToggleExpandedTouchEnd);
         if (resizeObserver) {
             resizeObserver.disconnect();
         }
@@ -740,7 +736,10 @@ function loadPreferences() {
     if (savedStation.name && savedStation.link) {
         audio.src = savedStation.link;
         document.getElementById("audiotext").textContent = savedStation.name;
+        document.title = `Radio | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
+    } else {
+        document.title = "Radio";
     }
 }
 
