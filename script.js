@@ -376,8 +376,9 @@ function setupRecentlyPlayedToggle() {
                 const progress = Math.min(swipeDistance / 100, 1);
                 container.style.transform = `translateY(${progress * 10}px)`;
                 container.style.opacity = `${1 - progress}`;
-                container.style.transform = `translateY(${progress * 10}px)`;
+                title.style.transform = `translateY(${progress * 10}px)`;
                 title.style.opacity = `${1 - progress}`;
+                toggle.style.transform = `translateY(${progress * 10}px)`;
             }
         } else {
             // Swipe up to open
