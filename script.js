@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Initialize scrollbar first
+    ScrollbarManager.init();
+    
     // Load all initial components
     loadPreferences();
     const cleanupToggle = setupRecentlyPlayedToggle();
@@ -16,12 +19,15 @@ document.addEventListener("DOMContentLoaded", () => {
     
     applyGenreFilter();
 
-    // Cleanup on page unload
+    // Final update after everything is loaded
+    setTimeout(() => {
+        ScrollbarManager.updateAll();
+    }, 500);
+
     window.addEventListener('beforeunload', () => {
         cleanupToggle?.();
     });
 
-    // Prevent container height changes on scroll
     const audioContainer = document.querySelector('.audio-container');
     if (audioContainer) {
         const observer = new ResizeObserver(entries => {
@@ -66,6 +72,17 @@ function changeStation(name, link) {
     updateRecentlyPlayed(name, link);
     updateSelectedStation(name);
     updatePlayPauseButton();
+
+    // Scroll the selected station into view
+    setTimeout(() => {
+        const selectedRadio = document.querySelector(`.radio.selected`);
+        if (selectedRadio) {
+            selectedRadio.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, 100);
 }
 
 function updateSelectedStation(name) {
@@ -122,6 +139,13 @@ function applyGenreFilter() {
 
         updateCategoryVisibility();
         setupExpandableCategories();
+        
+        // Update scrollbar after filtering
+        setTimeout(() => {
+            ScrollbarManager.updateThumbSize();
+            ScrollbarManager.positionThumb();
+            ScrollbarManager.updateScrollButtons();
+        }, 10);
     });
 }
 
@@ -171,6 +195,7 @@ function setTheme(mode) {
         document.querySelectorAll(".radio").forEach(radio => {
             radio.classList.remove("no-transition");
         });
+        ScrollbarManager.updateAll();
     }, 50);
 
     document.querySelectorAll(".theme-icon").forEach(icon => {
@@ -196,6 +221,7 @@ function changeColor(color) {
     );
 
     localStorage.setItem("accentColor", color);
+    ScrollbarManager.updateAll();
 }
 
 function setupThemeControls() {
@@ -426,6 +452,11 @@ function setupRecentlyPlayedToggle() {
         if (!container.querySelector('.radio')) return;
         isExpanded = !isExpanded;
         handleToggleAnimation();
+        
+        // Update scrollbar after toggling
+        setTimeout(() => {
+            ScrollbarManager.updateAll();
+        }, 210); // Match the transition duration
     }
 
     function handleToggleAnimation() {
@@ -545,18 +576,15 @@ function loadRecentlyPlayed() {
         audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
     } else {
         if (wasExpanded) {
-            // If it was expanded before reloading, restore the expanded state with correct height
             container.style.display = 'flex';
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
             
-            // Update the scroll list position
             if (scrollList) {
                 scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
             }
             
-            // Update the audio container height if needed
             if (audioContainer) {
                 audioContainer.style.height = 'auto';
             }
@@ -575,6 +603,11 @@ function loadRecentlyPlayed() {
             }
         }
     }
+    
+    // Update scrollbar after loading
+    setTimeout(() => {
+        ScrollbarManager.updateAll();
+    }, 10);
 }
 
 function createExpandButton(stations, category) {
@@ -605,7 +638,6 @@ function createExpandButton(stations, category) {
     content.append(icon, text);
     expandButton.append(content);
 
-    // Hover effects
     expandButton.addEventListener("mouseover", () => {
         expandButton.querySelector('.expand-text').style.fontSize = '15px';
     });
@@ -628,6 +660,11 @@ function createExpandButton(stations, category) {
                 station.style.display = newState ? "flex" : "none";
             }
         });
+        
+        // Update scrollbar after expanding/collapsing
+        setTimeout(() => {
+            ScrollbarManager.updateAll();
+        }, 10);
     });
 
     return expandButton;
@@ -682,10 +719,8 @@ function filterStations() {
     const query = document.getElementById("stationSearch").value.toLowerCase();
     const searching = query !== "";
     
-    // Toggle clear search icon
     document.getElementById("clearSearch").style.display = searching ? "block" : "none";
 
-    // Remove all expand buttons when searching
     if (searching) {
         document.querySelectorAll('.expand-button').forEach(btn => btn.remove());
         document.querySelectorAll('.category-container').forEach(cat => {
@@ -693,13 +728,11 @@ function filterStations() {
         });
     }
 
-    // Search logic - exclude recently played stations
     document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
         const matches = station.dataset.name.toLowerCase().includes(query);
         station.style.display = matches ? 'flex' : 'none';
     });
 
-    // Update category visibility (excluding recently played)
     document.querySelectorAll('.category-container:not(#recentlyPlayedContainer)').forEach(category => {
         const hasVisible = [...category.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)')]
             .some(station => station.style.display !== 'none');
@@ -710,6 +743,11 @@ function filterStations() {
             title.style.display = hasVisible ? 'flex' : 'none';
         }
     });
+    
+    // Update scrollbar after filtering
+    setTimeout(() => {
+        ScrollbarManager.updateAll();
+    }, 10);
 }
 
 function setupExpandableCategories() {
@@ -756,6 +794,13 @@ function setupExpandableCategories() {
             });
         }
     });
+    
+    // Update scrollbar after setting up expandable categories
+    setTimeout(() => {
+        ScrollbarManager.updateThumbSize();
+        ScrollbarManager.positionThumb();
+        ScrollbarManager.updateScrollButtons();
+    }, 10);
 }
 
 // Initialization Functions
@@ -774,6 +819,244 @@ function loadPreferences() {
         updateSelectedStation(savedStation.name);
     } else {
         document.title = "Radio";
+    }
+}
+
+const ScrollbarManager = {
+    init() {
+        this.scrollList = document.querySelector('.scroll-list');
+        this.scrollbarThumb = document.querySelector('.scrollbar-thumb');
+        this.scrollbarTrack = document.querySelector('.scrollbar-track');
+        this.scrollUpBtn = document.querySelector('.scroll-button.up');
+        this.scrollDownBtn = document.querySelector('.scroll-button.down');
+        
+        if (!this.scrollList || !this.scrollbarThumb || !this.scrollbarTrack) return;
+    
+        // Move scrollbar elements inside scroll-list
+        this.scrollList.appendChild(this.scrollbarTrack);
+        this.scrollbarTrack.appendChild(this.scrollbarThumb);
+        this.scrollbarTrack.appendChild(this.scrollUpBtn);
+        this.scrollbarTrack.appendChild(this.scrollDownBtn);
+        
+        // Initially hide buttons
+        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
+        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
+        
+        this.setupEvents();
+        this.updateAll();
+        
+        // Observe audio container for height changes
+        this.audioContainerObserver = new ResizeObserver(() => {
+            this.updateTrackPosition();
+        });
+        this.audioContainerObserver.observe(document.querySelector('.audio-container'));
+    },
+  
+    setupEvents() {
+        // Thumb dragging
+        this.scrollbarThumb.addEventListener('mousedown', this.handleThumbMouseDown.bind(this));
+        
+        // Track clicking
+        this.scrollbarTrack.addEventListener('click', this.handleTrackClick.bind(this));
+        
+        // Scroll buttons
+        this.scrollUpBtn?.addEventListener('click', () => this.scrollBy(-100));
+        this.scrollDownBtn?.addEventListener('click', () => this.scrollBy(100));
+        
+        // Scroll events
+        this.scrollList.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
+        
+        // Hover events - only for buttons (thumb remains always visible)
+        this.scrollbarTrack.addEventListener('mouseenter', () => {
+            this.updateScrollButtons();
+        });
+        
+        this.scrollbarTrack.addEventListener('mouseleave', () => {
+            if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
+            if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
+        });
+        
+        // Resize observer for scroll list
+        this.resizeObserver = new ResizeObserver(() => {
+            cancelAnimationFrame(this.resizeRAF);
+            this.resizeRAF = requestAnimationFrame(() => this.updateAll());
+        });
+        this.resizeObserver.observe(this.scrollList);
+    },
+    
+    handleScroll() {
+        cancelAnimationFrame(this.scrollRAF);
+        this.scrollRAF = requestAnimationFrame(() => {
+            this.positionThumb();
+            // Don't update buttons here - only update on hover
+        });
+    },
+    
+    updateAll() {
+        this.updateThumbSize();
+        this.positionThumb();
+        this.updateTrackPosition();
+    },
+    
+    updateThumbSize() {
+        const scrollHeight = this.scrollList.scrollHeight;
+        const clientHeight = this.scrollList.clientHeight;
+        
+        if (scrollHeight <= clientHeight) {
+            this.scrollbarThumb.style.display = 'none';
+            if (this.scrollUpBtn) this.scrollUpBtn.style.display = 'none';
+            if (this.scrollDownBtn) this.scrollDownBtn.style.display = 'none';
+            return;
+        }
+        
+        this.scrollbarThumb.style.display = 'block';
+        if (this.scrollUpBtn) this.scrollUpBtn.style.display = 'flex';
+        if (this.scrollDownBtn) this.scrollDownBtn.style.display = 'flex';
+        
+        const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
+        this.scrollbarThumb.style.height = `${thumbHeight}px`;
+    },
+  
+    positionThumb() {
+        const scrollHeight = this.scrollList.scrollHeight;
+        const clientHeight = this.scrollList.clientHeight;
+        const scrollTop = this.scrollList.scrollTop;
+        
+        if (scrollHeight <= clientHeight) {
+            return;
+        }
+        
+        const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+        const trackHeight = this.scrollbarTrack.clientHeight - 36; // Account for buttons
+        const thumbPosition = scrollPercentage * (trackHeight - this.scrollbarThumb.clientHeight);
+        
+        this.scrollbarThumb.style.top = `${thumbPosition + 18}px`;
+    },
+  
+    handleThumbMouseDown(e) {
+        e.preventDefault();
+        const startY = e.clientY;
+        const startTop = parseFloat(this.scrollbarThumb.style.top) || 18;
+        const trackHeight = this.scrollbarTrack.clientHeight - 36;
+        
+        const moveHandler = (e) => {
+            const deltaY = e.clientY - startY;
+            let newTop = startTop + deltaY;
+            
+            // Constrain the thumb within track bounds
+            newTop = Math.max(18, Math.min(newTop, trackHeight + 18));
+            
+            const scrollPercentage = (newTop - 18) / trackHeight;
+            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
+            const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
+            
+            this.scrollbarThumb.style.top = `${newTop}px`;
+            this.scrollList.scrollTop = scrollPosition;
+        };
+        
+        const upHandler = () => {
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+        };
+        
+        document.addEventListener('mousemove', moveHandler);
+        document.addEventListener('mouseup', upHandler);
+    },
+  
+    handleTrackClick(e) {
+        if (e.target === this.scrollbarThumb || 
+            e.target === this.scrollUpBtn || 
+            e.target === this.scrollDownBtn) return;
+        
+        const trackRect = this.scrollbarTrack.getBoundingClientRect();
+        const thumbHeight = this.scrollbarThumb.clientHeight;
+        const clickPosition = e.clientY - trackRect.top - 18 - (thumbHeight / 2);
+        const trackHeight = trackRect.height - 36;
+        const thumbPosition = Math.max(0, Math.min(clickPosition, trackHeight));
+        
+        const scrollPercentage = thumbPosition / trackHeight;
+        const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
+        const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
+        
+        this.scrollList.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
+        });
+    },
+  
+    scrollBy(amount) {
+        const currentScroll = this.scrollList.scrollTop;
+        const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
+        const targetScroll = Math.max(0, Math.min(currentScroll + amount, maxScroll));
+        
+        this.scrollList.scrollTo({
+            top: targetScroll,
+            behavior: 'smooth'
+        });
+    },
+  
+    updateScrollButtons() {
+        if (!this.scrollUpBtn || !this.scrollDownBtn) return;
+        
+        const isAtTop = this.scrollList.scrollTop <= 1;
+        const isAtBottom = this.scrollList.scrollTop + this.scrollList.clientHeight >= 
+                          this.scrollList.scrollHeight - 1;
+        
+        // Only update opacity (keep display: flex always)
+        this.scrollUpBtn.style.opacity = isAtTop ? '0' : '1';
+        this.scrollDownBtn.style.opacity = isAtBottom ? '0' : '1';
+    },
+    
+    updateTrackPosition() {
+        const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
+        const audioContainer = document.querySelector('.audio-container');
+        
+        if (recentlyPlayedContainer && audioContainer) {
+            const recentlyPlayedHeight = recentlyPlayedContainer.style.maxHeight !== '0px' ? 
+                recentlyPlayedContainer.scrollHeight : 0;
+            
+            const audioContainerHeight = audioContainer.clientHeight;
+            const bottomPosition = audioContainerHeight;
+            
+            this.scrollList.style.bottom = `${bottomPosition}px`;
+            
+            // Adjust scrollbar track height to match visible area
+            const viewportHeight = window.innerHeight;
+            const scrollListTop = this.scrollList.getBoundingClientRect().top;
+            const availableHeight = viewportHeight - scrollListTop - bottomPosition;
+            
+            if (availableHeight > 0) {
+                this.scrollList.style.maxHeight = `${availableHeight}px`;
+                this.scrollbarTrack.style.height = `${availableHeight}px`;
+            }
+            
+            // Ensure scroll position stays within bounds
+            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
+            if (this.scrollList.scrollTop > maxScroll) {
+                this.scrollList.scrollTop = maxScroll;
+            }
+        }
+    }
+};
+
+// Helper to check if element is in viewport
+function isInViewport(element) {
+    const rect = element.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
+// Helper to scroll element into view if needed
+function scrollIntoViewIfNeeded(element) {
+    if (!isInViewport(element)) {
+        element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
     }
 }
 
