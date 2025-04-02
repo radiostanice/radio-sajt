@@ -319,6 +319,7 @@ function setupRecentlyPlayedToggle() {
         touchStartY = e.changedTouches[0].screenY;
         touchStartTime = Date.now();
         container.style.transition = 'none';
+        title.style.transition = 'none';
     }
 
     function handleContainerTouchMove(e) {
@@ -331,6 +332,7 @@ function setupRecentlyPlayedToggle() {
             const progress = Math.min(swipeDistance / 100, 1);
             container.style.transform = `translateY(${progress * 20}px)`;
             container.style.opacity = `${1 - progress}`;
+            title.style.opacity = `${1 - progress}`;
         }
     }
 
@@ -342,48 +344,72 @@ function setupRecentlyPlayedToggle() {
         
         container.style.transform = '';
         container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
+        title.style.transition = 'height 0.2s ease, opacity 0.2s ease, margin 0.2s ease';
         
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
         } else {
             container.style.opacity = '1';
+            title.style.opacity = '1';
         }
     }
 
-    // Touch handlers for the toggle button when expanded
-    function handleToggleExpandedTouchStart(e) {
-        if (!isExpanded || !container.querySelector('.radio')) return;
+    // Touch handlers for the toggle button (both states)
+    function handleToggleTouchStart(e) {
         touchStartY = e.changedTouches[0].screenY;
         touchStartTime = Date.now();
-        container.style.transition = 'none';
+        
+        if (isExpanded) {
+            container.style.transition = 'none';
+            title.style.transition = 'none';
+        }
     }
 
-    function handleToggleExpandedTouchMove(e) {
-        if (!isExpanded || !container.querySelector('.radio')) return;
+    function handleToggleTouchMove(e) {
         touchEndY = e.changedTouches[0].screenY;
         const swipeDistance = touchEndY - touchStartY;
         
-        if (swipeDistance > 0) {
-            e.preventDefault();
-            const progress = Math.min(swipeDistance / 100, 1);
-            container.style.transform = `translateY(${progress * 20}px)`;
-            container.style.opacity = `${1 - progress}`;
+        if (isExpanded) {
+            // Swipe down to close
+            if (swipeDistance > 0) {
+                e.preventDefault();
+                const progress = Math.min(swipeDistance / 100, 1);
+                container.style.transform = `translateY(${progress * 20}px)`;
+                container.style.opacity = `${1 - progress}`;
+                title.style.opacity = `${1 - progress}`;
+            }
+        } else {
+            // Swipe up to open
+            if (swipeDistance < 0) {
+                e.preventDefault();
+                const progress = Math.min(-swipeDistance / 100, 1);
+                toggle.style.transform = `translateY(-${progress * 20}px)`;
+            }
         }
     }
 
-    function handleToggleExpandedTouchEnd(e) {
-        if (!isExpanded || !container.querySelector('.radio')) return;
+    function handleToggleTouchEnd(e) {
         const touchEndTime = Date.now();
         const swipeDistance = touchEndY - touchStartY;
         const swipeDuration = touchEndTime - touchStartTime;
         
-        container.style.transform = '';
-        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
-        
-        if (swipeDistance > 50 && swipeDuration < 300) {
-            toggleRecentlyPlayed();
+        if (isExpanded) {
+            container.style.transform = '';
+            container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
+            title.style.transition = 'height 0.2s ease, opacity 0.2s ease, margin 0.2s ease';
+            
+            if (swipeDistance > 50 && swipeDuration < 300) {
+                toggleRecentlyPlayed();
+            } else {
+                container.style.opacity = '1';
+                title.style.opacity = '1';
+            }
         } else {
-            container.style.opacity = '1';
+            toggle.style.transform = '';
+            
+            if (swipeDistance < -50 && swipeDuration < 300 && container.querySelector('.radio')) {
+                toggleRecentlyPlayed();
+            }
         }
     }
 
@@ -394,9 +420,9 @@ function setupRecentlyPlayedToggle() {
     title.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
     title.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
     title.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
-    toggle.addEventListener('touchstart', handleToggleExpandedTouchStart, { passive: true });
-    toggle.addEventListener('touchmove', handleToggleExpandedTouchMove, { passive: false });
-    toggle.addEventListener('touchend', handleToggleExpandedTouchEnd, { passive: true });
+    toggle.addEventListener('touchstart', handleToggleTouchStart, { passive: true });
+    toggle.addEventListener('touchmove', handleToggleTouchMove, { passive: false });
+    toggle.addEventListener('touchend', handleToggleTouchEnd, { passive: true });
 
     function toggleRecentlyPlayed() {
         if (!container.querySelector('.radio')) return;
@@ -406,41 +432,51 @@ function setupRecentlyPlayedToggle() {
 
     function handleToggleAnimation() {
         if (isExpanded) {
+            // Make sure container is properly initialized
             container.style.display = 'flex';
             container.style.maxHeight = '0';
             container.style.opacity = '0';
             container.style.padding = '5px 5px 10px 5px';
             container.style.overflow = 'hidden';
+            container.style.transform = '';
             
-            void container.offsetHeight;
-            
+            // Show title first
             title.style.display = 'flex';
             title.style.height = 'auto';
-            title.style.opacity = '1';
+            title.style.opacity = '0';
             title.style.margin = '20px 10px 10px 10px';
             title.style.overflow = 'visible';
             
+            // Force reflow before animation
+            void container.offsetHeight;
+            
+            // Animate both elements together
             const containerHeight = container.scrollHeight;
             container.style.maxHeight = `${containerHeight}px`;
             container.style.opacity = '1';
+            title.style.opacity = '1';
             
+            // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
         } else {
+            // Animate both elements together
             container.style.maxHeight = '0';
             container.style.opacity = '0';
             container.style.padding = '0';
             
-            title.style.display = 'none';
             title.style.height = '0';
             title.style.opacity = '0';
             title.style.margin = '0';
             title.style.overflow = 'hidden';
             
+            // Adjust scroll list
             scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
             
+            // Clean up after transition completes
             setTimeout(() => {
                 if (!isExpanded) {
                     container.style.display = 'none';
+                    title.style.display = 'none';
                 }
             }, 200);
         }
@@ -462,9 +498,9 @@ function setupRecentlyPlayedToggle() {
         title.removeEventListener('touchstart', handleContainerTouchStart);
         title.removeEventListener('touchmove', handleContainerTouchMove);
         title.removeEventListener('touchend', handleContainerTouchEnd);
-        toggle.removeEventListener('touchstart', handleToggleExpandedTouchStart);
-        toggle.removeEventListener('touchmove', handleToggleExpandedTouchMove);
-        toggle.removeEventListener('touchend', handleToggleExpandedTouchEnd);
+        toggle.removeEventListener('touchstart', handleToggleTouchStart);
+        toggle.removeEventListener('touchmove', handleToggleTouchMove);
+        toggle.removeEventListener('touchend', handleToggleTouchEnd);
         if (resizeObserver) {
             resizeObserver.disconnect();
         }
