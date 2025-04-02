@@ -534,7 +534,7 @@ button {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin: 10px auto 20px auto;
+    margin: 10px auto 15px auto;
     transform: none;
 }
 
@@ -598,7 +598,7 @@ button {
     appearance: none;
     width: 70px; 
     height: 4px;
-    background: #aaa;
+    background: #000;
     border-radius: 2px;
     outline: none;
     cursor: pointer;

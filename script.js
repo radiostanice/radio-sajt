@@ -295,7 +295,7 @@ function setupRecentlyPlayedToggle() {
             if (isExpanded && entries[0].target === container) {
                 const containerHeight = container.scrollHeight;
                 container.style.maxHeight = `${containerHeight}px`;
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
                 void container.offsetHeight; // Force reflow
             }
         }, 100);
@@ -424,7 +424,7 @@ function setupRecentlyPlayedToggle() {
             container.style.opacity = '1';
             
             // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
         } else {
             // Animate container collapse
             container.style.maxHeight = '0';
@@ -523,7 +523,7 @@ function loadRecentlyPlayed() {
             
             // Update the scroll list position
             if (scrollList) {
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
             }
             
             // Update the audio container height if needed
