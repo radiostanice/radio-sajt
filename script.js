@@ -295,7 +295,7 @@ function setupRecentlyPlayedToggle() {
             if (isExpanded && entries[0].target === container) {
                 const containerHeight = container.scrollHeight;
                 container.style.maxHeight = `${containerHeight}px`;
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
                 void container.offsetHeight; // Force reflow
             }
         }, 100);
@@ -424,7 +424,7 @@ function setupRecentlyPlayedToggle() {
             container.style.opacity = '1';
             
             // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
+            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
         } else {
             // Animate container collapse
             container.style.maxHeight = '0';
@@ -523,7 +523,7 @@ function loadRecentlyPlayed() {
             
             // Update the scroll list position
             if (scrollList) {
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
+                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 45}px`;
             }
             
             // Update the audio container height if needed
@@ -594,7 +594,7 @@ function createExpandButton(stations, category) {
         expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Još stanica";
         
         stations.forEach((station, index) => {
-            if (index >= 12) {
+            if (index >= 8) {
                 station.style.display = newState ? "flex" : "none";
             }
         });
@@ -713,12 +713,12 @@ function setupExpandableCategories() {
         }
         
         // Add expand button if needed
-        if (stations.length > 12) {
+        if (stations.length > 8) {
             category.append(createExpandButton(stations, category));
             category.classList.add("no-radius", "has-expand-button");
             
             stations.forEach((station, index) => {
-                station.style.display = index < 12 ? "flex" : "none";
+                station.style.display = index < 8 ? "flex" : "none";
             });
         } else {
             stations.forEach(station => {
