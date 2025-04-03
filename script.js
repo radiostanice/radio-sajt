@@ -1,6 +1,15 @@
+// Add these constants at the top of your file
+const HOVER_RESET_DELAY = 1000; // 1 second delay to remove hover effects
+const SCROLLBAR_HIDE_DELAY = 1500; // 1.5 seconds delay to hide scrollbar
+let hoverResetTimeout;
+let scrollbarHideTimeout;
+let lastScrollTime = 0;
+let isScrolling = false;
+
 document.addEventListener("DOMContentLoaded", () => {
     // Initialize scrollbar first
     ScrollbarManager.init();
+	ScrollbarManager.setupAutoHide();
     
     // Load all initial components
     loadPreferences();
@@ -11,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupGenreCategoriesSwipe();
     setupGenreFiltering();
     setupThemeControls();
+	setupAutoRemoveHover();
     
     // Initialize radio station click handlers
     document.querySelectorAll(".radio").forEach(radio => {
@@ -1106,6 +1116,43 @@ const ScrollbarManager = {
             }
         }
     }
+}
+ScrollbarManager.setupAutoHide = function() {
+    if (!this.scrollList || !this.scrollbarThumb) return;
+    
+    // Show scrollbar on scroll
+    this.scrollList.addEventListener('scroll', () => {
+        lastScrollTime = Date.now();
+        this.scrollbarThumb.classList.add('visible');
+        clearTimeout(scrollbarHideTimeout);
+        
+        scrollbarHideTimeout = setTimeout(() => {
+            if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
+                !this.scrollbarThumb.matches(':hover') && 
+                !this.scrollbarThumb.classList.contains('dragging')) {
+                this.scrollbarThumb.classList.remove('visible');
+            }
+        }, SCROLLBAR_HIDE_DELAY);
+    });
+
+    // Show on thumb hover
+    this.scrollbarThumb.addEventListener('mouseenter', () => {
+        this.scrollbarThumb.classList.add('visible');
+        clearTimeout(scrollbarHideTimeout);
+    });
+
+    // Hide after delay when mouse leaves
+    this.scrollbarThumb.addEventListener('mouseleave', () => {
+        scrollbarHideTimeout = setTimeout(() => {
+            if (!this.scrollbarThumb.classList.contains('dragging') && 
+                Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
+                this.scrollbarThumb.classList.remove('visible');
+            }
+        }, SCROLLBAR_HIDE_DELAY);
+    });
+
+    // Initial hide
+    this.scrollbarThumb.classList.remove('visible');
 };
 
 // Helper to check if element is in viewport
@@ -1126,6 +1173,33 @@ function scrollIntoViewIfNeeded(element) {
             behavior: 'smooth',
             block: 'center'
         });
+    }
+}
+
+function setupAutoRemoveHover() {
+    const elements = [
+        ...document.querySelectorAll('.radio'),
+        ...document.querySelectorAll('.recently-played-toggle')
+    ];
+
+    elements.forEach(el => {
+        // Clear any existing event listeners to avoid duplicates
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+        
+        el.addEventListener('mouseenter', handleMouseEnter);
+        el.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    function handleMouseEnter() {
+        this.classList.add('hover-active');
+        clearTimeout(hoverResetTimeout);
+    }
+
+    function handleMouseLeave() {
+        hoverResetTimeout = setTimeout(() => {
+            this.classList.remove('hover-active');
+        }, HOVER_RESET_DELAY);
     }
 }
 

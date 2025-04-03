@@ -1234,13 +1234,18 @@ button {
     background-color: var(--accent-color);
 	filter: contrast(0);
     border-radius: 4px;
-    transition: width 0.2s ease, background-color 0.2s linear;
-	-moz-transition: width 0.2s ease, background-color 0.2s linear;
-    -webkit-transition: width 0.2s ease, background-color 0.2s linear;
-    -o-transition: width 0.2s ease, background-color 0.2s linear;
-    -ms-transition: width 0.2s ease, background-color 0.2s linear;
+    transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+	-moz-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -o-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -ms-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
     pointer-events: auto;
 	touch-action: none;
+	opacity: 0;
+}
+
+.scrollbar-thumb.visible {
+    opacity: 1;
 }
 
 .scrollbar-thumb.hovering,
@@ -1283,6 +1288,19 @@ button {
 .scroll-button .material-icons {
     font-size: 14px;
     color: var(--accent-color);
+}
+
+/* Auto-remove hover effects */
+.radio:not(.hover-active):hover,
+.recently-played-toggle:not(.hover-active):hover {
+    filter: none !important;
+    border-color: #444 !important;
+    box-shadow: none !important;
+}
+
+.recently-played-toggle:not(.hover-active):hover::before {
+    background: white !important;
+    transform: none !important;
 }
 
 #recentlyPlayedContainer {
