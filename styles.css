@@ -180,8 +180,23 @@ button {
     color: white;
 }
 
+.light-mode .radio.selected,
 .light-mode .recently-played-toggle {
     border-color: #bdbdbd;
+}
+
+.light-mode .radio.selected::after {
+	background:
+	linear-gradient(to right, 
+      #bdbdbd 0%, 
+      #bdbdbd 100%
+    ),
+    linear-gradient(to right, 
+      transparent 0%,
+      var(--accent-color) 25%,
+      var(--accent-color) 75%,
+      transparent 100%
+    );
 }
 
 .light-mode .recently-played-toggle::before {
@@ -1121,7 +1136,7 @@ button {
     font-weight: 600;
     transition: all 0.2s linear;
     margin-right: 10px;
-    min-width: 70px;
+    min-width: 72px;
     height: 70px;
     box-sizing: border-box;
     color: var(--accent-color);
