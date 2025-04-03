@@ -1224,6 +1224,7 @@ button {
     z-index: 100;
     pointer-events: auto;
     background-color: transparent;
+	padding: 0 18px;
 }
 
 .scrollbar-thumb {
@@ -1239,6 +1240,7 @@ button {
     -o-transition: width 0.2s ease, background-color 0.2s linear;
     -ms-transition: width 0.2s ease, background-color 0.2s linear;
     pointer-events: auto;
+	touch-action: none;
 }
 
 .scrollbar-thumb.hovering,
@@ -1261,7 +1263,7 @@ button {
     z-index: 101;
     pointer-events: auto;
     opacity: 0;
-  
+	touch-action: manipulation;
 }
 
 .scrollbar-track:hover .scroll-button {
