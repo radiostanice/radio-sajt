@@ -148,9 +148,7 @@ function applyGenreFilter() {
         
         // Update scrollbar after filtering
         setTimeout(() => {
-            ScrollbarManager.updateThumbSize();
-            ScrollbarManager.positionThumb();
-            ScrollbarManager.updateScrollButtons();
+			ScrollbarManager.updateAll();
         }, 10);
     });
 }
@@ -750,6 +748,17 @@ function filterStations() {
         }
     });
     
+    // When search is cleared by backspacing, reapply genre filter and setup expand buttons
+    if (!searching) {
+        currentGenre = 'all';
+        document.querySelector('.genre-button[data-genre="all"]')?.classList.add('active');
+        document.querySelectorAll('.genre-button:not([data-genre="all"])').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        applyGenreFilter();
+        setupExpandableCategories();
+    }
+    
     // Update scrollbar after filtering
     setTimeout(() => {
         ScrollbarManager.updateAll();
@@ -803,9 +812,7 @@ function setupExpandableCategories() {
     
     // Update scrollbar after setting up expandable categories
     setTimeout(() => {
-        ScrollbarManager.updateThumbSize();
-        ScrollbarManager.positionThumb();
-        ScrollbarManager.updateScrollButtons();
+		ScrollbarManager.updateAll();
     }, 10);
 }
 
@@ -1116,56 +1123,39 @@ const ScrollbarManager = {
 ScrollbarManager.setupAutoHide = function() {
     if (!this.scrollList || !this.scrollbarThumb) return;
     
-    const showScrollbar = () => {
+    // Show scrollbar on scroll
+    this.scrollList.addEventListener('scroll', () => {
         lastScrollTime = Date.now();
         this.scrollbarThumb.classList.add('visible');
-        this.showScrollButtons(); // Show buttons when scrollbar is visible
         clearTimeout(scrollbarHideTimeout);
-    };
-
-    const hideScrollbar = () => {
-        if (!this.scrollbarThumb.classList.contains('dragging') && 
-            Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
-            this.scrollbarThumb.classList.remove('visible');
-            this.hideScrollButtons(); // Hide buttons when scrollbar hides
-        }
-    };
-
-    // Show on scroll
-    this.scrollList.addEventListener('scroll', () => {
-        showScrollbar();
-        scrollbarHideTimeout = setTimeout(hideScrollbar, SCROLLBAR_HIDE_DELAY);
-		this.hideScrollButtons();
+        
+        scrollbarHideTimeout = setTimeout(() => {
+            if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
+                !this.scrollbarThumb.matches(':hover') && 
+                !this.scrollbarThumb.classList.contains('dragging')) {
+                this.scrollbarThumb.classList.remove('visible');
+            }
+        }, SCROLLBAR_HIDE_DELAY);
     });
 
-    // Show on thumb hover (desktop)
-    this.scrollbarThumb.addEventListener('mouseenter', showScrollbar);
+    // Show on thumb hover
+    this.scrollbarThumb.addEventListener('mouseenter', () => {
+        this.scrollbarThumb.classList.add('visible');
+        clearTimeout(scrollbarHideTimeout);
+    });
+
+    // Hide after delay when mouse leaves
     this.scrollbarThumb.addEventListener('mouseleave', () => {
-        scrollbarHideTimeout = setTimeout(hideScrollbar, SCROLLBAR_HIDE_DELAY);
-    });
-
-    // Handle touch events for mobile
-    this.scrollbarThumb.addEventListener('touchstart', (e) => {
-        showScrollbar();
-        // Prevent default to avoid scrolling the page
-        e.preventDefault();
-    });
-
-    this.scrollbarThumb.addEventListener('touchend', () => {
-        scrollbarHideTimeout = setTimeout(hideScrollbar, SCROLLBAR_HIDE_DELAY);
-    });
-
-    // Keep visible while dragging
-    this.scrollbarThumb.addEventListener('mousedown', showScrollbar);
-    document.addEventListener('mouseup', () => {
-        if (!this.scrollbarThumb.classList.contains('dragging')) {
-            scrollbarHideTimeout = setTimeout(hideScrollbar, SCROLLBAR_HIDE_DELAY);
-        }
+        scrollbarHideTimeout = setTimeout(() => {
+            if (!this.scrollbarThumb.classList.contains('dragging') && 
+                Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
+                this.scrollbarThumb.classList.remove('visible');
+            }
+        }, SCROLLBAR_HIDE_DELAY);
     });
 
     // Initial hide
     this.scrollbarThumb.classList.remove('visible');
-    this.hideScrollButtons();
 };
 
 // Helper to check if element is in viewport
@@ -1342,16 +1332,8 @@ clearSearchIcon.addEventListener("click", () => {
     });
     document.querySelector('.genre-button[data-genre="all"]')?.classList.add('active');
     
-    // Show all regular stations
-    document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
-        station.style.display = 'flex';
-    });
-    
-    // Recently played remains visible
-    document.getElementById("recentlyPlayedContainer").style.display = "flex";
-    document.querySelector("#recentlyPlayedTitle").style.display = "flex";
-    
     applyGenreFilter();
+    setupExpandableCategories();
 });
 
 searchInput.addEventListener("input", debounce(filterStations, 300));

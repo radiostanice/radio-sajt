@@ -90,62 +90,6 @@ button {
     --accent-color: var(--accent-light); 
 }
 
-.light-mode {
-    --accent-color: var(--accent-dark);
-    background-color: #f0f0f0;
-    color: #000000;
-}
-
-.light-mode .theme-container .btn {
-    color: #000000;
-    background-color: #ffffff;
-    border-color: #bdbdbd;
-}
-
-.light-mode .audio-container,
-.light-mode .dropdown-menu {
-     background-color: #f0f0f0;
-     border-color: #bdbdbd;
-}
-
-.light-mode .category-container {
-    background-color: #f0f0f0;
-}
-
-.light-mode .radio,
-.light-mode .theme-option {
-    background-color: #ffffff;
-    color: #000000;
-    border-color: #bdbdbd;
-}
-
-.light-mode .header {
-    background-color: #f0f0f0;
-    color: #000000;
-    border-bottom-color: #bdbdbd;
-}
-
-.light-mode .search-container {
-    background-color: #ffffff;
-    border-color: #bdbdbd;
-}
-
-.light-mode .search-container input{
-    color: #000000;
-    background-color: #ffffff;
-    border-color: #bdbdbd;
-}
-
-.light-mode .search-container input:hover {
-    color: #000000;
-    background-color: #f3f3f3;
-}
-
-.light-mode .search-container input:focus{
-    color: #000000;
-    background-color: #ededed;
-}
-
 .dark-mode .search-container input {
     background-color: transparent;
 }
@@ -160,32 +104,51 @@ button {
     background-color: #444444;
 }
 
-.light-mode .search-container input::placeholder {
-    color: #555555 !important;
+.dark-mode .audio-player {
+    background-color: #121212 !important;
 }
 
-.light-mode .search-container input::-webkit-input-placeholder {
-    color: #555555 !important;
+.light-mode .material-icons,
+.dark-mode #playPauseBtn .material-icons {
+    color: black;
 }
 
-.light-mode .search-container input::-moz-placeholder {
-    color: #555555 !important;
+.light-mode {
+    --accent-color: var(--accent-dark);
+    background-color: #f0f0f0;
+    color: #000000;
 }
 
-.light-mode .search-container input:-ms-input-placeholder {
-    color: #555555 !important;
+.light-mode #recentlyPlayedContainer,
+.light-mode .audio-container,
+.light-mode .dropdown-menu {
+    background-color: #f0f0f0;
+    border-color: #bdbdbd;
 }
 
-.light-mode .radio:hover, .light-mode .scroll-list {
+.light-mode .theme-container .btn,
+.light-mode .search-container input,
+.light-mode .radio,
+.light-mode .theme-option {
+    background-color: #ffffff;
+    color: #000000;
+    border-color: #bdbdbd;
+}
+
+.light-mode .expand-button,
+.light-mode .header {
+    background-color: #f0f0f0;
+    color: black;
+    border-bottom-color: #bdbdbd;
+}
+
+.light-mode .radio:hover,
+.light-mode .scroll-list {
     background-color: #ffffff;
 }
 
 .light-mode .color-picker {
     border-color: #000000;
-}
-
-.light-mode .material-icons {
-    color: black;
 }
 
 .light-mode .volume-slider::-ms-thumb {
@@ -212,12 +175,81 @@ button {
     background: white;
 }
 
+.light-mode .genre-button.active .material-icons,
 .light-mode #playPauseBtn .material-icons {
     color: white;
 }
 
-.dark-mode #playPauseBtn .material-icons {
+.light-mode .recently-played-toggle {
+    border-color: #bdbdbd;
+}
+
+.light-mode .recently-played-toggle::before {
+    background: black;
+}
+
+.light-mode .category-container,
+.light-mode .recently-played-toggle,
+.light-mode .genre-buttons-wrapper,
+.light-mode .genre-button {
+    background-color: #f0f0f0;
+}
+
+.light-mode .genre-nav-button {
+    background-color: #f0f0f0;
     color: black;
+}
+
+.light-mode .genre-button.active {
+    background-color: var(--accent-color);
+    color: white;
+}
+
+.light-mode .genre-nav-button.left {
+    box-shadow: 25px 0px 10px rgba(240, 240, 240, 1);
+}
+
+.light-mode .genre-nav-button.right {
+    box-shadow: -25px 0px 10px rgba(240, 240, 240, 1);
+}
+
+.light-mode .expand-button[data-expanded="false"] {
+    box-shadow: 0px -28px 15px rgba(240, 240, 240, 1);
+}
+
+.light-mode .audio-player {
+    background-color: #ffffff !important;
+}
+
+.light-mode .search-container {
+    background-color: #ffffff;
+    border-color: #bdbdbd;
+}
+
+.light-mode .search-container input:hover {
+    color: #000000;
+    background-color: #f3f3f3;
+}
+
+.light-mode .search-container input:focus{
+    color: #000000;
+    background-color: #ededed;
+}
+
+.light-mode .search-container input::placeholder {
+    color: #555555 !important;
+}
+
+.light-mode .search-container input::-webkit-input-placeholder {
+    color: #555555 !important;
+}
+
+.light-mode .search-container input::-moz-placeholder {
+    color: #555555 !important;
+}
+
+.light-mode .search-container input:-ms-input-placeholder {
+    color: #555555 !important;
 }
 
 /* ======== */
@@ -490,7 +522,98 @@ button {
     justify-content: center;
     margin-top: 12px;
 }
+/* SCROLLBAR */
+.scroll-list {
+    background-color: #121212;
+    position: absolute;
+    top: 65.5px;
+    bottom: 160px;
+    left: 0;
+    right: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
 
+.scroll-list::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-track {
+    position: fixed;
+    right: 0;
+    top: 65.5px;
+    bottom: 160px;
+    width: 12px;
+    z-index: 100;
+    pointer-events: auto;
+    background-color: transparent;
+	padding: 0 8px;
+}
+
+.scrollbar-thumb {
+    position: absolute;
+    right: 2px;
+    width: 3px;
+    background-color: var(--accent-color);
+	filter: contrast(0);
+    border-radius: 4px;
+    transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+	-moz-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -o-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    -ms-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    pointer-events: auto;
+	touch-action: none;
+	opacity: 0;
+}
+
+.scrollbar-thumb.visible {
+    opacity: 1;
+}
+
+.scrollbar-thumb.hovering,
+.scrollbar-thumb.dragging {
+    width: 6px;
+    right: 2px;
+    opacity: 1;
+    background-color: var(--accent-color);
+	filter: none;
+}
+
+.scroll-button {
+    position: absolute;
+    right: 0;
+    width: 10px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 101;
+    pointer-events: auto;
+    opacity: 0;
+	touch-action: manipulation;
+}
+
+.scrollbar-track:hover .scroll-button {
+    opacity: 1;
+}
+
+.scroll-button.up {
+    top: 0;
+	transform: rotate(270deg);
+}
+
+.scroll-button.down {
+    bottom: 0;
+	transform: rotate(90deg);
+}
+
+.scroll-button .material-icons {
+    font-size: 14px;
+    color: var(--accent-color);
+}
 /* ============ */
 /* AUDIO PLAYER */
 /* ============ */
@@ -536,14 +659,6 @@ button {
     justify-content: space-between;
     margin: 10px auto 15px auto;
     transform: none;
-}
-
-.dark-mode .audio-player {
-    background-color: #121212 !important;
-}
-
-.light-mode .audio-player {
-    background-color: #ffffff !important;
 }
 
 .play-pause {
@@ -703,11 +818,11 @@ button {
     justify-content: center;
     align-items: center;
     vertical-align: middle;
-    margin: 10px;
+    margin: 10px 15px;
     border-radius: 8px;
     background-color: #222;
     padding: 6px 10px 6px 10px;
-    max-width: calc(100% - 20px);
+    max-width: calc(100% - 30px);
     box-sizing: border-box;
 }
 
@@ -802,7 +917,7 @@ button {
     font-size: 26px;
     font-weight: bold;
     margin-top: 30px;
-    padding-left: 10px;
+    padding-left: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -814,7 +929,7 @@ button {
     font-size: 26px;
     font-weight: bold;
     margin-top: 30px;
-    padding-left: 10px;
+    padding-left: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -836,12 +951,6 @@ button {
 .category-container.no-radius {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-}
-
-.light-mode .expand-button {
-    background-color: #f0f0f0;
-    border-color: #bdbdbd;
-    color: black;
 }
 
 .expand-button {
@@ -895,12 +1004,8 @@ button {
     vertical-align: middle;
 }
 
-.light-mode .expand-button[data-expanded="false"] {
-    box-shadow: 0px -28px 15px rgba(240, 240, 240, 1), 10px 0px 0px rgba(255, 255, 255, 1), -10px 0px 0px rgba(255, 255, 255, 1);
-}
-
 .expand-button[data-expanded="false"] {
-    box-shadow: 0px -25px 15px rgba(34, 34, 34, 1), 10px 0px 0px rgba(18, 18, 18, 1), -10px 0px 0px rgba(18, 18, 18, 1);
+    box-shadow: 0px -25px 15px rgba(34, 34, 34, 1);
     border-bottom: 2px solid transparent;
 }
 
@@ -977,7 +1082,7 @@ button {
 /* ============ */
 .genre-buttons-wrapper {
     position: relative;
-    margin: 10px;
+    margin: 10px 15px;
     -moz-border-radius: 8px;
     border-radius: 8px;
     background-color: #222;
@@ -1097,14 +1202,6 @@ button {
     box-shadow: -25px 0px 10px rgba(34, 34, 34, 1);
 }
 
-.light-mode .genre-nav-button.left {
-    box-shadow: 25px 0px 10px rgba(240, 240, 240, 1);
-}
-
-.light-mode .genre-nav-button.right {
-    box-shadow: -25px 0px 10px rgba(240, 240, 240, 1);
-}
-
 .genre-nav-button.left:hover {
     border-right: 2px solid var(--accent-color);
     box-shadow: none;
@@ -1119,44 +1216,13 @@ button {
     font-size: 26px;
 }
 
-.light-mode .genre-buttons-wrapper,
-.light-mode .genre-button {
-    background-color: #f0f0f0;
-}
-
-.light-mode .genre-nav-button {
-    background-color: #f0f0f0;
-    color: black;
-}
-
-.light-mode .genre-button.active {
-    background-color: var(--accent-color);
-    color: white;
-}
-
-.light-mode .genre-button.active .material-icons {
-    color: white;
-}
-
 /* ============ */
 /* RECENTLY PLAYED */
 /* ============ */
-.light-mode .recently-played-toggle {
-    border-color: #bdbdbd;
-}
-
-.light-mode .recently-played-toggle::before {
-    background: black;
-}
-
-.light-mode .recently-played-toggle {
-    background-color: #f0f0f0;
-}
 
 .recently-played-toggle {
     position: absolute;
     top: 0;
-    left: 0;
     width: 100%;
     height: 20px;
     border-top: 2px solid #444;
@@ -1182,6 +1248,10 @@ button {
     background: white;
     border-radius: 2px;
     transition: all 0.2s linear;
+	-moz-transition: all 0.2s linear;
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    -ms-transition: all 0.2s linear;
 }
 
 .recently-played-toggle:hover::before {
@@ -1195,99 +1265,6 @@ button {
 
 #recentlyPlayedContainer.swiping {
     transition: none;
-}
-
-/* SCROLLBAR STYLES */
-.scroll-list {
-    background-color: #121212;
-    position: absolute;
-    top: 65.5px;
-    bottom: 160px;
-    left: 0;
-    right: 0;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-.scroll-list::-webkit-scrollbar {
-    display: none;
-}
-
-.scrollbar-track {
-    position: fixed;
-    right: 0;
-    top: 65.5px;
-    bottom: 160px;
-    width: 12px;
-    z-index: 100;
-    pointer-events: auto;
-    background-color: transparent;
-	padding: 0 18px;
-}
-
-.scrollbar-thumb {
-    position: absolute;
-    right: 2px;
-    width: 3px;
-    background-color: var(--accent-color);
-	filter: contrast(0);
-    border-radius: 4px;
-    transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-	-moz-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -webkit-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -o-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -ms-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    pointer-events: auto;
-	touch-action: none;
-	opacity: 0;
-}
-
-.scrollbar-thumb.visible {
-    opacity: 1;
-}
-
-.scrollbar-thumb.hovering,
-.scrollbar-thumb.dragging {
-    width: 6px;
-    right: 2px;
-    opacity: 1;
-    background-color: var(--accent-color);
-	filter: none;
-}
-
-.scroll-button {
-    position: absolute;
-    right: 0;
-    width: 10px;
-    height: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 101;
-    pointer-events: auto;
-    opacity: 0;
-	touch-action: manipulation;
-}
-
-.scrollbar-track:hover .scroll-button {
-    opacity: 1;
-}
-
-.scroll-button.up {
-    top: 0;
-	transform: rotate(270deg);
-}
-
-.scroll-button.down {
-    bottom: 0;
-	transform: rotate(90deg);
-}
-
-.scroll-button .material-icons {
-    font-size: 14px;
-    color: var(--accent-color);
 }
 
 #recentlyPlayedContainer {
