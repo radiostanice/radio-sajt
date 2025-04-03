@@ -853,28 +853,46 @@ const ScrollbarManager = {
     },
   
     setupEvents() {
-        // Thumb dragging
+        // Thumb dragging - mouse
         this.scrollbarThumb.addEventListener('mousedown', this.handleThumbMouseDown.bind(this));
+        
+        // Thumb dragging - touch
+        this.scrollbarThumb.addEventListener('touchstart', this.handleThumbTouchStart.bind(this), { passive: false });
         
         // Track clicking
         this.scrollbarTrack.addEventListener('click', this.handleTrackClick.bind(this));
         
         // Scroll buttons
-        this.scrollUpBtn?.addEventListener('click', () => this.scrollBy(-100));
-        this.scrollDownBtn?.addEventListener('click', () => this.scrollBy(100));
+        this.scrollUpBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.scrollBy(-this.scrollList.clientHeight * 0.8);
+        });
+        this.scrollDownBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.scrollBy(this.scrollList.clientHeight * 0.8);
+        });
         
         // Scroll events
         this.scrollList.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
         
-        // Hover events - only for buttons (thumb remains always visible)
+        // Wheel event on track
+        this.scrollbarTrack.addEventListener('wheel', this.handleTrackWheel.bind(this), { passive: false });
+        
+        // Hover events
         this.scrollbarTrack.addEventListener('mouseenter', () => {
-            this.updateScrollButtons();
+            this.showScrollButtons();
+            this.scrollbarThumb.classList.add('hovering');
         });
         
         this.scrollbarTrack.addEventListener('mouseleave', () => {
-            if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
-            if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
+            this.hideScrollButtons();
+            this.scrollbarThumb.classList.remove('hovering');
         });
+        
+        // Touch events for track
+        this.scrollbarTrack.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+        }, { passive: false });
         
         // Resize observer for scroll list
         this.resizeObserver = new ResizeObserver(() => {
@@ -884,11 +902,32 @@ const ScrollbarManager = {
         this.resizeObserver.observe(this.scrollList);
     },
     
+    handleTrackWheel(e) {
+        // Prevent page scrolling when hovering scrollbar
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Apply wheel scrolling to the scroll list
+        this.scrollList.scrollTop += e.deltaY;
+        
+        // Update thumb position immediately
+        this.positionThumb();
+    },
+    
+    showScrollButtons() {
+        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '1';
+        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '1';
+    },
+    
+    hideScrollButtons() {
+        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
+        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
+    },
+    
     handleScroll() {
         cancelAnimationFrame(this.scrollRAF);
         this.scrollRAF = requestAnimationFrame(() => {
             this.positionThumb();
-            // Don't update buttons here - only update on hover
         });
     },
     
@@ -928,25 +967,30 @@ const ScrollbarManager = {
         
         const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
         const trackHeight = this.scrollbarTrack.clientHeight - 36; // Account for buttons
-        const thumbPosition = scrollPercentage * (trackHeight - this.scrollbarThumb.clientHeight);
+        const thumbHeight = this.scrollbarThumb.clientHeight;
+        const maxThumbPosition = trackHeight - thumbHeight;
+        const thumbPosition = Math.min(scrollPercentage * maxThumbPosition, maxThumbPosition);
         
         this.scrollbarThumb.style.top = `${thumbPosition + 18}px`;
     },
   
     handleThumbMouseDown(e) {
         e.preventDefault();
+        this.scrollbarThumb.classList.add('dragging');
+        
         const startY = e.clientY;
         const startTop = parseFloat(this.scrollbarThumb.style.top) || 18;
         const trackHeight = this.scrollbarTrack.clientHeight - 36;
+        const thumbHeight = this.scrollbarThumb.clientHeight;
         
         const moveHandler = (e) => {
             const deltaY = e.clientY - startY;
             let newTop = startTop + deltaY;
             
             // Constrain the thumb within track bounds
-            newTop = Math.max(18, Math.min(newTop, trackHeight + 18));
+            newTop = Math.max(18, Math.min(newTop, trackHeight - thumbHeight + 18));
             
-            const scrollPercentage = (newTop - 18) / trackHeight;
+            const scrollPercentage = (newTop - 18) / (trackHeight - thumbHeight);
             const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
             const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
             
@@ -955,12 +999,49 @@ const ScrollbarManager = {
         };
         
         const upHandler = () => {
+            this.scrollbarThumb.classList.remove('dragging');
             document.removeEventListener('mousemove', moveHandler);
             document.removeEventListener('mouseup', upHandler);
         };
         
         document.addEventListener('mousemove', moveHandler);
         document.addEventListener('mouseup', upHandler);
+    },
+    
+    handleThumbTouchStart(e) {
+        e.preventDefault();
+        this.scrollbarThumb.classList.add('dragging');
+        
+        const touch = e.touches[0];
+        const startY = touch.clientY;
+        const startTop = parseFloat(this.scrollbarThumb.style.top) || 18;
+        const trackHeight = this.scrollbarTrack.clientHeight - 36;
+        const thumbHeight = this.scrollbarThumb.clientHeight;
+        
+        const moveHandler = (e) => {
+            const touch = e.touches[0];
+            const deltaY = touch.clientY - startY;
+            let newTop = startTop + deltaY;
+            
+            // Constrain the thumb within track bounds
+            newTop = Math.max(18, Math.min(newTop, trackHeight - thumbHeight + 18));
+            
+            const scrollPercentage = (newTop - 18) / (trackHeight - thumbHeight);
+            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
+            const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
+            
+            this.scrollbarThumb.style.top = `${newTop}px`;
+            this.scrollList.scrollTop = scrollPosition;
+        };
+        
+        const endHandler = () => {
+            this.scrollbarThumb.classList.remove('dragging');
+            document.removeEventListener('touchmove', moveHandler);
+            document.removeEventListener('touchend', endHandler);
+        };
+        
+        document.addEventListener('touchmove', moveHandler, { passive: false });
+        document.addEventListener('touchend', endHandler, { passive: true });
     },
   
     handleTrackClick(e) {
@@ -972,9 +1053,9 @@ const ScrollbarManager = {
         const thumbHeight = this.scrollbarThumb.clientHeight;
         const clickPosition = e.clientY - trackRect.top - 18 - (thumbHeight / 2);
         const trackHeight = trackRect.height - 36;
-        const thumbPosition = Math.max(0, Math.min(clickPosition, trackHeight));
+        const thumbPosition = Math.max(0, Math.min(clickPosition, trackHeight - thumbHeight));
         
-        const scrollPercentage = thumbPosition / trackHeight;
+        const scrollPercentage = thumbPosition / (trackHeight - thumbHeight);
         const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
         const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
         
@@ -993,18 +1074,6 @@ const ScrollbarManager = {
             top: targetScroll,
             behavior: 'smooth'
         });
-    },
-  
-    updateScrollButtons() {
-        if (!this.scrollUpBtn || !this.scrollDownBtn) return;
-        
-        const isAtTop = this.scrollList.scrollTop <= 1;
-        const isAtBottom = this.scrollList.scrollTop + this.scrollList.clientHeight >= 
-                          this.scrollList.scrollHeight - 1;
-        
-        // Only update opacity (keep display: flex always)
-        this.scrollUpBtn.style.opacity = isAtTop ? '0' : '1';
-        this.scrollDownBtn.style.opacity = isAtBottom ? '0' : '1';
     },
     
     updateTrackPosition() {

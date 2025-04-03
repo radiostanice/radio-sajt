@@ -176,7 +176,7 @@ button {
     color: #555555 !important;
 }
 
-.light-mode .radio:hover {
+.light-mode .radio:hover, .light-mode .scroll-list {
     background-color: #ffffff;
 }
 
@@ -254,7 +254,7 @@ button {
     flex-grow: 1;
     justify-content: flex-start;
     height: 44px;
-    max-width: 270px;
+    max-width: 250px;
     min-width: 116px;
     margin-right: 10px;
 }
@@ -1197,18 +1197,18 @@ button {
     transition: none;
 }
 
-/* SCROLLBAR SOLUTION */
+/* SCROLLBAR STYLES */
 .scroll-list {
     background-color: #121212;
     position: absolute;
     top: 65.5px;
-    bottom: 160px; /* Will be updated by JS */
+    bottom: 160px;
     left: 0;
     right: 0;
     overflow-y: scroll;
     overflow-x: hidden;
-    scrollbar-width: none; /* Hide default scrollbar */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .scroll-list::-webkit-scrollbar {
@@ -1216,97 +1216,71 @@ button {
 }
 
 .scrollbar-track {
-    position: fixed; /* Changed to fixed positioning */
+    position: fixed;
     right: 0;
-    top: 65.5px; /* Match scroll-list top position */
-    bottom: 160px; /* Match scroll-list bottom position */
+    top: 65.5px;
+    bottom: 160px;
     width: 12px;
     z-index: 100;
-    pointer-events: none;
+    pointer-events: auto;
     background-color: transparent;
-    transition: background-color 0.2s ease;
-}
-
-.scroll-list:hover .scrollbar-track {
-    background-color: #121212;
-    border-left: 1px solid #333;
 }
 
 .scrollbar-thumb {
     position: absolute;
     right: 2px;
-    width: 6px;
+    width: 3px;
     background-color: var(--accent-color);
+	filter: contrast(0);
     border-radius: 4px;
-    transition: width 0.2s ease, background-color 0.2s ease;
+    transition: width 0.2s ease, background-color 0.2s linear;
+	-moz-transition: width 0.2s ease, background-color 0.2s linear;
+    -webkit-transition: width 0.2s ease, background-color 0.2s linear;
+    -o-transition: width 0.2s ease, background-color 0.2s linear;
+    -ms-transition: width 0.2s ease, background-color 0.2s linear;
     pointer-events: auto;
 }
 
-.scroll-list:hover .scrollbar-thumb {
-    width: 8px;
+.scrollbar-thumb.hovering,
+.scrollbar-thumb.dragging {
+    width: 6px;
     right: 2px;
     opacity: 1;
+    background-color: var(--accent-color);
+	filter: none;
 }
 
 .scroll-button {
     position: absolute;
     right: 0;
-    width: 12px;
+    width: 10px;
     height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #121212;
     z-index: 101;
     pointer-events: auto;
-    border-left: 1px solid #333;
-
+    opacity: 0;
+  
 }
 
-.scroll-list:hover .scroll-button {
+.scrollbar-track:hover .scroll-button {
     opacity: 1;
 }
 
 .scroll-button.up {
     top: 0;
-    border-bottom: 1px solid #333;
+	transform: rotate(270deg);
 }
 
 .scroll-button.down {
     bottom: 0;
-    border-top: 1px solid #333;
+	transform: rotate(90deg);
 }
 
 .scroll-button .material-icons {
-    font-size: 16px;
+    font-size: 14px;
     color: var(--accent-color);
-}
-
-.scroll-button.hidden {
-    display: none;
-}
-
-/* Light mode adjustments */
-.light-mode .scrollbar-track {
-    background-color: transparent;
-}
-
-.light-mode .scroll-list:hover .scrollbar-track {
-    background-color: #f0f0f0;
-    border-left: 1px solid #bdbdbd;
-}
-
-.light-mode .scroll-button {
-    background-color: #f0f0f0;
-    border-left: 1px solid #bdbdbd;
-}
-
-.light-mode .scroll-button.up {
-    border-bottom: 1px solid #bdbdbd;
-}
-
-.light-mode .scroll-button.down {
-    border-top: 1px solid #bdbdbd;
 }
 
 #recentlyPlayedContainer {
@@ -1314,10 +1288,11 @@ button {
     top: auto;
     overflow: hidden;
     opacity: 0;
-    transition:
-		height 0.2s linear,
-        opacity 0.2s linear,
-        transform 0.2s linear;
+    transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
+	-moz-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
+    -webkit-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
+    -o-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
+    -ms-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
     border: 2px solid #444;
     background: #222;
 	height: auto;
@@ -1345,6 +1320,10 @@ button {
     margin: 0 10px;
     padding: 0;
     transition: opacity 0.2s linear;
+	-moz-transition: opacity 0.2s linear;
+    -webkit-transition: opacity 0.2s linear;
+    -o-transition: opacity 0.2s linear;
+    -ms-transition: opacity 0.2s linear;
 }
 
 #recentlyPlayedTitle.expanded {
