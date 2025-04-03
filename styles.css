@@ -1290,19 +1290,6 @@ button {
     color: var(--accent-color);
 }
 
-/* Auto-remove hover effects */
-.radio:not(.hover-active):hover,
-.recently-played-toggle:not(.hover-active):hover {
-    filter: none !important;
-    border-color: #444 !important;
-    box-shadow: none !important;
-}
-
-.recently-played-toggle:not(.hover-active):hover::before {
-    background: white !important;
-    transform: none !important;
-}
-
 #recentlyPlayedContainer {
     position: relative;
     top: auto;
