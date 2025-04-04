@@ -1,8 +1,3 @@
-const SCROLLBAR_HIDE_DELAY = 2000;
-let scrollbarHideTimeout;
-let lastScrollTime = 0;
-let isScrolling = false;
-
 document.addEventListener("DOMContentLoaded", () => {
     // Initialize scrollbar first
     ScrollbarManager.init();
@@ -30,9 +25,15 @@ document.addEventListener("DOMContentLoaded", () => {
         ScrollbarManager.updateAll();
     }, 500);
 
-    window.addEventListener('beforeunload', () => {
-        cleanupToggle?.();
-    });
+	window.addEventListener('beforeunload', () => {
+		cleanupToggle?.();
+		if (windowResizeObserver) {
+			windowResizeObserver.disconnect();
+		}
+		if (ScrollbarManager.resizeObservers) {
+			ScrollbarManager.resizeObservers.forEach(observer => observer.disconnect());
+		}
+	});
 
     const audioContainer = document.querySelector('.audio-container');
     if (audioContainer) {
@@ -56,10 +57,15 @@ const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
 const COLLAPSED_HEIGHT = 160;
+const SCROLLBAR_HIDE_DELAY = 1500;
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
 let recentlyPlayedObserver;
 let resizeObserver;
+let windowResizeObserver;
+let scrollbarHideTimeout;
+let lastScrollTime = 0;
+let isScrolling = false;
 
 // Station Functions
 function changeStation(name, link) {
@@ -836,36 +842,55 @@ function loadPreferences() {
 }
 
 const ScrollbarManager = {
-    init() {
-        this.scrollList = document.querySelector('.scroll-list');
-        this.scrollbarThumb = document.querySelector('.scrollbar-thumb');
-        this.scrollbarTrack = document.querySelector('.scrollbar-track');
-        this.scrollUpBtn = document.querySelector('.scroll-button.up');
-        this.scrollDownBtn = document.querySelector('.scroll-button.down');
-        
-        if (!this.scrollList || !this.scrollbarThumb || !this.scrollbarTrack) return;
+    resizeObservers: [],
+    resizeTimeout: null,
+init() {
+    this.scrollList = document.querySelector('.scroll-list');
+    this.scrollbarThumb = document.querySelector('.scrollbar-thumb');
+    this.scrollbarTrack = document.querySelector('.scrollbar-track');
     
-        // Move scrollbar elements inside scroll-list
-        this.scrollList.appendChild(this.scrollbarTrack);
-        this.scrollbarTrack.appendChild(this.scrollbarThumb);
-        this.scrollbarTrack.appendChild(this.scrollUpBtn);
-        this.scrollbarTrack.appendChild(this.scrollDownBtn);
-        
-        // Initially hide buttons
-        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
-        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
-        
-        this.setupEvents();
-        this.updateAll();
-        
-        // Observe audio container for height changes
-        this.audioContainerObserver = new ResizeObserver(() => {
-            this.updateTrackPosition();
-        });
-        this.audioContainerObserver.observe(document.querySelector('.audio-container'));
-    },
+    if (!this.scrollList || !this.scrollbarThumb || !this.scrollbarTrack) return;
+
+    // Move scrollbar elements inside scroll-list
+    this.scrollList.appendChild(this.scrollbarTrack);
+    this.scrollbarTrack.appendChild(this.scrollbarThumb);
+    
+    this.setupEvents();
+    this.updateAll();
+    
+    // Observe multiple elements for size changes
+    this.setupResizeObservers();
+},
+
+setupResizeObservers() {
+    // Clean up any existing observers
+    if (this.resizeObservers) {
+        this.resizeObservers.forEach(observer => observer.disconnect());
+    }
+    
+    this.resizeObservers = [];
+    
+    // Elements that could affect the scroll list height
+    const elementsToObserve = [
+        document.querySelector('.audio-container'),
+        document.getElementById('recentlyPlayedContainer'),
+        document.body
+    ];
+    
+    elementsToObserve.forEach(element => {
+        if (element) {
+            const observer = new ResizeObserver(() => {
+                this.updateTrackPosition();
+            });
+            observer.observe(element);
+            this.resizeObservers.push(observer);
+        }
+    });
+},
   
     setupEvents() {
+		window.addEventListener('resize', this.handleWindowResize.bind(this));
+		
         // Thumb dragging - mouse
         this.scrollbarThumb.addEventListener('mousedown', this.handleThumbMouseDown.bind(this));
         
@@ -875,16 +900,6 @@ const ScrollbarManager = {
         // Track clicking
         this.scrollbarTrack.addEventListener('click', this.handleTrackClick.bind(this));
         
-        // Scroll buttons
-        this.scrollUpBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.scrollBy(-this.scrollList.clientHeight * 0.8);
-        });
-        this.scrollDownBtn?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.scrollBy(this.scrollList.clientHeight * 0.8);
-        });
-        
         // Scroll events
         this.scrollList.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
         
@@ -893,12 +908,10 @@ const ScrollbarManager = {
         
         // Hover events
         this.scrollbarTrack.addEventListener('mouseenter', () => {
-            this.showScrollButtons();
             this.scrollbarThumb.classList.add('hovering');
         });
         
         this.scrollbarTrack.addEventListener('mouseleave', () => {
-            this.hideScrollButtons();
             this.scrollbarThumb.classList.remove('hovering');
         });
         
@@ -915,6 +928,14 @@ const ScrollbarManager = {
         this.resizeObserver.observe(this.scrollList);
     },
     
+	handleWindowResize() {
+		// Debounce the resize handling
+		clearTimeout(this.resizeTimeout);
+		this.resizeTimeout = setTimeout(() => {
+			this.updateTrackPosition();
+		}, 100);
+	},
+	
     handleTrackWheel(e) {
         // Prevent page scrolling when hovering scrollbar
         e.preventDefault();
@@ -925,16 +946,6 @@ const ScrollbarManager = {
         
         // Update thumb position immediately
         this.positionThumb();
-    },
-    
-    showScrollButtons() {
-        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '1';
-        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '1';
-    },
-    
-    hideScrollButtons() {
-        if (this.scrollUpBtn) this.scrollUpBtn.style.opacity = '0';
-        if (this.scrollDownBtn) this.scrollDownBtn.style.opacity = '0';
     },
     
     handleScroll() {
@@ -956,14 +967,10 @@ const ScrollbarManager = {
         
         if (scrollHeight <= clientHeight) {
             this.scrollbarThumb.style.display = 'none';
-            if (this.scrollUpBtn) this.scrollUpBtn.style.display = 'none';
-            if (this.scrollDownBtn) this.scrollDownBtn.style.display = 'none';
             return;
         }
         
         this.scrollbarThumb.style.display = 'block';
-        if (this.scrollUpBtn) this.scrollUpBtn.style.display = 'flex';
-        if (this.scrollDownBtn) this.scrollDownBtn.style.display = 'flex';
         
         const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
         this.scrollbarThumb.style.height = `${thumbHeight}px`;
@@ -979,12 +986,12 @@ const ScrollbarManager = {
         }
         
         const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-        const trackHeight = this.scrollbarTrack.clientHeight - 36; // Account for buttons
+        const trackHeight = this.scrollbarTrack.clientHeight;
         const thumbHeight = this.scrollbarThumb.clientHeight;
         const maxThumbPosition = trackHeight - thumbHeight;
         const thumbPosition = Math.min(scrollPercentage * maxThumbPosition, maxThumbPosition);
         
-        this.scrollbarThumb.style.top = `${thumbPosition + 18}px`;
+        this.scrollbarThumb.style.top = `${thumbPosition}px`;
     },
   
     handleThumbMouseDown(e) {
@@ -992,8 +999,8 @@ const ScrollbarManager = {
         this.scrollbarThumb.classList.add('dragging');
         
         const startY = e.clientY;
-        const startTop = parseFloat(this.scrollbarThumb.style.top) || 18;
-        const trackHeight = this.scrollbarTrack.clientHeight - 36;
+        const startTop = parseFloat(this.scrollbarThumb.style.top) || 0;
+        const trackHeight = this.scrollbarTrack.clientHeight;
         const thumbHeight = this.scrollbarThumb.clientHeight;
         
         const moveHandler = (e) => {
@@ -1001,9 +1008,9 @@ const ScrollbarManager = {
             let newTop = startTop + deltaY;
             
             // Constrain the thumb within track bounds
-            newTop = Math.max(18, Math.min(newTop, trackHeight - thumbHeight + 18));
+            newTop = Math.max(0, Math.min(newTop, trackHeight - thumbHeight));
             
-            const scrollPercentage = (newTop - 18) / (trackHeight - thumbHeight);
+            const scrollPercentage = newTop / (trackHeight - thumbHeight);
             const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
             const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
             
@@ -1027,8 +1034,8 @@ const ScrollbarManager = {
         
         const touch = e.touches[0];
         const startY = touch.clientY;
-        const startTop = parseFloat(this.scrollbarThumb.style.top) || 18;
-        const trackHeight = this.scrollbarTrack.clientHeight - 36;
+        const startTop = parseFloat(this.scrollbarThumb.style.top) || 0;
+        const trackHeight = this.scrollbarTrack.clientHeight;
         const thumbHeight = this.scrollbarThumb.clientHeight;
         
         const moveHandler = (e) => {
@@ -1037,9 +1044,9 @@ const ScrollbarManager = {
             let newTop = startTop + deltaY;
             
             // Constrain the thumb within track bounds
-            newTop = Math.max(18, Math.min(newTop, trackHeight - thumbHeight + 18));
+            newTop = Math.max(0, Math.min(newTop, trackHeight - thumbHeight));
             
-            const scrollPercentage = (newTop - 18) / (trackHeight - thumbHeight);
+            const scrollPercentage = newTop / (trackHeight - thumbHeight);
             const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
             const scrollPosition = Math.min(scrollPercentage * maxScroll, maxScroll);
             
@@ -1058,14 +1065,12 @@ const ScrollbarManager = {
     },
   
     handleTrackClick(e) {
-        if (e.target === this.scrollbarThumb || 
-            e.target === this.scrollUpBtn || 
-            e.target === this.scrollDownBtn) return;
+        if (e.target === this.scrollbarThumb) return;
         
         const trackRect = this.scrollbarTrack.getBoundingClientRect();
         const thumbHeight = this.scrollbarThumb.clientHeight;
-        const clickPosition = e.clientY - trackRect.top - 18 - (thumbHeight / 2);
-        const trackHeight = trackRect.height - 36;
+        const clickPosition = e.clientY - trackRect.top - (thumbHeight / 2);
+        const trackHeight = trackRect.height;
         const thumbPosition = Math.max(0, Math.min(clickPosition, trackHeight - thumbHeight));
         
         const scrollPercentage = thumbPosition / (trackHeight - thumbHeight);
@@ -1089,74 +1094,83 @@ const ScrollbarManager = {
         });
     },
     
-    updateTrackPosition() {
-        const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
-        const audioContainer = document.querySelector('.audio-container');
+updateTrackPosition() {
+    const audioContainer = document.querySelector('.audio-container');
+    const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
+    
+    if (!audioContainer) return;
+    
+    // Get the current height of the audio container
+    const audioContainerHeight = audioContainer.clientHeight;
+    
+    // Calculate recently played height if expanded
+    let recentlyPlayedHeight = 0;
+    if (recentlyPlayedContainer && 
+        recentlyPlayedContainer.style.maxHeight !== '0px' && 
+        recentlyPlayedContainer.style.display !== 'none') {
+        recentlyPlayedHeight = recentlyPlayedContainer.scrollHeight;
+    }
+    
+    // Calculate available height for scroll list
+    const viewportHeight = window.innerHeight;
+    const scrollListTop = this.scrollList.getBoundingClientRect().top;
+    const availableHeight = viewportHeight - scrollListTop - audioContainerHeight;
+    
+    // Ensure minimum height
+    const minHeight = 100; // Minimum height to prevent disappearing
+    const finalHeight = Math.max(minHeight, availableHeight);
+    
+    // Update the scroll list dimensions
+    this.scrollList.style.bottom = `${audioContainerHeight}px`;
+    this.scrollList.style.maxHeight = `${finalHeight}px`;
+    this.scrollbarTrack.style.height = `${finalHeight}px`;
+    
+    // Update scrollbar thumb
+    this.updateThumbSize();
+    this.positionThumb();
+    
+    // Force a reflow to ensure updates are applied
+    void this.scrollList.offsetHeight;
+},
+
+    setupAutoHide() {
+        if (!this.scrollList || !this.scrollbarThumb) return;
         
-        if (recentlyPlayedContainer && audioContainer) {
-            const recentlyPlayedHeight = recentlyPlayedContainer.style.maxHeight !== '0px' ? 
-                recentlyPlayedContainer.scrollHeight : 0;
+        // Show scrollbar on scroll
+        this.scrollList.addEventListener('scroll', () => {
+            lastScrollTime = Date.now();
+            this.scrollbarThumb.classList.add('visible');
+            clearTimeout(scrollbarHideTimeout);
             
-            const audioContainerHeight = audioContainer.clientHeight;
-            const bottomPosition = audioContainerHeight;
-            
-            this.scrollList.style.bottom = `${bottomPosition}px`;
-            
-            // Adjust scrollbar track height to match visible area
-            const viewportHeight = window.innerHeight;
-            const scrollListTop = this.scrollList.getBoundingClientRect().top;
-            const availableHeight = viewportHeight - scrollListTop - bottomPosition;
-            
-            if (availableHeight > 0) {
-                this.scrollList.style.maxHeight = `${availableHeight}px`;
-                this.scrollbarTrack.style.height = `${availableHeight}px`;
-            }
-            
-            // Ensure scroll position stays within bounds
-            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
-            if (this.scrollList.scrollTop > maxScroll) {
-                this.scrollList.scrollTop = maxScroll;
-            }
-        }
+            scrollbarHideTimeout = setTimeout(() => {
+                if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
+                    !this.scrollbarThumb.matches(':hover') && 
+                    !this.scrollbarThumb.classList.contains('dragging')) {
+                    this.scrollbarThumb.classList.remove('visible');
+                }
+            }, SCROLLBAR_HIDE_DELAY);
+        });
+
+        // Show on thumb hover
+        this.scrollbarThumb.addEventListener('mouseenter', () => {
+            this.scrollbarThumb.classList.add('visible');
+            clearTimeout(scrollbarHideTimeout);
+        });
+
+        // Hide after delay when mouse leaves
+        this.scrollbarThumb.addEventListener('mouseleave', () => {
+            scrollbarHideTimeout = setTimeout(() => {
+                if (!this.scrollbarThumb.classList.contains('dragging') && 
+                    Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
+                    this.scrollbarThumb.classList.remove('visible');
+                }
+            }, SCROLLBAR_HIDE_DELAY);
+        });
+
+        // Initial hide
+        this.scrollbarThumb.classList.remove('visible');
     }
 }
-ScrollbarManager.setupAutoHide = function() {
-    if (!this.scrollList || !this.scrollbarThumb) return;
-    
-    // Show scrollbar on scroll
-    this.scrollList.addEventListener('scroll', () => {
-        lastScrollTime = Date.now();
-        this.scrollbarThumb.classList.add('visible');
-        clearTimeout(scrollbarHideTimeout);
-        
-        scrollbarHideTimeout = setTimeout(() => {
-            if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
-                !this.scrollbarThumb.matches(':hover') && 
-                !this.scrollbarThumb.classList.contains('dragging')) {
-                this.scrollbarThumb.classList.remove('visible');
-            }
-        }, SCROLLBAR_HIDE_DELAY);
-    });
-
-    // Show on thumb hover
-    this.scrollbarThumb.addEventListener('mouseenter', () => {
-        this.scrollbarThumb.classList.add('visible');
-        clearTimeout(scrollbarHideTimeout);
-    });
-
-    // Hide after delay when mouse leaves
-    this.scrollbarThumb.addEventListener('mouseleave', () => {
-        scrollbarHideTimeout = setTimeout(() => {
-            if (!this.scrollbarThumb.classList.contains('dragging') && 
-                Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
-                this.scrollbarThumb.classList.remove('visible');
-            }
-        }, SCROLLBAR_HIDE_DELAY);
-    });
-
-    // Initial hide
-    this.scrollbarThumb.classList.remove('visible');
-};
 
 // Helper to check if element is in viewport
 function isInViewport(element) {
@@ -1270,6 +1284,9 @@ function setupGenreCategoriesSwipe() {
     let touchStartTime = 0;
 
     genreButtons.addEventListener('touchstart', function(e) {
+        // Only respond to direct touches on buttons
+        if (!e.target.classList.contains('genre-button')) return;
+        
         touchStartX = e.changedTouches[0].screenX;
         scrollLeftStart = genreButtons.scrollLeft;
         touchStartTime = Date.now();
@@ -1291,29 +1308,34 @@ function setupGenreCategoriesSwipe() {
     genreButtons.addEventListener('touchend', function(e) {
         if (!isSwiping) return;
         isSwiping = false;
-        genreButtons.style.scrollBehavior = 'smooth';
         
         const diff = touchStartX - touchEndX;
         const swipeDuration = Date.now() - touchStartTime;
         
-        // Calculate momentum scroll
-        const velocity = diff / swipeDuration;
-        let targetScroll = genreButtons.scrollLeft + (velocity * 200);
-        
-        // Apply limits
-        targetScroll = Math.max(0, Math.min(targetScroll, genreButtons.scrollWidth - genreButtons.clientWidth));
-        
-        // Snap to nearest button
-        const buttonWidth = genreButtons.querySelector('.genre-button')?.offsetWidth || 0;
-        if (buttonWidth > 0) {
-            targetScroll = Math.round(targetScroll / buttonWidth) * buttonWidth;
+        // Only apply momentum if it was a quick swipe
+        if (swipeDuration < 300 && Math.abs(diff) > 30) {
+            const velocity = diff / swipeDuration;
+            let targetScroll = genreButtons.scrollLeft + (velocity * 100);
+            
+            // Apply limits
+            const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+            targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+            
+            // Smooth scroll to target position
+            genreButtons.style.scrollBehavior = 'smooth';
+            genreButtons.scrollLeft = targetScroll;
+            
+            setTimeout(() => {
+                genreButtons.style.scrollBehavior = 'auto';
+                updateButtonVisibility(); // Call this if you have nav buttons
+            }, 500);
         }
         
-        // Smooth scroll to target position
-        genreButtons.scrollTo({
-            left: targetScroll,
-            behavior: 'smooth'
-        });
+        // Always update button visibility after swipe
+        setTimeout(() => {
+            const buttons = genreWrapper.querySelectorAll('.genre-nav-button');
+            if (buttons.length) updateButtonVisibility();
+        }, 100);
     }, { passive: true });
 }
 
