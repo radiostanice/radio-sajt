@@ -121,7 +121,11 @@ function updateSelectedStation(name) {
 // Genre Filtering Functions
 function setupGenreFiltering() {
     document.querySelectorAll('.genre-button').forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', function(e) {
+            // Prevent any default behavior that might interfere
+            e.preventDefault();
+            e.stopPropagation();
+            
             document.getElementById("stationSearch").value = "";
             document.getElementById("clearSearch").style.display = "none";
             
@@ -1282,6 +1286,7 @@ function setupGenreCategoriesSwipe() {
     let isSwiping = false;
     let scrollLeftStart = 0;
     let touchStartTime = 0;
+    let touchMoved = false;
 
     genreButtons.addEventListener('touchstart', function(e) {
         // Only respond to direct touches on buttons
@@ -1291,6 +1296,7 @@ function setupGenreCategoriesSwipe() {
         scrollLeftStart = genreButtons.scrollLeft;
         touchStartTime = Date.now();
         isSwiping = true;
+        touchMoved = false;
         genreButtons.style.scrollBehavior = 'auto';
     }, { passive: true });
 
@@ -1299,7 +1305,9 @@ function setupGenreCategoriesSwipe() {
         touchEndX = e.changedTouches[0].screenX;
         const diff = touchStartX - touchEndX;
         
-        if (Math.abs(diff) > 5) {
+        // Only consider it a swipe if movement exceeds threshold
+        if (Math.abs(diff) > 10) {
+            touchMoved = true;
             e.preventDefault();
             genreButtons.scrollLeft = scrollLeftStart + diff;
         }
@@ -1308,6 +1316,12 @@ function setupGenreCategoriesSwipe() {
     genreButtons.addEventListener('touchend', function(e) {
         if (!isSwiping) return;
         isSwiping = false;
+        
+        // If touch didn't move much, it's a click - don't swipe
+        if (!touchMoved) {
+            genreButtons.style.scrollBehavior = 'auto';
+            return;
+        }
         
         const diff = touchStartX - touchEndX;
         const swipeDuration = Date.now() - touchStartTime;
