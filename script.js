@@ -1361,7 +1361,7 @@ clearSearchIcon.addEventListener("click", () => {
     searchInput.value = "";
     clearSearchIcon.style.display = "none";
     currentGenre = 'all';
-    
+
     // Reset active genre button
     document.querySelectorAll('.genre-button').forEach(btn => {
         btn.classList.remove('active');
