@@ -2,8 +2,8 @@
 /* ROOT & VARIABLES */
 /* ================ */
 :root {
-    --accent-dark: #266A4A;
-    --accent-light: #BBF294;
+    --accent-dark: #00639B;
+    --accent-light: #97CBFF;
     
     --green-dark: #266A4A;
     --green-light: #BBF294;
@@ -595,7 +595,6 @@ button {
 .scrollbar-thumb.hovering,
 .scrollbar-thumb.dragging {
     width: 6px;
-    right: 2px;
     opacity: 1;
     background-color: var(--accent-color);
 	filter: none;

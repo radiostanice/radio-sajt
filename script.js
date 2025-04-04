@@ -219,11 +219,11 @@ function setTheme(mode) {
 
 function changeColor(color) {
     const colors = {
+		blue: ["--blue-dark", "--blue-light"],
         green: ["--green-dark", "--green-light"],
-        blue: ["--blue-dark", "--blue-light"],
         yellow: ["--yellow-dark", "--yellow-light"],
         red: ["--red-dark", "--red-light"]
-    }[color] || ["--green-dark", "--green-light"];
+    }[color] || ["--blue-dark", "--blue-light"];
 
     document.documentElement.style.setProperty("--accent-dark", `var(${colors[0]})`);
     document.documentElement.style.setProperty("--accent-light", `var(${colors[1]})`);
@@ -829,7 +829,7 @@ function setupExpandableCategories() {
 // Initialization Functions
 function loadPreferences() {
     const savedTheme = localStorage.getItem("theme") || "dark";
-    const savedColor = localStorage.getItem("accentColor") || "green";
+    const savedColor = localStorage.getItem("accentColor") || "blue";
     const savedStation = safeParseJSON("lastStation", {});
 
     setTheme(savedTheme);
