@@ -203,6 +203,10 @@ button {
     background: black;
 }
 
+.light-mode .recently-played-toggle.empty::before {
+    background: #bdbdbd;
+}
+
 .light-mode .category-container,
 .light-mode .recently-played-toggle,
 .light-mode .genre-buttons-wrapper,
@@ -1227,7 +1231,7 @@ button {
     display: block;
     width: 60px;
     height: 4px;
-    background: #ccc;
+    background: #fff;
     border-radius: 2px;
     transition: all 0.2s linear;
 	-moz-transition: all 0.2s linear;
@@ -1263,7 +1267,7 @@ button {
     background: #222;
 	height: auto;
     width: 100%;
-    margin: 0 15px !important;
+    margin: 0 15px;
     margin-bottom: 10px;
     touch-action: pan-y;
     will-change: height, opacity, padding, transform;
