@@ -1079,8 +1079,8 @@ button {
     white-space: nowrap;
     scrollbar-width: none;
     overflow: hidden;
-    padding: 0 10px;
-    margin: 0 -10px;
+    padding: 0 10px !important;
+    margin: 0 -5px;
 }
 
 .genre-buttons::-webkit-scrollbar {
@@ -1103,14 +1103,12 @@ button {
     font-size: 14px;
     font-weight: 600;
     transition: all 0.2s linear;
-    margin-right: 10px;
-    min-width: 72px;
+    margin: 0 5px;
+    min-width: 71px;
     height: 70px;
     box-sizing: border-box;
     color: var(--accent-color);
-    padding-left: 15px;
-    padding-right: 15px;
-
+	padding: 0 12px;
 }
 
 .genre-button:hover {
@@ -1265,7 +1263,7 @@ button {
     background: #222;
 	height: auto;
     width: 100%;
-    margin: 0 10px;
+    margin: 0 15px !important;
     margin-bottom: 10px;
     touch-action: pan-y;
     will-change: height, opacity, padding, transform;
