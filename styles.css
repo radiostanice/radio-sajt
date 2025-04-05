@@ -1082,7 +1082,7 @@ button {
     white-space: nowrap;
     scrollbar-width: none;
     overflow: hidden;
-    padding: 0 10px !important;
+    padding: 0 5px !important;
     margin: 0 -5px;
 }
 
