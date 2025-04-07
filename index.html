@@ -65,7 +65,7 @@
             Rock
         </button>
 		<button class="genre-button" data-genre="zabavna">
-            <span class="material-icons">nature_people</span>
+            <span class="material-icons">auto_awesome</span>
             Zabavna
         </button>
 		<button class="genre-button" data-genre="narodna">
@@ -97,7 +97,7 @@
             Chill
         </button>
 		<button class="genre-button" data-genre="house">
-            <span class="material-icons">home</span>
+            <span class="material-icons">cottage</span>
             House
         </button>
 		<button class="genre-button" data-genre="dance">
@@ -119,7 +119,7 @@
     </div>
     <div class="category-container">
         <div class="radio" data-name="Naxi Radio" data-link="https://naxi128.streaming.rs:9152/;stream.nsv" data-genre="pop,rock,zabavna"><div class="radio-text">Naxi Radio</div></div>
-        <div class="radio" data-name="Naxi Hype" data-link="https://naxidigital-hype128ssl.streaming.rs:8272/;stream.nsv" data-genre="hiphop,pop"><div class="radio-text">Naxi Hype</div></div>
+        <div class="radio" data-name="Naxi Hype" data-link="https://naxidigital-hype128ssl.streaming.rs:8272/;stream.nsv" data-genre="hiphop,pop,top"><div class="radio-text">Naxi Hype</div></div>
         <div class="radio" data-name="Naxi Rock" data-link="https://naxidigital-rock128ssl.streaming.rs:8182/;stream.nsv" data-genre="rock,metal,strana"><div class="radio-text">Naxi Rock</div></div>
         <div class="radio" data-name="Naxi Ex-Yu" data-link="https://naxidigital-exyu128ssl.streaming.rs:8242/;stream.nsv" data-genre="exyu,rock"><div class="radio-text">Naxi Ex-Yu</div></div>
         <div class="radio" data-name="Naxi Ex-Yu Rock" data-link="https://naxidigital-exyurock128ssl.streaming.rs:8402/;stream.nsv" data-genre="rock,exyu,metal"><div class="radio-text">Naxi Ex-Yu Rock</div></div>
@@ -166,7 +166,7 @@
         <div class="radio" data-name="Radio S4" data-link="https://stream.radios.rs:9006/;*.mp3" data-genre="pop,zabavna"><div class="radio-text">Radio S4</div></div>
         <div class="radio" data-name="S Trap&Rap" data-link="https://stream.radios.rs:9030/;*.mp3" data-genre="hiphop,top"><div class="radio-text">S Trap&Rap</div></div>
         <div class="radio" data-name="S Rock" data-link="https://stream.radios.rs:9032/;*.mp3" data-genre="rock,strana"><div class="radio-text">S Rock</div></div>
-        <div class="radio" data-name="S Pop&Rock" data-link="https://stream.radios.rs:9028/;*.mp3" data-genre="pop,rock,metal"><div class="radio-text">S Pop&Rock</div></div>
+        <div class="radio" data-name="S Pop&Rock" data-link="https://stream.radios.rs:9028/;*.mp3" data-genre="pop,rock,metal,top"><div class="radio-text">S Pop&Rock</div></div>
         <div class="radio" data-name="S Rock Ballads" data-link="https://stream.radios.rs:9058/;*.mp3" data-genre="rock"><div class="radio-text">S Rock Ballads</div></div>
         <div class="radio" data-name="S Cafe" data-link="https://stream.radios.rs:9012/;*.mp3" data-genre="hiphop,strana"><div class="radio-text">S Cafe</div></div>
         <div class="radio" data-name="S Chill" data-link="https://stream.radios.rs:9066/;*.mp3" data-genre="chill,strana"><div class="radio-text">S Chill</div></div>
@@ -321,13 +321,20 @@
     </div>
 </div>
 
-    <div class="audio-container">
-		<div class="category" id="recentlyPlayedTitle">
-			<span id="category-icon" class="material-icons history">history</span>Nedavno slušano
-		</div>
-    <div class="category-container" id="recentlyPlayedContainer"></div>
-        <h1><span class="audio-title" id="audiotext">Izaberite radio stanicu</span></h1>
-        <div id="audioPlayer" class="audio-player">
+<div class="audio-container">
+	<div class="category" id="recentlyPlayedTitle">
+		<span id="category-icon" class="material-icons history">history</span>Nedavno slušano
+	</div>
+		<div class="category-container" id="recentlyPlayedContainer"></div>
+    <div class="audio-wrapper">
+    <div class="audio-title-container">
+        <h1><span class="audio-title" id="audiotext">Izaberite stanicu</span></h1>
+        <div class="info-icon">
+            <span class="material-icons">info</span>
+            <div class="genre-tooltip"></div>
+        </div>
+    </div>
+    <div id="audioPlayer" class="audio-player">
             <button id="playPauseBtn">
                 <span class="material-icons">play_arrow</span>
             </button>
@@ -337,7 +344,8 @@
             </div>
             <audio id="audioctrl"></audio>
         </div>
-    </div>
+	</div>
+</div>
 
     <script src="script.js"></script>
 </body>

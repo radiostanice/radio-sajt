@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadPreferences();
     const cleanupToggle = setupRecentlyPlayedToggle();
     loadRecentlyPlayed();
+	setupGenreInfoIcon();
     setupDropdown();
     setupGenreButtonsNavigation();
     setupGenreCategoriesSwipe();
@@ -81,7 +82,10 @@ function changeStation(name, link) {
     document.title = `Radio | ${name}`;
     
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
-    updateRecentlyPlayed(name, link);
+    const currentStation = document.querySelector(`.radio[data-name="${name}"]`);
+    const genre = currentStation ? currentStation.dataset.genre : '';
+    
+    updateRecentlyPlayed(name, link, genre);
     updateSelectedStation(name);
     updatePlayPauseButton();
 
@@ -248,11 +252,10 @@ function setupThemeControls() {
     });
 }
 
-// Recently Played Functions
-function updateRecentlyPlayed(name, link) {
+function updateRecentlyPlayed(name, link, genre = '') {
     const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
     const newRecentlyPlayed = [
-        { name, link },
+        { name, link, genre },
         ...recentlyPlayed.filter(item => item.link !== link)
     ].slice(0, 7);
     
@@ -277,7 +280,7 @@ function updateRecentlyPlayed(name, link) {
                     scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
                 }
             }
-        }, 10); // Small timeout to allow DOM to update
+        }, 10);
     }
 }
 
@@ -304,6 +307,101 @@ function setupDropdown() {
             dropdownMenu.classList.remove("show");
         }
     });
+}
+
+function setupGenreInfoIcon() {
+    const infoIcon = document.querySelector('.info-icon');
+    const tooltip = document.querySelector('.genre-tooltip');
+    const audioTitle = document.getElementById('audiotext');
+
+    if (!infoIcon || !tooltip || !audioTitle) return;
+
+    let isTooltipVisible = false;
+
+    // Toggle tooltip on click
+    infoIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isTooltipVisible = !isTooltipVisible;
+        tooltip.classList.toggle('visible', isTooltipVisible);
+        updateTooltipContent();
+    });
+
+    // Hide tooltip when clicking elsewhere
+    document.addEventListener('click', (e) => {
+        if (!infoIcon.contains(e.target)) {
+            isTooltipVisible = false;
+            tooltip.classList.remove('visible');
+        }
+    });
+
+    // Update visibility and content when station changes
+    audio.addEventListener('play', updateInfoIconVisibility);
+    audio.addEventListener('pause', updateInfoIconVisibility);
+    
+    // Update immediately if there's a station playing
+    updateInfoIconVisibility();
+    
+    function updateInfoIconVisibility() {
+        const hasStation = audio.src && audioTitle.textContent !== "Izaberite stanicu";
+        infoIcon.classList.toggle('visible', hasStation);
+        
+        if (!hasStation) {
+            isTooltipVisible = false;
+            tooltip.classList.remove('visible');
+        } else {
+            updateTooltipContent();
+        }
+    }
+    
+    function updateTooltipContent() {
+        const currentStation = document.querySelector('.radio.selected') || 
+                             document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
+        
+        if (!currentStation) {
+            tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
+            return;
+        }
+        
+        const genres = currentStation.dataset.genre;
+		if (!genres) {
+			tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
+			return;
+    }
+        
+        const genreArray = genres.split(',');
+        const formattedGenres = genreArray.map(genre => {
+        const icon = getGenreIcon(genre.trim());
+			return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
+			}).join('');
+    
+			tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
+    }
+
+    function getGenreIcon(genre) {
+        const genreIcons = {
+            'pop': 'mic_external_on',
+            'rock': 'rocket',
+            'hiphop': 'mic',
+            'zabavna': 'auto_awesome',
+            'narodna': 'nature_people',
+            'exyu': 'language',
+            'strana': 'public',
+            'kids': 'child_care',
+            'classical': 'piano',
+            'chill': 'air',
+            'house': 'cottage',
+            'dance': 'celebration',
+            'metal': 'flash_on',
+            'techno': 'speaker',
+            'top': 'trending_up'
+        };
+        
+        return `<span class="material-icons" style="font-size:16px;vertical-align:middle">${genreIcons[genre] || 'queue_music'}</span>`;
+    }
+    
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
 }
 
 function setupRecentlyPlayedToggle() {
@@ -571,6 +669,7 @@ function loadRecentlyPlayed() {
         radio.className = 'radio';
         radio.dataset.name = station.name;
         radio.dataset.link = station.link;
+        radio.dataset.genre = station.genre || '';
         radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
         radio.addEventListener('click', () => changeStation(station.name, station.link));
         container.appendChild(radio);
@@ -840,6 +939,12 @@ function loadPreferences() {
         document.getElementById("audiotext").textContent = savedStation.name;
         document.title = `Radio | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
+        
+        // Update the info icon after a short delay
+        setTimeout(() => {
+            const event = new Event('play');
+            audio.dispatchEvent(event);
+        }, 100);
     } else {
         document.title = "Radio";
     }
