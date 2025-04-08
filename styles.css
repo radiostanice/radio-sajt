@@ -26,13 +26,13 @@
     src: url('fonts/MaterialIcons-Regular.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
-    color: white;
+    color: #ffffff;
     vertical-align: middle;
 }
 
 .material-icons {
     font-family: 'Material Icons', sans-serif;
-    color: white;
+    color: #ffffff;
     font-size: 24px;
     display: inline-block;
     vertical-align: middle;
@@ -111,7 +111,7 @@ button {
 .dark-mode .volume-icon,
 .light-mode .material-icons,
 .dark-mode #playPauseBtn .material-icons {
-    color: black;
+    color: #000000;
 }
 
 .light-mode {
@@ -139,11 +139,14 @@ button {
 .light-mode .expand-button,
 .light-mode .header {
     background-color: #f0f0f0;
-    color: black;
+    color: #000000;
     border-bottom-color: #bdbdbd;
 }
 
-.light-mode .radio:hover,
+.light-mode .radio:hover {
+	background-color: #ffffff;
+}
+
 .light-mode .scroll-list {
     background-color: #ffffff;
 }
@@ -153,36 +156,40 @@ button {
 }
 
 .light-mode .volume-slider::-ms-thumb {
-    border-color: white;
+    border-color: #ffffff;
 }
 
 .light-mode .volume-slider::-webkit-slider-thumb {
-    border-color: white;
+    border-color: #ffffff;
 }
 
 .light-mode .volume-slider::-moz-range-thumb {
-    border-color: white;
+    border-color: #ffffff;
 }
 
 .light-mode .volume-slider::-ms-track {
-    background: white;
+    background: #ffffff;
 }
 
 .light-mode .volume-slider::-webkit-slider-runnable-track {
-    background: white;
+    background: #ffffff;
 }
 
 .light-mode .volume-slider::-moz-range-track {
-    background: white;
+    background: #ffffff;
 }
 
 .light-mode .volume-icon,
 .light-mode .genre-button.active .material-icons,
 .light-mode #playPauseBtn .material-icons {
-    color: white;
+    color: #ffffff;
 }
 
-.light-mode .radio.selected,
+.light-mode .radio.selected {
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1);
+	border-color: #bdbdbd;
+}
+
 .light-mode .recently-played-toggle {
     border-color: #bdbdbd;
 }
@@ -202,32 +209,40 @@ button {
 }
 
 .light-mode .recently-played-toggle:hover::before {
-    background: #000000;
+    background-color: #000000;
 }
 
 .light-mode .recently-played-toggle.empty::before {
-    background: #bdbdbd;
+    background-color: #bdbdbd;
 }
 
 .light-mode .recently-played-toggle::before {
-	background: #979797;
+	background-color: #979797;
 }
 
 .light-mode .category-container,
 .light-mode .recently-played-toggle,
-.light-mode .genre-buttons-wrapper,
-.light-mode .genre-button {
+.light-mode .genre-buttons-wrapper {
     background-color: #f0f0f0;
+}
+
+.light-mode .genre-button {
+	color: #000000;
+	background-color: #ffffff;
+}
+
+.light-mode .genre-button .material-icons {
+	color: #000000;
 }
 
 .light-mode .genre-nav-button {
     background-color: #f0f0f0;
-    color: black;
+    color: #000000;
 }
 
 .light-mode .genre-button.active {
     background-color: var(--accent-color);
-    color: white;
+    color: #ffffff;
 }
 
 .light-mode .genre-nav-button.left {
@@ -278,7 +293,7 @@ button {
 }
 
 .light-mode .genre-tooltip-item {
-	border-color: var(--accent-light);
+	border-color: #bdbdbd;
 	background-color: #f9f9f9;
 }
 
@@ -295,21 +310,24 @@ button {
 
 .light-mode .info-icon .material-icons {
 	color: #f0f0f0;
+	background-color: #979797;
 }
 
 .light-mode .genre-tooltip strong {
 	border-bottom-color: #979797;
 }
 
-.light-mode .expand-button[data-expanded="false"]:hover,
-.light-mode .expand-button[data-expanded="true"]:hover,
-.light-mode .radio:hover,
 .light-mode .theme-container .btn:hover {
-	border-color: var(--accent-light);
+	border-color: #979797;
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 5px #979797;
 }
 
 .light-mode .equalizer.displaypaused div {
 	background-color: #bdbdbd;
+}
+
+.light-mode .search-container:hover {
+	border-color: #979797;
 }
 
 /* ======== */
@@ -321,7 +339,7 @@ button {
     justify-content: space-between;
     align-items: center;
     background-color: #222222;
-    color: white;
+    color: #ffffff;
     padding: 10px;
     border-bottom: 2px solid #444444;
     position: fixed;
@@ -367,6 +385,11 @@ button {
     border-radius: 5px;
     outline: none;
     box-sizing: border-box;
+	transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+    -moz-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+    -webkit-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+    -o-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+    -ms-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
 }
 
 .search-container input::placeholder {
@@ -392,21 +415,17 @@ button {
 .search-container input:focus,
 .search-container input:hover {
     background-color: #222222;
-    transition: background-color 0.2s linear;
-    -moz-transition: background-color 0.2s linear;
-    -webkit-transition: background-color 0.2s linear;
-    -o-transition: background-color 0.2s linear;
-    -ms-transition: background-color 0.2s linear;
 }
 
 .search-container:hover {
-    box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.1), 1px 1px 1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1);
+	border-color: #777;
 }
 
 .search-container:focus-within {
-    box-shadow: -1px -1px 4px rgba(0, 0, 0, 0.1), 1px 1px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
     border-color: var(--accent-color) !important;
-    transition: border-color 0.2s linear;
+	transition: border-color 0.2s linear;
     -moz-transition: border-color 0.2s linear;
     -webkit-transition: border-color 0.2s linear;
     -o-transition: border-color 0.2s linear;
@@ -455,7 +474,7 @@ button {
     -moz-box-pack: center !important;
     background-color: #121212;
     border: 2px solid #444444;
-    color: white;
+    color: #ffffff;
     height: 44px;
     width: 88px;
     font-size: 16px;
@@ -464,6 +483,11 @@ button {
     padding: 0 8px;
     white-space: nowrap;
     line-height: 44px;
+	transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -moz-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -webkit-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -o-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -ms-transition: border-color 0.2s linear, box-shadow 0.2s linear;
 }
 
 .theme-container .btn .material-icons {
@@ -484,23 +508,13 @@ button {
 }
 
 .theme-container .btn:hover {
-    box-shadow: -1px -1px 2px rgba(0, 0, 0, 0.1), 1px 1px 2px rgba(0, 0, 0, 0.1);
-    border-color: var(--accent-dark);
-    transition: border-color 0.2s linear;
-    -moz-transition: border-color 0.2s linear;
-    -webkit-transition: border-color 0.2s linear;
-    -o-transition: border-color 0.2s linear;
-    -ms-transition: border-color 0.2s linear;
+    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 5px #777;
+    border-color: #777;
 }
 
 .theme-container .btn:focus {
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-color);
     border-color: var(--accent-color);
-    transition: border-color 0.2s linear;
-    -moz-transition: border-color 0.2s linear;
-    -webkit-transition: border-color 0.2s linear;
-    -o-transition: border-color 0.2s linear;
-    -ms-transition: border-color 0.2s linear;
 }
 
 .dropdown {
@@ -511,7 +525,7 @@ button {
 
 .dropdown-menu {
     opacity: 0;
-	display: flex;
+	display: none;
     position: absolute;
     right: 0;
     background-color: #222222;
@@ -519,17 +533,12 @@ button {
     z-index: 1000;
     white-space: nowrap;
     border: 2px solid #444444;
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
 	padding: 10px 7px;
 }
 
 .dropdown-menu.show {
 	opacity: 1;
-	transition: opacity 0.1s linear;
-    -moz-transition: opacity 0.1s linear;
-    -webkit-transition: opacity 0.1s linear;
-    -o-transition: opacity 0.1s linear;
-    -ms-transition: opacity 0.1s linear;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -548,16 +557,16 @@ button {
 	margin: 0 3px;
     background-color: #121212;
     font-size: 16px;
+	transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -moz-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -webkit-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -o-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+    -ms-transition: border-color 0.2s linear, box-shadow 0.2s linear;
 }
 
 .theme-option:hover {
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-color);
     border-color: var(--accent-color);
-    transition: border-color 0.2s linear;
-    -moz-transition: border-color 0.2s linear;
-    -webkit-transition: border-color 0.2s linear;
-    -o-transition: border-color 0.2s linear;
-    -ms-transition: border-color 0.2s linear;
 }
 
 .theme-option .material-icons {
@@ -575,17 +584,17 @@ button {
     margin: 0px 6px;
     cursor: pointer;
     border: 2px solid #ffffff;
-}
-
-.color-picker:hover {
-    box-shadow: -1px -1px 7px rgba(0, 0, 0, 0.2), 1px 1px 7px rgba(0, 0, 0, 0.2);
-	transform: scale(1.1);
-	will-change: transform;
 	transition: transform 0.1s ease-out;
     -moz-transition: transform 0.1s ease-out;
     -webkit-transition: transform 0.1s ease-out;
     -o-transition: transform 0.1s ease-out;
     -ms-transition: transform 0.1s ease-out;
+}
+
+.color-picker:hover {
+    box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.2);
+	transform: scale(1.1);
+	will-change: transform;
 }
 
 .theme-options-container {
@@ -603,7 +612,7 @@ button {
     background-color: #121212;
     position: absolute;
     top: 65.5px;
-    bottom: 160px;
+    bottom: 159px;
     left: 0;
     right: 0;
     overflow-y: scroll;
@@ -620,7 +629,7 @@ button {
     position: fixed;
     right: 0;
     top: 65.5px;
-    bottom: 160px;
+    bottom: 159px;
     width: 12px;
     z-index: 100;
     pointer-events: auto;
@@ -661,7 +670,7 @@ button {
 /* AUDIO PLAYER */
 /* ============ */
 .audio-container {
-    min-height: 160px !important;
+    min-height: 159px !important;
     height: auto !important;
     overflow: visible !important;
     will-change: height;
@@ -673,17 +682,16 @@ button {
     text-align: center;
     z-index: 100;
     border: none;
-    transition: height 0.2s linear;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    
+    box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .audio-wrapper {
-    width: 300px; /* Match audio player width */
+    width: 300px;
     margin: 0 auto;
-    text-align: left; /* Center text within this container */
+    text-align: left;
 }
 
 .audio-title {
@@ -692,13 +700,13 @@ button {
     font-size: 32px;
     white-space: nowrap;
     overflow: hidden;
-    max-width: 100%;
+    max-width: 300px;
     margin: 0 5px;
     padding: 0;
     flex-shrink: 0;
-    display: inline-block; /* Allows text-align to work */
-    text-align: left; /* Align text to left within its container */
-	z-index: 10000;
+    display: inline-block;
+    text-align: left;
+    z-index: 10000;
 }
 
 .audio-player {
@@ -707,14 +715,25 @@ button {
     width: 300px;
     border: 3px solid var(--accent-color);
     border-radius: 40px;
-	border-top-left-radius: 30px;
-	border-bottom-left-radius: 30px;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
     padding: 5px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin: 0px auto 15px auto;
     transform: none;
+	transition: border-radius 0.1s linear;
+    -moz-transition: border-radius 0.1s linear;
+    -webkit-transition: border-radius 0.2s linear;
+    -o-transition: border-radius 0.2s linear;
+    -ms-transition: border-radius 0.2s linear;
+}
+
+/* When play icon is shown (paused state) */
+.audio-player.play-mode {
+    border-top-left-radius: 40px;
+    border-bottom-left-radius: 40px;
 }
 
 .play-pause {
@@ -735,6 +754,15 @@ button {
     cursor: pointer;
     border-radius: 18px;
     background-color: var(--accent-color);
+    transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -o-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+}
+
+#playPauseBtn.play-mode {
+    border-radius: 50px;
 }
 
 #playPauseBtn .material-icons {
@@ -742,13 +770,8 @@ button {
 }
 
 #playPauseBtn:hover {
-    box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.1), 2px 2px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
     filter: contrast(0.9);
-    transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -o-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear;
 }
 
 .audio-controls {
@@ -759,11 +782,6 @@ button {
     border-radius: 50px;
     height: 50px;
     width: 130px;
-}
-
-.audio-controls:hover {
-    box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.1), 2px 2px 5px rgba(0, 0, 0, 0.1);
-    filter: contrast(0.9);
     transition: box-shadow 0.2s linear, filter 0.2s linear;
     -moz-transition: box-shadow 0.2s linear, filter 0.2s linear;
     -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear;
@@ -771,11 +789,16 @@ button {
     -ms-transition: box-shadow 0.2s linear, filter 0.2s linear;
 }
 
+.audio-controls:hover {
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+    filter: contrast(0.9);
+}
+
 .volume-icon {
     margin-right: 4px;
     font-size: 30px;
     cursor: pointer;
-    color: black;
+    color: #000000;
 }
 
 .volume-slider {
@@ -800,17 +823,17 @@ button {
     min-height: 19px;
     background: var(--accent-color);
     border-radius: 50%;
-    border: 3px solid black;
+    border: 3px solid #000000;
     cursor: pointer;
     position: relative;
     margin-top: -8px;
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1), inset -1px -1px 5px rgba(0, 0, 0, 0.1), inset 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
 }
 
 .volume-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
-    background: black;
+    background: #000000;
     border-radius: 2px;
 }
 
@@ -821,16 +844,16 @@ button {
     min-height: 14px;
     background: var(--accent-color);
     border-radius: 50%;
-    border: 3px solid black;
+    border: 3px solid #000000;
     cursor: pointer;
     position: relative;
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1), inset -1px -1px 5px rgba(0, 0, 0, 0.1), inset 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
 }
 
 .volume-slider::-moz-range-track {
     width: 100%;
     height: 4px;
-    background: black;
+    background: #000000;
     border-radius: 2px;
 }
 
@@ -841,15 +864,15 @@ button {
     min-height: 18px;
     background: var(--accent-color);
     border-radius: 50%;
-    border: 3px solid black;
+    border: 3px solid #000000;
     cursor: pointer;
-    box-shadow: -1px -1px 5px rgba(0, 0, 0, 0.1), 1px 1px 5px rgba(0, 0, 0, 0.1), inset -1px -1px 5px rgba(0, 0, 0, 0.1), inset 1px 1px 5px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
 }
 
 .volume-slider::-ms-track {
     width: 100%;
     height: 4px;
-    background: black;
+    background: #000000;
     border-radius: 2px;
 }
 
@@ -879,7 +902,7 @@ button {
 .recently-played-toggle::before {
     content: '';
     display: block;
-    width: 60px;
+    width: 40px;
     height: 4px;
     background: #777;
     border-radius: 2px;
@@ -892,7 +915,7 @@ button {
 
 .recently-played-toggle:hover::before {
     background: #ffffff;
-    transform: scaleX(1.1);
+    width: 60px;
 }
 
 .recently-played-toggle.empty::before {
@@ -908,11 +931,6 @@ button {
     top: auto;
     overflow: hidden;
     opacity: 0;
-    transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
-	-moz-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
-    -webkit-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
-    -o-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
-    -ms-transition: height 0.2s linear, opacity 0.2s linear, transform 0.2s linear;
     border: 2px solid #444;
     background: #222;
 	height: auto;
@@ -922,6 +940,11 @@ button {
     touch-action: pan-y;
     will-change: height, opacity, padding, transform;
     transform-origin: top center;
+	transition: opacity 0.2s linear;
+	-moz-transition: opacity 0.2s linear;
+    -webkit-transition: opacity 0.2s linear;
+    -o-transition: opacity 0.2s linear;
+    -ms-transition: opacity 0.2s linear;
 }
 
 #recentlyPlayedContainer.expanded {
@@ -963,12 +986,12 @@ button {
 }
 
 .info-icon {
-	display: flex;
+	display: none;
     align-items: center;
     justify-content: center;
 	position: fixed;
-	margin-top: -5px;
-	right: 20px;
+	margin-top: -4px;
+	right: 10px;
     cursor: pointer;
     flex-shrink: 0;
     opacity: 0;
@@ -981,29 +1004,31 @@ button {
 
 .info-icon.visible {
     opacity: 1;
+	display: flex;
 }
 
 .info-icon .material-icons {
-    font-size: 26px;
+    font-size: 22px;
     color: #222;
-	background-color: var(--accent-color);
+	background-color: #777;
 	border-radius: 70px;
-	height: 26px;
+	height: 22px;
 	display: flex;
     align-items: center;
     justify-content: center;
+	transition: background-color 0.2s linear;
+	-moz-transition: background-color 0.2s linear;
+    -webkit-transition: background-color 0.2s linear;
+    -o-transition: background-color 0.2s linear;
+    -ms-transition: background-color 0.2s linear;
 }
 
 .info-icon .material-icons:hover {
-	filter: contrast(0.9);
-	transition: filter 0.2s linear;
-	-moz-transition: filter 0.2s linear;
-    -webkit-transition: filter 0.2s linear;
-    -o-transition: filter 0.2s linear;
-    -ms-transition: filter 0.2s linear;
+	background-color: var(--accent-color);
 }
 
 .genre-tooltip {
+	display: none;
     position: absolute;
     right: 25px;
     bottom: 100%;
@@ -1014,7 +1039,6 @@ button {
     font-size: 16px;
     max-width: 500px;
     opacity: 0;
-    pointer-events: none;
     transition: opacity 0.1s linear, box-shadow 0.1s linear;
 	-moz-transition: opacity 0.1s linear, box-shadow 0.1s linear;
     -webkit-transition: opacity 0.1s linear, box-shadow 0.1s linear;
@@ -1022,14 +1046,15 @@ button {
     -ms-transition: opacity 0.1s linear, box-shadow 0.1s linear;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 	border: 2px solid #444;
+	cursor: default;
 }
 
 .genre-tooltip-item {
     display: flex;
     align-items: center;
-    padding: 2px 10px;
+    padding: 5px 10px;
     margin: 5px 0 5px 0;
-    border: 2px solid var(--accent-dark);
+    border: 2px solid #444;
     border-radius: 20px;
     white-space: nowrap;
     background-color: #191919;
@@ -1050,6 +1075,7 @@ button {
     display: inline-flex;
     background: none;
     vertical-align: middle;
+	pointer-events: none;
 }
 
 .genre-tooltip-item span {
@@ -1064,11 +1090,12 @@ button {
     font-size: 16px;
 	font-weight: 600;
 	border-bottom: 1px solid #777;
-	margin: -5px 0 10px -10px;
+	margin: -2px -10px 10px -10px;
 }
 
 .genre-tooltip.visible {
     opacity: 1;
+	display: block;
 }
 
 /* ============ */
@@ -1105,7 +1132,7 @@ button {
     margin: 5px;
     border: 2px solid #444;
     border-radius: 50px;
-    color: white;
+    color: #ffffff;
     font-weight: bold;
     white-space: nowrap;
     overflow: visible;
@@ -1113,6 +1140,11 @@ button {
     flex-grow: 1;
     flex-shrink: 0;
 	vertical-align: middle;
+	transition: border-color 0.2s linear, filter 0.2s linear;
+    -moz-transition: border-color 0.2s linear, filter 0.2s linear;
+    -webkit-transition: border-color 0.2s linear, filter 0.2s linear;
+    -o-transition: border-color 0.2s linear, filter 0.2s linear;
+    -ms-transition: border-color 0.2s linear, filter 0.2s linear;
 }
 
 .radio-text {
@@ -1125,14 +1157,8 @@ button {
 }
 
 .radio:hover {
-    filter: contrast(0.95);
-    box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.1), 1px 1px 1px rgba(0, 0, 0, 0.1);
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-dark);
     border-color: var(--accent-dark);
-    transition: border-color 0.2s linear, filter 0.2s linear;
-    -moz-transition: border-color 0.2s linear, filter 0.2s linear;
-    -webkit-transition: border-color 0.2s linear, filter 0.2s linear;
-    -o-transition: border-color 0.2s linear, filter 0.2s linear;
-    -ms-transition: border-color 0.2s linear, filter 0.2s linear;
 }
 
 .no-transition {
@@ -1142,7 +1168,12 @@ button {
 .radio.selected {
 	color: var(--accent-color);
 	position: relative;
-	border: 2px solid #444; 
+	border-color: #444;
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1);
+}
+
+.radio.selected:hover {
+	 filter: contrast(0.95);
 }
 
 .radio.selected::after {
@@ -1238,13 +1269,10 @@ button {
     bottom: -35px;
     left: 0;
     cursor: pointer;
-    color: white;
+    color: #ffffff;
     margin: 0;
     padding: 0;
-}
-
-.expand-button:hover {
-    transition: border-top 0.2s linear, border-bottom 0.2s linear, box-shadow 0.2s linear;
+	transition: border-top 0.2s linear, border-bottom 0.2s linear, box-shadow 0.2s linear;
     -moz-transition: border-top 0.2s linear, border-bottom 0.2s linear, box-shadow 0.2s linear;
     -webkit-transition: border-top 0.2s linear, border-bottom 0.2s linear, box-shadow 0.2s linear;
     -o-transition: border-top 0.2s linear, border-bottom 0.2s linear, box-shadow 0.2s linear;
@@ -1273,7 +1301,7 @@ button {
 }
 
 .expand-button[data-expanded="false"]:hover {
-    border-bottom: 2px solid var(--accent-dark);
+    border-color: var(--accent-color);
     box-shadow: none;
 }
 
@@ -1283,7 +1311,7 @@ button {
 }
 
 .expand-button[data-expanded="true"]:hover {
-    border-top: 2px solid var(--accent-dark);
+    border-color: var(--accent-color);
 }
 
 /* ============ */
@@ -1295,7 +1323,7 @@ button {
     display: flex;
     align-items: flex-end;
     position: absolute;
-    left: 16px;
+    left: 18px;
     padding: 0;
     box-sizing: border-box;
 }
@@ -1388,27 +1416,26 @@ button {
     justify-content: center;
     white-space: nowrap;
     border-radius: 50px;
-    background-color: #222;
+    background-color: #121212;
     border: 2px solid var(--accent-color);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all 0.2s linear;
+    transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
+	-moz-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
+    -webkit-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
+    -o-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
+    -ms-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
     margin: 0 5px;
     min-width: 71px;
     height: 70px;
     box-sizing: border-box;
-    color: var(--accent-color);
-	padding: 0 12px;
+    color: #ffffff;
+	padding: 0 15px;
 }
 
 .genre-button:hover {
-    filter: contrast(0.9);
-    transition: filter 0.2s linear;
-    -moz-transition: filter 0.2s linear;
-    -webkit-transition: filter 0.2s linear;
-    -o-transition: filter 0.2s linear;
-    -ms-transition: filter 0.2s linear;
+	box-shadow: inset 0px 0px 5px var(--accent-color);
 }
 
 .genre-button span:not(.material-icons) {
@@ -1421,16 +1448,21 @@ button {
 .genre-button .material-icons {
     font-size: 24px;
     margin-bottom: 5px;
-    color: var(--accent-color);
+    color: #ffffff;
 }
 
 .genre-button.active {
     background-color: var(--accent-color);
-    color: black;
+    color: #000000;
+    transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
+	-moz-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
+    -webkit-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
+    -o-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
+    -ms-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
 }
 
 .genre-button.active .material-icons {
-    color: black;
+    color: #000000;
 }
 
 .genre-nav-button {
@@ -1441,7 +1473,7 @@ button {
     height: 100%;
     background-color: #222;
     border: none;
-    color: white;
+    color: #ffffff;
     cursor: pointer;
     z-index: 2;
     display: none;
@@ -1449,10 +1481,7 @@ button {
     -moz-box-pack: center;
     align-items: center;
     justify-content: center;
-}
-
-.genre-nav-button:hover {
-    transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
+	transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
     -moz-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
     -webkit-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
     -o-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
@@ -1473,12 +1502,10 @@ button {
 
 .genre-nav-button.left:hover {
     border-left: 2px solid var(--accent-color);
-  
 }
 
 .genre-nav-button.right:hover {
     border-right: 2px solid var(--accent-color);
-    
 }
 
 .genre-nav-button .material-icons {
@@ -1510,14 +1537,12 @@ button {
 
 @media (max-width: 600px) {
     .radio { width: calc(100% - 20px); }
-
 }
 
 @media (max-width: 380px) {
 	.audio-player { width: 250px; }
 	.audio-wrapper { width: 250px; }
-	.audio-title { font-size: 26px; }
-	#recentlyPlayedContainer { margin-top: 10px; }
+	.audio-title { width: 250px; }
     .category { font-size: 24px; }
     #category-icon { font-size: 30px; }
 }

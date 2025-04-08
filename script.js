@@ -57,7 +57,7 @@ const audio = document.getElementById("audioctrl");
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
-const COLLAPSED_HEIGHT = 160;
+const COLLAPSED_HEIGHT = 159;
 const SCROLLBAR_HIDE_DELAY = 1500;
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
@@ -197,8 +197,8 @@ function updateCategoryVisibility() {
 // Theme Functions
 function setTheme(mode) {
     document.body.classList.add("no-transition");
-    document.querySelectorAll(".radio").forEach(radio => {
-        radio.classList.add("no-transition");
+    document.querySelectorAll("*").forEach(allelements => {
+        allelements.classList.add("no-transition");
     });
     
     document.body.className = `${mode}-mode`;
@@ -210,8 +210,8 @@ function setTheme(mode) {
 
     setTimeout(() => {
         document.body.classList.remove("no-transition");
-        document.querySelectorAll(".radio").forEach(radio => {
-            radio.classList.remove("no-transition");
+        document.querySelectorAll("*").forEach(allelements => {
+            allelements.classList.remove("no-transition");
         });
         ScrollbarManager.updateAll();
     }, 50);
@@ -468,7 +468,6 @@ function setupRecentlyPlayedToggle() {
         if (swipeDistance > 0) {
             e.preventDefault();
             const progress = Math.min(swipeDistance / 100, 1);
-            container.style.transform = `translateY(${progress * 20}px)`;
             container.style.opacity = `${1 - progress}`;
             title.style.opacity = `${1 - progress}`;
         }
@@ -480,9 +479,8 @@ function setupRecentlyPlayedToggle() {
         const swipeDistance = touchEndY - touchStartY;
         const swipeDuration = touchEndTime - touchStartTime;
         
-        container.style.transform = '';
-        container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease, padding 0.2s ease';
-        title.style.transition = 'height 0.2s ease, opacity 0.2s ease, margin 0.2s ease';
+        container.style.transition = 'opacity 0.2s linear';
+        title.style.transition = 'opacity 0.2s linear';
         
         if (swipeDistance > 50 && swipeDuration < 300) {
             toggleRecentlyPlayed();
@@ -531,8 +529,8 @@ function setupRecentlyPlayedToggle() {
         const swipeDuration = touchEndTime - touchStartTime;
         
         if (isExpanded) {
-            container.style.transition = 'max-height 0.2s ease, opacity 0.2s ease';
-            title.style.transition = 'height 0.2s ease, opacity 0.2s ease';
+            container.style.transition = 'opacity 0.2s linear';
+            title.style.transition = 'opacity 0.2s linear';
             
             if (swipeDistance > 50 && swipeDuration < 300) {
                 toggleRecentlyPlayed();
@@ -792,7 +790,17 @@ audio.addEventListener("play", updatePlayPauseButton);
 audio.addEventListener("pause", updatePlayPauseButton);
 
 function updatePlayPauseButton() {
+    const audioPlayer = document.querySelector('.audio-player');
     playPauseBtn.innerHTML = `<span class="material-icons">${audio.paused ? 'play_arrow' : 'pause'}</span>`;
+    
+    // Toggle play-mode class based on paused state
+    if (audio.paused) {
+        playPauseBtn.classList.add('play-mode');
+        audioPlayer.classList.add('play-mode');
+    } else {
+        playPauseBtn.classList.remove('play-mode');
+        audioPlayer.classList.remove('play-mode');
+    }
 
     document.querySelectorAll(".radio.selected .equalizer").forEach(equalizer => {
         equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
@@ -940,6 +948,9 @@ function loadPreferences() {
         document.title = `Radio | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
         
+        // Set initial play/pause button state
+        updatePlayPauseButton();
+        
         // Update the info icon after a short delay
         setTimeout(() => {
             const event = new Event('play');
@@ -947,6 +958,8 @@ function loadPreferences() {
         }, 100);
     } else {
         document.title = "Radio";
+        // Ensure initial state is correct
+        updatePlayPauseButton();
     }
 }
 
