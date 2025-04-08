@@ -1467,6 +1467,7 @@ button {
     left: 18px;
     padding: 0;
     box-sizing: border-box;
+	gap: 1px;
 }
 
 .equalizer div {
@@ -1475,11 +1476,6 @@ button {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
-    margin-right: 1px;
-}
-
-.equalizer div:last-child {
-    margin-right: 0;
 }
 
 .equalizer.displaypaused div {
