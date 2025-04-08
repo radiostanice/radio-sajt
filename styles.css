@@ -1170,7 +1170,7 @@ button {
 .genre-tooltip {
 	display: none;
     position: absolute;
-    right: 25px;
+    right: 20px;
     bottom: 100%;
     background-color: #222;
     color: #ffffff;
