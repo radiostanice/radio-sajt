@@ -1464,7 +1464,7 @@ button {
     display: flex;
     align-items: flex-end;
     position: absolute;
-    left: 18px;
+    left: 20px;
     padding: 0;
     box-sizing: border-box;
 	gap: 1px;
