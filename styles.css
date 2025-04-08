@@ -143,10 +143,6 @@ button {
     border-bottom-color: #bdbdbd;
 }
 
-.light-mode .radio:hover {
-	background-color: #ffffff;
-}
-
 .light-mode .scroll-list {
     background-color: #ffffff;
 }
@@ -319,7 +315,23 @@ button {
 
 .light-mode .theme-container .btn:hover {
 	border-color: #979797;
-	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 5px #979797;
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 4px #979797;
+}
+
+.light-mode .theme-container .btn:focus {
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1), inset 0px 0px 4px var(--accent-color);
+}
+
+.light-mode .genre-button:hover {
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 4px var(--accent-color);
+}
+
+.light-mode .radio:hover {
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 4px var(--accent-dark);
+	background-color: #ffffff;
+}
+.light-mode .theme-option:hover {
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1), inset 0px 0px 4px var(--accent-color);
 }
 
 .light-mode .equalizer.displaypaused div {
@@ -508,12 +520,12 @@ button {
 }
 
 .theme-container .btn:hover {
-    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 5px #777;
+    box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 8px #777;
     border-color: #777;
 }
 
 .theme-container .btn:focus {
-    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-color);
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1), inset 0px 0px 8px var(--accent-color);
     border-color: var(--accent-color);
 }
 
@@ -565,7 +577,7 @@ button {
 }
 
 .theme-option:hover {
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-color);
+    box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1), inset 0px 0px 8px var(--accent-color);
     border-color: var(--accent-color);
 }
 
@@ -723,8 +735,8 @@ button {
     justify-content: space-between;
     margin: 0px auto 15px auto;
     transform: none;
-	transition: border-radius 0.1s linear;
-    -moz-transition: border-radius 0.1s linear;
+	transition: border-radius 0.2s linear;
+    -moz-transition: border-radius 0.2s linear;
     -webkit-transition: border-radius 0.2s linear;
     -o-transition: border-radius 0.2s linear;
     -ms-transition: border-radius 0.2s linear;
@@ -763,6 +775,11 @@ button {
 
 #playPauseBtn.play-mode {
     border-radius: 50px;
+	transition: border-radius 0.2s linear;
+    -moz-transition: border-radius 0.2s linear;
+    -webkit-transition: border-radius 0.2s linear;
+    -o-transition: border-radius 0.2s linear;
+    -ms-transition: border-radius 0.2s linear;
 }
 
 #playPauseBtn .material-icons {
@@ -1157,7 +1174,7 @@ button {
 }
 
 .radio:hover {
-    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 5px var(--accent-dark);
+    box-shadow: 0px 0px 1px rgba(0, 0, 0, 0.1), inset 0px 0px 8px var(--accent-dark);
     border-color: var(--accent-dark);
 }
 
@@ -1169,11 +1186,12 @@ button {
 	color: var(--accent-color);
 	position: relative;
 	border-color: #444;
-	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1);
+	box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
 }
 
 .radio.selected:hover {
 	 filter: contrast(0.95);
+	 box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1);
 }
 
 .radio.selected::after {
@@ -1435,7 +1453,7 @@ button {
 }
 
 .genre-button:hover {
-	box-shadow: inset 0px 0px 5px var(--accent-color);
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 8px var(--accent-color);
 }
 
 .genre-button span:not(.material-icons) {
