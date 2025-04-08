@@ -583,7 +583,7 @@ function setupRecentlyPlayedToggle() {
             title.style.display = 'flex';
             title.style.height = 'auto';
             title.style.opacity = '0';
-            title.style.margin = '20px 10px 10px 10px';
+            title.style.margin = '25px 15px 0px 15px';
             title.style.overflow = 'visible';
             
             // Force reflow before animation
