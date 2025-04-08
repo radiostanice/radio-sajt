@@ -338,6 +338,10 @@ button {
 	background-color: #bdbdbd;
 }
 
+.light-mode .equalizer div {
+	border-left: 1px solid #ffffff;
+}
+
 .light-mode .search-container:hover {
 	border-color: #979797;
 }
@@ -1460,22 +1464,22 @@ button {
 /* ============ */
 .equalizer {
     height: 15px;
-    width: 20px;
+    width: 21px;
     display: flex;
     align-items: flex-end;
     position: absolute;
     left: 20px;
     padding: 0;
     box-sizing: border-box;
-	gap: 1px;
 }
 
 .equalizer div {
-    width: 6px !important;
+    width: 7px !important;
     background-color: var(--accent-color);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     transform: translateZ(0);
+	border-left: 1px solid #121212;
 }
 
 .equalizer.displaypaused div {
