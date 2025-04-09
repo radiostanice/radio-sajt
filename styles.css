@@ -95,13 +95,12 @@ button {
 }
 
 .dark-mode .search-container input:hover {
-    color: #ffffff;
-    background-color: #333333;
+   
+    background-color: transparent;
 }
 
 .dark-mode .search-container input:focus {
-    color: #ffffff;
-    background-color: #444444;
+    background-color: #383838;
 }
 
 .dark-mode .audio-player {
@@ -128,7 +127,6 @@ button {
 }
 
 .light-mode .theme-container .btn,
-.light-mode .search-container input,
 .light-mode .radio,
 .light-mode .theme-option {
     background-color: #ffffff;
@@ -248,13 +246,11 @@ button {
     border-color: #bdbdbd;
 }
 
-.light-mode .search-container input:hover {
-    color: #000000;
-    background-color: #f3f3f3;
+.light-mode .search-container input {
+	color: #000000;
 }
 
 .light-mode .search-container input:focus{
-    color: #000000;
     background-color: #ededed;
 }
 
@@ -399,11 +395,6 @@ button {
 .search-container input:-ms-input-placeholder {
     color: #cccccc !important;
     opacity: 1;
-}
-
-.search-container input:focus,
-.search-container input:hover {
-    background-color: #222222;
 }
 
 .search-container:hover {

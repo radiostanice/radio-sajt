@@ -527,7 +527,7 @@ function setupRecentlyPlayedToggle() {
             if (swipeDistance < 0) {
                 e.preventDefault();
                 const progress = Math.min(-swipeDistance / 100, 1);
-                toggle.style.transform = `translateY(-${progress * 20}px)`;
+                toggle.style.transform = `translateY(-${progress * 10}px)`;
             }
         }
     }
