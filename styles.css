@@ -1451,7 +1451,7 @@ button {
     align-items: flex-end;
     position: absolute;
     justify-content: center;
-    bottom: 0;
+    bottom: 1px;
     padding: 0 2px;
     box-sizing: border-box;
     gap: 1px;
@@ -1489,27 +1489,27 @@ button {
 /* ============ */
 /* MEDIA QUERIES */
 /* ============ */
-@media (max-width: 1550px) {
+@media (max-width: 1580px) {
     .radio { width: calc(16.66% - 20px); }
 }
 
-@media (max-width: 1300px) {
+@media (max-width: 1340px) {
     .radio { width: calc(20% - 20px); }
 }
 
-@media (max-width: 1090px) {
+@media (max-width: 1140px) {
     .radio { width: calc(25% - 20px); }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 930px) {
     .radio { width: calc(33.33% - 20px); }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 730px) {
     .radio { width: calc(50% - 20px); }
 }
 
-@media (max-width: 460px) {
+@media (max-width: 470px) {
     .radio { width: calc(100% - 20px); }
 }
 
