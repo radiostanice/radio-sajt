@@ -1285,8 +1285,7 @@ button {
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-left: 43px;
-    padding-right: 43px;
+    padding: 0 17px;
 }
 
 .radio:hover {
@@ -1475,7 +1474,7 @@ button {
 }
 
 @keyframes equalizer {
-    0%, 100% { transform: translateZ(0) scaleY(0.2); }
+    0%, 100% { transform: translateZ(0) scaleY(0.3); }
     50% { transform: translateZ(0) scaleY(1); }
 }
 
@@ -1490,27 +1489,27 @@ button {
 /* ============ */
 /* MEDIA QUERIES */
 /* ============ */
-@media (max-width: 2080px) {
+@media (max-width: 1550px) {
     .radio { width: calc(16.66% - 20px); }
 }
 
-@media (max-width: 1770px) {
+@media (max-width: 1300px) {
     .radio { width: calc(20% - 20px); }
 }
 
-@media (max-width: 1490px) {
+@media (max-width: 1090px) {
     .radio { width: calc(25% - 20px); }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 900px) {
     .radio { width: calc(33.33% - 20px); }
 }
 
-@media (max-width: 890px) {
+@media (max-width: 700px) {
     .radio { width: calc(50% - 20px); }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 460px) {
     .radio { width: calc(100% - 20px); }
 }
 
