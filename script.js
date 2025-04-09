@@ -112,7 +112,7 @@ function updateSelectedStation(name) {
             } else {
                 const equalizer = document.createElement("div");
                 equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
-                equalizer.innerHTML = "<div></div><div></div><div></div>";
+                equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
                 const radioText = radio.querySelector(".radio-text");
                 if (radioText) radio.insertBefore(equalizer, radioText);
             }
@@ -147,22 +147,31 @@ function setupGenreFiltering() {
 
 function applyGenreFilter() {
     cancelAnimationFrame(window._genreFilterRAF);
+    const noResultsElement = document.querySelector('.no-results');
     
     window._genreFilterRAF = requestAnimationFrame(() => {
         if (document.getElementById("stationSearch").value.trim() !== "") return;
+        
+        let hasVisibleStations = false;
         
         document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
             const stationGenres = station.dataset.genre?.split(',') || [];
             const shouldShow = currentGenre === 'all' || stationGenres.includes(currentGenre);
             station.style.display = shouldShow ? 'flex' : 'none';
+            if (shouldShow) hasVisibleStations = true;
         });
+
+        // Hide no results message if stations are visible
+        if (noResultsElement) {
+            noResultsElement.style.display = hasVisibleStations ? 'none' : 'none'; // Always hide when filtering by genre
+        }
 
         updateCategoryVisibility();
         setupExpandableCategories();
         
         // Update scrollbar after filtering
         setTimeout(() => {
-			ScrollbarManager.updateAll();
+            ScrollbarManager.updateAll();
         }, 10);
     });
 }
@@ -839,6 +848,7 @@ function debounce(func, wait) {
 function filterStations() {
     const query = document.getElementById("stationSearch").value.toLowerCase();
     const searching = query !== "";
+    const noResultsElement = document.querySelector('.no-results');
     
     document.getElementById("clearSearch").style.display = searching ? "block" : "none";
 
@@ -849,9 +859,12 @@ function filterStations() {
         });
     }
 
+    let hasVisibleStations = false;
+    
     document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
         const matches = station.dataset.name.toLowerCase().includes(query);
         station.style.display = matches ? 'flex' : 'none';
+        if (matches) hasVisibleStations = true;
     });
 
     document.querySelectorAll('.category-container:not(#recentlyPlayedContainer)').forEach(category => {
@@ -863,7 +876,14 @@ function filterStations() {
         if (title?.classList.contains("category")) {
             title.style.display = hasVisible ? 'flex' : 'none';
         }
+        
+        if (hasVisible) hasVisibleStations = true;
     });
+    
+    // Show/hide no results message
+    if (noResultsElement) {
+        noResultsElement.style.display = (searching && !hasVisibleStations) ? 'flex' : 'none';
+    }
     
     // When search is cleared by backspacing, reapply genre filter and setup expand buttons
     if (!searching) {
