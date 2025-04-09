@@ -1479,16 +1479,14 @@ button {
     50% { transform: translateZ(0) scaleY(1); }
 }
 
-.equalizer.animate div:nth-child(10n+1) { animation-delay: 0s; }
-.equalizer.animate div:nth-child(10n+2) { animation-delay: -0.2s; }
-.equalizer.animate div:nth-child(10n+3) { animation-delay: -0.4s; }
-.equalizer.animate div:nth-child(10n+4) { animation-delay: -0.6s; }
-.equalizer.animate div:nth-child(10n+5) { animation-delay: -0.4s; }
-.equalizer.animate div:nth-child(10n+6) { animation-delay: -0.2s; }
-.equalizer.animate div:nth-child(10n+7) { animation-delay: -0.8s; }
-.equalizer.animate div:nth-child(10n+8) { animation-delay: -0.6s; }
-.equalizer.animate div:nth-child(10n+9) { animation-delay: -0.4s; }
-.equalizer.animate div:nth-child(10n+10) { animation-delay: -0.2s; }
+.equalizer.animate div:nth-child(8n+1) { animation-delay: 0s; }
+.equalizer.animate div:nth-child(8n+2) { animation-delay: -0.2s; }
+.equalizer.animate div:nth-child(8n+3) { animation-delay: -0.4s; }
+.equalizer.animate div:nth-child(8n+4) { animation-delay: -0.6s; }
+.equalizer.animate div:nth-child(8n+5) { animation-delay: -0.4s; }
+.equalizer.animate div:nth-child(8n+6) { animation-delay: -0.2s; }
+.equalizer.animate div:nth-child(8n+7) { animation-delay: -0.8s; }
+.equalizer.animate div:nth-child(8n+8) { animation-delay: -0.6s; }
 
 /* ============ */
 /* MEDIA QUERIES */
