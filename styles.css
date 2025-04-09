@@ -1445,7 +1445,7 @@ button {
 /* EQUALIZER */
 /* ============ */
 .equalizer {
-    height: 5px;
+    height: 7px;
     width: 100%;
     display: flex;
     align-items: flex-end;
@@ -1454,8 +1454,9 @@ button {
     bottom: 1px;
     padding: 0 2px;
     box-sizing: border-box;
-    gap: 1px;
+    gap: 2px;
 	contain: strict;
+	
 }
 
 .equalizer div {
@@ -1471,10 +1472,11 @@ button {
     animation: equalizer 1s infinite ease-in-out;
     transform-origin: bottom;
 	will-change: transform;
+	border-radius: 1px 1px 0 0;
 }
 
 @keyframes equalizer {
-    0%, 100% { transform: translateZ(0) scaleY(0.3); }
+    0%, 100% { transform: translateZ(0) scaleY(0.5); }
     50% { transform: translateZ(0) scaleY(1); }
 }
 
