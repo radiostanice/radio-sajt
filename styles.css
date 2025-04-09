@@ -1445,7 +1445,7 @@ button {
 /* EQUALIZER */
 /* ============ */
 .equalizer {
-    height: 8px;
+    height: 7px;
     width: 100%;
     display: flex;
     align-items: flex-end;
@@ -1464,7 +1464,7 @@ button {
 }
 
 .equalizer.animate div {
-    height: 6px;
+    height: 5px;
     background-color: var(--accent-color);
 	opacity: 0.4;
     transition: background-color 0.2s linear;
@@ -1475,7 +1475,7 @@ button {
 }
 
 @keyframes equalizer {
-    0%, 100% { transform: translateZ(0) scaleY(0.4); }
+    0%, 100% { transform: translateZ(0) scaleY(0.5); }
     50% { transform: translateZ(0) scaleY(1); }
 }
 
