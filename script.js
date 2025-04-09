@@ -112,7 +112,7 @@ function updateSelectedStation(name) {
             } else {
                 const equalizer = document.createElement("div");
                 equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
-                equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
+                equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
                 const radioText = radio.querySelector(".radio-text");
                 if (radioText) radio.insertBefore(equalizer, radioText);
             }

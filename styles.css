@@ -1445,7 +1445,7 @@ button {
 /* EQUALIZER */
 /* ============ */
 .equalizer {
-    height: 6px;
+    height: 5px;
     width: 100%;
     display: flex;
     align-items: flex-end;
@@ -1459,12 +1459,12 @@ button {
 }
 
 .equalizer div {
-    width: 7px !important;
+    width: 5px !important;
     transform: translateZ(0) scaleY(0);
 }
 
 .equalizer.animate div {
-    height: 6px;
+    height: 5px;
     background-color: var(--accent-color);
 	opacity: 0.4;
     transition: background-color 0.2s linear;
@@ -1478,13 +1478,16 @@ button {
     50% { transform: translateZ(0) scaleY(1); }
 }
 
-.equalizer.animate div:nth-child(7n+1) { animation-delay: 0s; }
-.equalizer.animate div:nth-child(7n+2) { animation-delay: -0.2s; }
-.equalizer.animate div:nth-child(7n+3) { animation-delay: -0.4s; }
-.equalizer.animate div:nth-child(7n+4) { animation-delay: -0.6s; }
-.equalizer.animate div:nth-child(7n+5) { animation-delay: -0.4s; }
-.equalizer.animate div:nth-child(7n+6) { animation-delay: -0.2s; }
-.equalizer.animate div:nth-child(7n+7) { animation-delay: -0.7s; }
+.equalizer.animate div:nth-child(10n+1) { animation-delay: 0s; }
+.equalizer.animate div:nth-child(10n+2) { animation-delay: -0.2s; }
+.equalizer.animate div:nth-child(10n+3) { animation-delay: -0.4s; }
+.equalizer.animate div:nth-child(10n+4) { animation-delay: -0.6s; }
+.equalizer.animate div:nth-child(10n+5) { animation-delay: -0.4s; }
+.equalizer.animate div:nth-child(10n+6) { animation-delay: -0.2s; }
+.equalizer.animate div:nth-child(10n+7) { animation-delay: -0.8s; }
+.equalizer.animate div:nth-child(10n+8) { animation-delay: -0.6s; }
+.equalizer.animate div:nth-child(10n+9) { animation-delay: -0.4s; }
+.equalizer.animate div:nth-child(10n+10) { animation-delay: -0.2s; }
 
 /* ============ */
 /* MEDIA QUERIES */
