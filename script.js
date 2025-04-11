@@ -56,6 +56,8 @@ document.addEventListener("DOMContentLoaded", () => {
 // Global Elements and Constants
 const audio = document.getElementById("audioctrl");
 const METADATA_PROXY = 'https://radiometadata.kosta04miletic.workers.dev';
+const METADATA_CHECK_INTERVAL = 15000;
+const METADATA_COOLDOWN = 3000;
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
@@ -71,38 +73,49 @@ let lastScrollTime = 0;
 let isScrolling = false;
 let currentStation = null;
 let metadataInterval = null;
+let lastMetadataCheck = 0;
 let lastTitle = '';
 
 // Station Functions
-function changeStation(name, link) {
+async function changeStation(name, link) {
+    // Clear existing metadata
     if (metadataInterval) clearInterval(metadataInterval);
+    
+    // Immediately clear previous metadata display
+    const audioTextElement = document.getElementById('audiotext');
+    if (audioTextElement) {
+        const songTitleElement = audioTextElement.querySelector('.song-title');
+        if (songTitleElement) songTitleElement.remove();
+        audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
+        audioTextElement.classList.remove('has-now-playing');
+    }
+    
+    // Store new station
+    currentStation = { name, link };
+    lastTitle = '';
+    
+    // Pause current audio and load new source
     audio.pause();
     audio.src = link;
     audio.load();
     
-    // Store current station
-    currentStation = { name, link };
-    lastTitle = '';
-    
-    // Reset display
-    const audioTextElement = document.getElementById('audiotext');
-    audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
-    audioTextElement.classList.remove('has-now-playing');
-    
-    audio.oncanplay = () => {
-        try { 
-            audio.play().then(() => {
-                setupNowPlayingMetadata();
-            }).catch(e => {
-                console.error("Audio play failed:", e);
-                setupNowPlayingMetadata(); // Still setup metadata even if autoplay fails
-            });
-        } catch (e) { 
+    audio.oncanplay = async () => {
+        try {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                await playPromise.catch(e => {
+                    console.error("Autoplay blocked:", e);
+                    setupNowPlayingMetadata();
+                });
+            }
+            setupNowPlayingMetadata();
+        } catch (e) {
             console.error("Audio play failed:", e);
-            setupNowPlayingMetadata(); // Still setup metadata if error occurs
+            setupNowPlayingMetadata();
         }
     };
 
+    // Update UI
     document.title = `Radio | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     
@@ -112,259 +125,202 @@ function changeStation(name, link) {
     updateRecentlyPlayed(name, link, genre);
     updateSelectedStation(name);
     updatePlayPauseButton();
+    
+    // Immediate silent metadata check (won't show until confirmed)
+    setTimeout(() => checkMetadata(true), 100);
+}
 
-    // Scroll the selected station into view
-    setTimeout(() => {
-        const selectedRadio = document.querySelector(`.radio.selected`);
-        if (selectedRadio) {
-            selectedRadio.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+async function getNowPlaying(station) {
+    if (!station?.link) return null;
+
+    try {
+        const proxyUrl = `${METADATA_PROXY}?url=${encodeURIComponent(station.link)}`;
+        const response = await fetch(proxyUrl);
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.title && !data.isStationName) {
+                return cleanMetadata(data.title);
+            }
         }
-    }, 100);
+    } catch (e) {
+        console.error('Metadata fetch failed:', e);
+    }
+
+    return null;
+}
+
+// Helper function inspired by icecast-metadata.js
+async function getMetadataViaAudioElement(streamUrl) {
+    return new Promise((resolve) => {
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.preload = 'metadata';
+        audio.src = streamUrl;
+        
+        let timeout = setTimeout(() => {
+            audio.removeEventListener('loadedmetadata', handleMetadata);
+            resolve(null);
+        }, 5000);
+
+        function handleMetadata() {
+            clearTimeout(timeout);
+            try {
+                // Try standard HTML5 metadata
+                if (audio.metadata && audio.metadata.title) {
+                    resolve(audio.metadata.title);
+                    return;
+                }
+                
+                // Fallback to parsing currentSrc if available
+                if (audio.currentSrc) {
+                    const url = new URL(audio.currentSrc);
+                    const title = url.searchParams.get('title') || 
+                                 url.pathname.split('/').pop().replace(/\.[^/.]+$/, '');
+                    if (title) resolve(title);
+                }
+            } catch (e) {
+                console.log('Metadata parsing error:', e);
+                resolve(null);
+            }
+        }
+
+        audio.addEventListener('loadedmetadata', handleMetadata, { once: true });
+        audio.load();
+    });
+}
+
+// Enhanced metadata cleaning
+function cleanMetadata(title) {
+    if (!title) return null;
+    
+    // Remove common unwanted patterns
+    return title
+        .replace(/<\/?[^>]+(>|$)/g, '')       // Remove HTML tags
+        .replace(/(https?:\/\/[^\s]+)/g, '')  // Remove URLs
+        .replace(/^\s+|\s+$/g, '')            // Trim whitespace
+        .replace(/\|.*$/, '')                 // Remove everything after pipe
+        .replace(/\b(?:Radio Paradise|RP)\b/i, '') // Remove RP mentions
+        .trim();
+}
+
+// Helper function with timeout
+function fetchWithTimeout(url, timeout) {
+    return Promise.race([
+        fetch(url),
+        new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Request timeout')), timeout)
+        )
+    ]);
+}
+
+function updateNowPlayingUI(title) {
+    const audioTextElement = document.getElementById('audiotext');
+    if (!audioTextElement || !title) return;
+
+    // Ensure station name exists
+    let stationNameElement = audioTextElement.querySelector('.station-name');
+    if (!stationNameElement) {
+        stationNameElement = document.createElement('div');
+        stationNameElement.className = 'station-name';
+        stationNameElement.textContent = currentStation?.name || '';
+        audioTextElement.appendChild(stationNameElement);
+    }
+
+    // Create or update song title
+    let songTitleElement = audioTextElement.querySelector('.song-title');
+    if (!songTitleElement) {
+        songTitleElement = document.createElement('div');
+        songTitleElement.className = 'song-title';
+        audioTextElement.insertBefore(songTitleElement, audioTextElement.firstChild);
+    }
+    
+    songTitleElement.textContent = title;
+    audioTextElement.classList.add('has-now-playing');
+    
+    // Apply marquee with delay
+    setTimeout(() => {
+        applyMarqueeEffect(songTitleElement);
+    }, 300);
+}
+
+function applyMarqueeEffect(element) {
+    // Clean up any existing animations/styles
+    element.style.animation = 'none';
+    element.style.transform = 'translateX(0)';
+    element.style.textShadow = 'none';
+    
+    // Force reflow
+    void element.offsetWidth;
+
+    const container = element.closest('#audiotext');
+    if (!container) return;
+    
+    const containerWidth = container.clientWidth;
+    const textWidth = element.scrollWidth;
+    const isOverflowing = textWidth > containerWidth;
+    
+    if (isOverflowing) {
+        // Calculate total animation duration based on text length
+        const duration = Math.max(5, textWidth / 50); // Adjust 50 for speed
+        
+        // Create dynamic keyframes
+        const keyframes = `
+            @keyframes marquee-${Date.now()} {
+                0%, 10% { 
+                    transform: translateX(0);
+                    text-shadow: 15px 0 10px rgba(0,0,0,0.7), -15px 0 10px rgba(0,0,0,0.7);
+                }
+                80%, 100% { 
+                    transform: translateX(calc(${containerWidth}px - ${textWidth}px + 10px));
+                    text-shadow: 15px 0 10px rgba(0,0,0,0.7), -15px 0 10px rgba(0,0,0,0.7);
+                }
+            }
+        `;
+
+        // Remove any existing style
+        const oldStyle = document.getElementById('marquee-style');
+        if (oldStyle) oldStyle.remove();
+        
+        // Create and inject new style
+        const style = document.createElement('style');
+        style.id = 'marquee-style';
+        style.innerHTML = keyframes;
+        document.head.appendChild(style);
+        
+        // Apply animation
+        element.style.animation = `marquee-${Date.now()} ${duration}s linear infinite`;
+    }
 }
 
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
     
-    // Use a faster interval when first loading, then slower
-    let checkInterval = 5000; // Initial fast check
-    let fastChecksRemaining = 3; // Number of fast checks before switching to normal
+    // Immediate check on load
+    checkMetadata();
     
-    metadataInterval = setInterval(async () => {
-        if (currentStation && !audio.paused) {
-            const title = await getNowPlaying(currentStation);
-            if (title) {
-                updateNowPlayingUI(title);
-            }
-            
-            // After initial fast checks, switch to normal interval
-            if (fastChecksRemaining > 0) {
-                fastChecksRemaining--;
-                if (fastChecksRemaining === 0) {
-                    clearInterval(metadataInterval);
-                    checkInterval = 15000; // Normal interval
-                    metadataInterval = setInterval(arguments.callee, checkInterval);
-                }
-            }
-        }
-    }, checkInterval);
+    // Set up regular interval checks
+    metadataInterval = setInterval(checkMetadata, METADATA_CHECK_INTERVAL);
     
-    audio.addEventListener('play', async () => {
-        if (currentStation) {
-            // Reset to fast checks when playback starts
-            clearInterval(metadataInterval);
-            fastChecksRemaining = 3;
-            checkInterval = 5000;
-            
-            metadataInterval = setInterval(async () => {
-                if (currentStation && !audio.paused) {
-                    const title = await getNowPlaying(currentStation);
-                    if (title) {
-                        updateNowPlayingUI(title);
-                    }
-                    
-                    if (fastChecksRemaining > 0) {
-                        fastChecksRemaining--;
-                        if (fastChecksRemaining === 0) {
-                            clearInterval(metadataInterval);
-                            checkInterval = 15000;
-                            metadataInterval = setInterval(arguments.callee, checkInterval);
-                        }
-                    }
-                }
-            }, checkInterval);
-            
-            // Immediate check on play
-            const title = await getNowPlaying(currentStation);
-            if (title) {
-                updateNowPlayingUI(title);
-            }
-        }
-    });
-    
-    audio.addEventListener('pause', () => {
-        if (metadataInterval) {
-            clearInterval(metadataInterval);
-            metadataInterval = null;
-        }
+    // Check when playback starts
+    audio.addEventListener('play', () => {
+        clearInterval(metadataInterval);
+        checkMetadata();
+        metadataInterval = setInterval(checkMetadata, METADATA_CHECK_INTERVAL);
     });
 }
 
-async function getNowPlaying(station) {
-    if (!station?.link) return null;
+async function checkMetadata(silent = false) {
+    if (!currentStation || audio.paused) return;
     
-    let retryCount = 0;
-    const MAX_RETRIES = 2;
-    
-    while (retryCount < MAX_RETRIES) {
-        try {
-            // Try our Cloudflare worker first
-            const proxyUrl = `${METADATA_PROXY}?url=${encodeURIComponent(station.link)}`;
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            
-            const response = await fetch(proxyUrl, { signal: controller.signal });
-            clearTimeout(timeoutId);
-            
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            const { icyTitle, icyName } = await response.json();
-            
-            // Clean up the title if it exists
-            if (icyTitle) {
-                // Remove any HTML tags and URLs
-                let cleanTitle = icyTitle
-                    .replace(/<\/?[^>]+(>|$)/g, "")
-                    .replace(/(https?:\/\/[^\s]+)/g, "")
-                    .trim();
-                
-                // Skip if title is just the station name
-                if (cleanTitle.toLowerCase() === station.name.toLowerCase()) {
-                    return null;
-                }
-                
-                return cleanTitle || null;
-            }
-            
-            if (icyName) return icyName;
-            
-            // Special handling for Radio Paradise
-            if (station.link.includes('radioparadise.com')) {
-                try {
-                    const rpController = new AbortController();
-                    const rpTimeoutId = setTimeout(() => rpController.abort(), 2000);
-                    
-                    const rpResponse = await fetch('https://api.radioparadise.com/api/now_playing', {
-                        signal: rpController.signal
-                    });
-                    clearTimeout(rpTimeoutId);
-                    
-                    const rpData = await rpResponse.json();
-                    if (rpData.title && rpData.artist) {
-                        return `${rpData.artist} - ${rpData.title}`;
-                    }
-                } catch (e) {
-                    console.log('Radio Paradise API fallback failed:', e);
-                }
-            }
-            
-            // Fallback to HTML5 Audio metadata for streams that support it
-            const audio = new Audio();
-            audio.crossOrigin = 'anonymous';
-            audio.src = station.link;
-            
-            const title = await new Promise(resolve => {
-                const timeout = setTimeout(() => {
-                    audio.removeEventListener('loadedmetadata', handleMetadata);
-                    audio.removeEventListener('error', handleError);
-                    resolve(null);
-                }, 2000);
-                
-                function handleMetadata() {
-                    clearTimeout(timeout);
-                    resolve(audio.metadata?.title || null);
-                }
-                
-                function handleError() {
-                    clearTimeout(timeout);
-                    resolve(null);
-                }
-                
-                audio.addEventListener('loadedmetadata', handleMetadata);
-                audio.addEventListener('error', handleError);
-                audio.load();
-            });
-            
-            return title || null;
-            
-        } catch (error) {
-            console.error('Metadata fetch attempt', retryCount + 1, 'failed:', error);
-            retryCount++;
-            if (retryCount >= MAX_RETRIES) {
-                return null;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+        const title = await getNowPlaying(currentStation);
+        if (title && title !== lastTitle && !silent) {
+            lastTitle = title;
+            updateNowPlayingUI(title);
         }
-    }
-    return null;
-}
-
-function updateNowPlayingUI(title) {
-    const audioTextElement = document.getElementById('audiotext');
-    
-    // Clear previous content
-    audioTextElement.innerHTML = '';
-    
-    // Always show station name as fallback
-    const stationName = document.createElement('div');
-    stationName.className = 'station-name';
-    stationName.textContent = currentStation.name;
-    audioTextElement.appendChild(stationName);
-    
-    // Create and append elements if we have a title
-    if (title && title !== lastTitle) {
-        lastTitle = title;
-        
-        // Check for common artist-title separators
-        const separators = [' - ', ' – ', ' — ', ' • ', '|'];
-        let separatorFound = null;
-        
-        for (const sep of separators) {
-            if (title.includes(sep)) {
-                separatorFound = sep;
-                break;
-            }
-        }
-        
-        if (separatorFound) {
-            const parts = title.split(separatorFound);
-            if (parts.length >= 2) {
-                const artist = parts[0].trim();
-                const song = parts.slice(1).join(separatorFound).trim();
-                
-                // Create artist element if not empty
-                if (artist) {
-                    const artistElement = document.createElement('div');
-                    artistElement.className = 'now-playing-artist';
-                    artistElement.textContent = artist;
-                    audioTextElement.insertBefore(artistElement, stationName);
-                }
-                
-                // Create song element
-                const songElement = document.createElement('div');
-                songElement.className = 'now-playing-song';
-                songElement.textContent = song;
-                
-                // Insert in correct position
-                if (artist) {
-                    audioTextElement.insertBefore(songElement, stationName);
-                } else {
-                    audioTextElement.insertBefore(songElement, stationName);
-                }
-            } else {
-                // Single line display if weird separator match
-                addTitleElement(title);
-            }
-        } else {
-            // Single line display
-            addTitleElement(title);
-        }
-        
-        // Add class to indicate we have now playing info
-        audioTextElement.classList.add('has-now-playing');
-    } else {
-        // Just show station name if no song title
-        audioTextElement.classList.remove('has-now-playing');
-    }
-    
-    // Helper function to add title element
-    function addTitleElement(text) {
-        const titleElement = document.createElement('div');
-        titleElement.className = 'now-playing-title';
-        titleElement.textContent = text;
-        audioTextElement.insertBefore(titleElement, stationName);
+    } catch (e) {
+        console.error("Metadata check failed:", e);
     }
 }
 
@@ -1220,7 +1176,6 @@ function setupExpandableCategories() {
     }, 10);
 }
 
-// Initialization Functions
 function loadPreferences() {
     const savedTheme = localStorage.getItem("theme") || "dark";
     const savedColor = localStorage.getItem("accentColor") || "blue";
@@ -1231,21 +1186,19 @@ function loadPreferences() {
 
     if (savedStation.name && savedStation.link) {
         audio.src = savedStation.link;
-        document.getElementById("audiotext").textContent = savedStation.name;
+        document.getElementById("audiotext").innerHTML = 
+            `<div class="station-name">${savedStation.name}</div>`;
         document.title = `Radio | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
         
         // Set initial play/pause button state
         updatePlayPauseButton();
         
-        // Update the info icon after a short delay
-        setTimeout(() => {
-            const event = new Event('play');
-            audio.dispatchEvent(event);
-        }, 100);
+        // Check metadata immediately on load
+        currentStation = savedStation;
+        setTimeout(() => checkMetadata(), 100);
     } else {
         document.title = "Radio";
-        // Ensure initial state is correct
         updatePlayPauseButton();
     }
 }
