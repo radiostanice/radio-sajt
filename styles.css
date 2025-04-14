@@ -315,6 +315,14 @@ button {
 	background-color: #ffffff;
 }
 
+.light-mode .song-title::after{
+    background: linear-gradient(270deg, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 100%);
+}
+
+.light-mode #marquee-fade-left {
+    background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 100%);
+}
+
 /* ======== */
 /* HEADER */
 /* ======== */
@@ -823,7 +831,7 @@ button {
 }
 
 .audio-wrapper {
-    max-width: 370px;
+    max-width: 350px;
 	min-width: 270px;
 	width: auto;
     margin: 0 auto;
@@ -831,7 +839,6 @@ button {
     position: relative;
     overflow: hidden;
 	white-space: nowrap;
-
 }
 
 /* ============ */
@@ -846,8 +853,8 @@ button {
     font-size: 32px;
     white-space: nowrap;
     overflow: hidden;
-	width: 100%;
-    margin: 0 15px;
+	max-width: 340px;
+    margin: 0 5px;
     padding: 0;
     text-align: left;
     z-index: 10000;
@@ -876,22 +883,58 @@ button {
     text-overflow: ellipsis;
     overflow: visible;
     will-change: transform;
-    font-size: 26px;
+    font-size: 28px;
     opacity: 1;
     animation: fade 0.2s linear;
 	white-space: nowrap;
     display: inline-block;
-	width: 100%;
     box-sizing: border-box;
-    max-width: 100%;
 	position: relative;
-    text-shadow: 10px 0 10px rgba(0,0,0,0.7), -10px 0 10px rgba(0,0,0,0.7);
+}
+
+.song-title::after{
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 100%;
+    background: linear-gradient(270deg, rgba(34,34,34,1) 0%, rgba(34,34,34,0) 100%);
+    pointer-events: none;
+    z-index: 2;
+	opacity: 0;
+}
+
+.song-title.marquee-active::after {
+    opacity: 1;
 }
 
 .has-now-playing .station-name {
-    font-size: 20px;
-	opacity: 0.8;
-	transition: opacity 0.2s linear;
+    font-size: 18px;
+	opacity: 0.7;
+	transition: opacity 0.4s linear;
+	z-index: 3;
+}
+
+.marquee-clone {
+    display: inline-block;
+    padding-left: 40px;
+}
+
+#marquee-fade-left {
+    content: '';
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 30px;
+    pointer-events: none;
+    z-index: 2;
+	left: 0;
+    background: linear-gradient(90deg, rgba(34,34,34,1) 0%, rgba(34,34,34,0) 100%);
+}
+
+.song-title > div {
+    will-change: transform;
 }
 
 @keyframes fade {
@@ -934,7 +977,7 @@ button {
     padding: 5px;
     align-items: center;
     justify-content: space-between;
-    margin: 5px 10px 15px 10px;
+    margin: 5px 0px 15px 0px;
     transform: none;
 	transition: border-radius 0.1s linear;
     -moz-transition: border-radius 0.1s linear;

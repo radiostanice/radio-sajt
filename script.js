@@ -1,57 +1,44 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Initialize scrollbar first
+    // Initialize core components first
     ScrollbarManager.init();
 	ScrollbarManager.setupAutoHide();
-    
-    // Load all initial components
     loadPreferences();
-    const cleanupToggle = setupRecentlyPlayedToggle();
-    loadRecentlyPlayed();
-	setupGenreInfoIcon();
-    setupDropdown();
-    setupGenreButtonsNavigation();
-    setupGenreCategoriesSwipe();
-    setupGenreFiltering();
-    setupThemeControls();
-	setupNowPlayingMetadata();
     
-    // Initialize radio station click handlers
-    document.querySelectorAll(".radio").forEach(radio => {
-        radio.addEventListener("click", () => changeStation(radio.dataset.name, radio.dataset.link));
+    // Initialize all other components
+    const initFunctions = [
+        setupRecentlyPlayedToggle,
+        loadRecentlyPlayed,
+        setupGenreInfoIcon,
+        setupDropdown,
+        setupGenreButtonsNavigation,
+        setupGenreCategoriesSwipe,
+        setupGenreFiltering,
+        setupThemeControls,
+        setupNowPlayingMetadata
+    ];
+    
+    initFunctions.forEach(fn => fn());
+    
+    // Use event delegation for radio stations
+    document.querySelector('.scroll-list').addEventListener('click', (e) => {
+        const radio = e.target.closest('.radio');
+        if (radio) changeStation(radio.dataset.name, radio.dataset.link);
     });
     
-    applyGenreFilter();
-
-    // Final update after everything is loaded
-    setTimeout(() => {
-        ScrollbarManager.updateAll();
-    }, 500);
-
-	window.addEventListener('beforeunload', () => {
-		cleanupToggle?.();
-		if (windowResizeObserver) {
-			windowResizeObserver.disconnect();
-		}
-		if (ScrollbarManager.resizeObservers) {
-			ScrollbarManager.resizeObservers.forEach(observer => observer.disconnect());
-		}
-	});
-
-    const audioContainer = document.querySelector('.audio-container');
-    if (audioContainer) {
-        const observer = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                if (entry.target === audioContainer) {
-                    const currentHeight = entry.contentRect.height;
-                    if (currentHeight < COLLAPSED_HEIGHT) {
-                        audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
-                    }
-                }
-            }
-        });
-        observer.observe(audioContainer);
-    }
+    // Final update
+    setTimeout(ScrollbarManager.updateAll, 500);
+    
+    // Cleanup
+    window.addEventListener('beforeunload', cleanupResources);
 });
+
+function cleanupResources() {
+    // Cleanup all observers and timers
+    [windowResizeObserver, ...(ScrollbarManager.resizeObservers || [])]
+        .forEach(observer => observer?.disconnect());
+    
+    clearInterval(metadataInterval);
+}
 
 // Global Elements and Constants
 const audio = document.getElementById("audioctrl");
@@ -81,20 +68,21 @@ async function changeStation(name, link) {
     // Clear existing metadata
     if (metadataInterval) clearInterval(metadataInterval);
     
-    // Immediately clear previous metadata display
+    // Cache DOM elements
     const audioTextElement = document.getElementById('audiotext');
+    
+    // Clear previous UI
     if (audioTextElement) {
-        const songTitleElement = audioTextElement.querySelector('.song-title');
-        if (songTitleElement) songTitleElement.remove();
+        audioTextElement.querySelector('.song-title')?.remove();
         audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
         audioTextElement.classList.remove('has-now-playing');
     }
     
-    // Store new station
+    // Update current station
     currentStation = { name, link };
     lastTitle = '';
     
-    // Pause current audio and load new source
+    // Handle audio playback
     audio.pause();
     audio.src = link;
     audio.load();
@@ -103,31 +91,32 @@ async function changeStation(name, link) {
         try {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
-                await playPromise.catch(e => {
-                    console.error("Autoplay blocked:", e);
-                    setupNowPlayingMetadata();
-                });
+                await playPromise.catch(handlePlayError);
             }
             setupNowPlayingMetadata();
         } catch (e) {
-            console.error("Audio play failed:", e);
-            setupNowPlayingMetadata();
+            handlePlayError(e);
         }
     };
 
-    // Update UI
+    // Update UI and storage
     document.title = `Radio | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     
     const currentStationElement = document.querySelector(`.radio[data-name="${name}"]`);
-    const genre = currentStationElement ? currentStationElement.dataset.genre : '';
+    const genre = currentStationElement?.dataset.genre || '';
     
     updateRecentlyPlayed(name, link, genre);
     updateSelectedStation(name);
     updatePlayPauseButton();
     
-    // Immediate silent metadata check (won't show until confirmed)
+    // Check metadata after short delay
     setTimeout(() => checkMetadata(true), 100);
+}
+
+function handlePlayError(e) {
+    console.error("Playback error:", e);
+    setupNowPlayingMetadata();
 }
 
 async function getNowPlaying(station) {
@@ -137,17 +126,17 @@ async function getNowPlaying(station) {
         const proxyUrl = `${METADATA_PROXY}?url=${encodeURIComponent(station.link)}`;
         const response = await fetch(proxyUrl);
         
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.title && !data.isStationName) {
-                return cleanMetadata(data.title);
-            }
+        if (!response.ok) return null;
+        
+        const data = await response.json();
+        if (data.success && data.title && !data.isStationName) {
+            return cleanMetadata(data.title);
         }
+        return null;
     } catch (e) {
         console.error('Metadata fetch failed:', e);
+        return null;
     }
-
-    return null;
 }
 
 // Helper function inspired by icecast-metadata.js
@@ -194,13 +183,12 @@ async function getMetadataViaAudioElement(streamUrl) {
 function cleanMetadata(title) {
     if (!title) return null;
     
-    // Remove common unwanted patterns
     return title
-        .replace(/<\/?[^>]+(>|$)/g, '')       // Remove HTML tags
-        .replace(/(https?:\/\/[^\s]+)/g, '')  // Remove URLs
-        .replace(/^\s+|\s+$/g, '')            // Trim whitespace
-        .replace(/\|.*$/, '')                 // Remove everything after pipe
-        .replace(/\b(?:Radio Paradise|RP)\b/i, '') // Remove RP mentions
+        .replace(/<\/?[^>]+(>|$)/g, '')
+        .replace(/(https?:\/\/[^\s]+)/g, '')
+        .replace(/^\s+|\s+$/g, '')
+        .replace(/\|.*$/, '')
+        .replace(/\b(?:Radio Paradise|RP)\b/i, '')
         .trim();
 }
 
@@ -218,95 +206,165 @@ function updateNowPlayingUI(title) {
     const audioTextElement = document.getElementById('audiotext');
     if (!audioTextElement || !title) return;
 
-    // Ensure station name exists
-    let stationNameElement = audioTextElement.querySelector('.station-name');
-    if (!stationNameElement) {
-        stationNameElement = document.createElement('div');
-        stationNameElement.className = 'station-name';
-        stationNameElement.textContent = currentStation?.name || '';
-        audioTextElement.appendChild(stationNameElement);
-    }
-
+    // Create or update station name
+    let stationNameElement = audioTextElement.querySelector('.station-name') || 
+                           document.createElement('div');
+    stationNameElement.className = 'station-name';
+    stationNameElement.textContent = currentStation?.name || '';
+    
     // Create or update song title
     let songTitleElement = audioTextElement.querySelector('.song-title');
     if (!songTitleElement) {
         songTitleElement = document.createElement('div');
         songTitleElement.className = 'song-title';
-        audioTextElement.insertBefore(songTitleElement, audioTextElement.firstChild);
+        audioTextElement.prepend(songTitleElement);
     }
     
     songTitleElement.textContent = title;
     audioTextElement.classList.add('has-now-playing');
     
-    // Apply marquee with delay
-    setTimeout(() => {
-        applyMarqueeEffect(songTitleElement);
-    }, 300);
+    // Apply marquee effect after short delay for DOM update
+    setTimeout(() => applyMarqueeEffect(songTitleElement), 300);
 }
 
 function applyMarqueeEffect(element) {
-    // Clean up any existing animations/styles
+    // Clear any existing marquee elements and styles
+    removeExistingMarqueeElements();
+    
+    // Reset element styles
     element.style.animation = 'none';
     element.style.transform = 'translateX(0)';
-    element.style.textShadow = 'none';
+    element.style.position = 'relative';
+    element.style.display = 'inline-block';
+    element.style.whiteSpace = 'nowrap';
+    element.style.width = 'auto';
     
-    // Force reflow
-    void element.offsetWidth;
-
-    const container = element.closest('#audiotext');
+    // Check if text overflows its container
+    const container = element.parentElement;
     if (!container) return;
+    
+    element.style.overflow = 'visible';
+    container.style.overflow = 'hidden';
     
     const containerWidth = container.clientWidth;
     const textWidth = element.scrollWidth;
     const isOverflowing = textWidth > containerWidth;
     
-    if (isOverflowing) {
-        // Calculate total animation duration based on text length
-        const duration = Math.max(5, textWidth / 50); // Adjust 50 for speed
-        
-        // Create dynamic keyframes
-        const keyframes = `
-            @keyframes marquee-${Date.now()} {
-                0%, 10% { 
-                    transform: translateX(0);
-                    text-shadow: 15px 0 10px rgba(0,0,0,0.7), -15px 0 10px rgba(0,0,0,0.7);
-                }
-                80%, 100% { 
-                    transform: translateX(calc(${containerWidth}px - ${textWidth}px + 10px));
-                    text-shadow: 15px 0 10px rgba(0,0,0,0.7), -15px 0 10px rgba(0,0,0,0.7);
-                }
-            }
-        `;
-
-        // Remove any existing style
-        const oldStyle = document.getElementById('marquee-style');
-        if (oldStyle) oldStyle.remove();
-        
-        // Create and inject new style
-        const style = document.createElement('style');
-        style.id = 'marquee-style';
-        style.innerHTML = keyframes;
-        document.head.appendChild(style);
-        
-        // Apply animation
-        element.style.animation = `marquee-${Date.now()} ${duration}s linear infinite`;
+    if (!isOverflowing) {
+        // Remove right fade if text doesn't overflow
+        element.style.removeProperty('overflow');
+        container.style.removeProperty('overflow');
+		element.classList.remove('marquee-active');
+        return;
     }
+
+    // Add class to indicate marquee is active
+    element.classList.add('marquee-active');
+	
+    // Create fade elements and setup animation only if overflowing
+    setupMarqueeAnimation(element, textWidth);
+}
+
+function removeExistingMarqueeElements() {
+    document.getElementById('marquee-fade-left')?.remove();
+    document.querySelectorAll('.marquee-clone').forEach(el => el.remove());
+    document.getElementById('marquee-style')?.remove();
+}
+
+function setupMarqueeAnimation(element, textWidth) {
+    const container = element.parentElement;
+    
+    // Create left fade element
+    const leftFade = document.createElement('div');
+    leftFade.id = "marquee-fade-left";
+    leftFade.style.position = 'absolute';
+    leftFade.style.top = '0';
+    leftFade.style.left = '0';
+    leftFade.style.width = '30px';
+    leftFade.style.height = '100%';
+    leftFade.style.pointerEvents = 'none';
+    leftFade.style.zIndex = '2';
+    leftFade.style.opacity = '0';
+    container.appendChild(leftFade);
+
+    // Create wrapper for animation
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'inline-block';
+    wrapper.style.position = 'relative';
+    wrapper.style.whiteSpace = 'nowrap';
+
+    // Original content
+    const originalContent = element.innerHTML;
+    const originalSpan = document.createElement('span');
+    originalSpan.innerHTML = originalContent;
+    wrapper.appendChild(originalSpan);
+    
+    // Clone for seamless looping
+    const cloneSpan = document.createElement('span');
+    cloneSpan.className = 'marquee-clone';
+    cloneSpan.innerHTML = originalContent;
+    cloneSpan.style.paddingLeft = '40px';
+    wrapper.appendChild(cloneSpan);
+    
+    element.innerHTML = '';
+    element.appendChild(wrapper);
+
+    // Animation parameters
+    const scrollDistance = textWidth + 40;
+    const scrollSpeed = 40; // pixels per second
+    const scrollDuration = scrollDistance / scrollSpeed;
+    const pauseDuration = 2; // seconds
+    const totalDuration = scrollDuration + pauseDuration * 2;
+    
+    const initialPauseEnd = (pauseDuration / totalDuration * 100).toFixed(6);
+    const scrollEnd = (((pauseDuration + scrollDuration) / totalDuration) * 100).toFixed(6);
+
+    // Animation definitions
+    const animationName = `marquee-${Date.now()}`;
+    
+    const keyframes = `
+        @keyframes ${animationName} {
+            0% { transform: translateX(0); }
+            ${initialPauseEnd}% { transform: translateX(0); }
+            ${scrollEnd}% { transform: translateX(-${scrollDistance}px); }
+            100% { transform: translateX(-${scrollDistance}px); }
+        }
+        
+        @keyframes ${animationName}-left-fade {
+            0%, ${(Number(initialPauseEnd) - 0.0001).toFixed(6)}% { opacity: 0; }
+            ${initialPauseEnd}%, ${(Number(scrollEnd) - 0.0001).toFixed(6)}% { opacity: 1; }
+            ${scrollEnd}%, 100% { opacity: 0; }
+        }
+    `;
+
+    const style = document.createElement('style');
+    style.id = 'marquee-style';
+    style.innerHTML = keyframes;
+    document.head.appendChild(style);
+    
+    wrapper.style.animation = `${animationName} ${totalDuration}s linear infinite`;
+    leftFade.style.animation = `${animationName}-left-fade ${totalDuration}s linear infinite`;
 }
 
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
     
-    // Immediate check on load
-    checkMetadata();
+    // Immediate check with cooldown handling
+    const checkWithCooldown = () => {
+        const now = Date.now();
+        if (now - lastMetadataCheck >= METADATA_COOLDOWN) {
+            checkMetadata();
+            lastMetadataCheck = now;
+        }
+    };
     
-    // Set up regular interval checks
-    metadataInterval = setInterval(checkMetadata, METADATA_CHECK_INTERVAL);
+    checkWithCooldown();
+    metadataInterval = setInterval(checkWithCooldown, METADATA_CHECK_INTERVAL);
     
-    // Check when playback starts
     audio.addEventListener('play', () => {
         clearInterval(metadataInterval);
-        checkMetadata();
-        metadataInterval = setInterval(checkMetadata, METADATA_CHECK_INTERVAL);
+        checkWithCooldown();
+        metadataInterval = setInterval(checkWithCooldown, METADATA_CHECK_INTERVAL);
     });
 }
 
@@ -347,34 +405,34 @@ function updateSelectedStation(name) {
 
 // Genre Filtering Functions
 function setupGenreFiltering() {
-    document.querySelectorAll('.genre-button').forEach(button => {
-        button.addEventListener('click', function(e) {
-            // Prevent any default behavior that might interfere
-            e.preventDefault();
-            e.stopPropagation();
-            
-            document.getElementById("stationSearch").value = "";
-            document.getElementById("clearSearch").style.display = "none";
-            
-            document.querySelectorAll('.genre-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            currentGenre = button.dataset.genre;
-            applyGenreFilter();
-            setupExpandableCategories();
+    // Use event delegation instead of individual listeners
+    document.querySelector('.genre-buttons')?.addEventListener('click', (e) => {
+        const button = e.target.closest('.genre-button');
+        if (!button) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        document.getElementById("stationSearch").value = "";
+        document.getElementById("clearSearch").style.display = "none";
+        
+        document.querySelectorAll('.genre-button').forEach(btn => {
+            btn.classList.toggle('active', btn === button);
         });
+        
+        currentGenre = button.dataset.genre;
+        applyGenreFilter();
+        setupExpandableCategories();
     });
 }
 
 function applyGenreFilter() {
     cancelAnimationFrame(window._genreFilterRAF);
-    const noResultsElement = document.querySelector('.no-results');
     
     window._genreFilterRAF = requestAnimationFrame(() => {
         if (document.getElementById("stationSearch").value.trim() !== "") return;
         
+        const noResultsElement = document.querySelector('.no-results');
         let hasVisibleStations = false;
         
         document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
@@ -384,18 +442,15 @@ function applyGenreFilter() {
             if (shouldShow) hasVisibleStations = true;
         });
 
-        // Hide no results message if stations are visible
         if (noResultsElement) {
-            noResultsElement.style.display = hasVisibleStations ? 'none' : 'none'; // Always hide when filtering by genre
+            noResultsElement.style.display = 'none'; // Always hide for genre filter
         }
 
         updateCategoryVisibility();
         setupExpandableCategories();
         
         // Update scrollbar after filtering
-        setTimeout(() => {
-            ScrollbarManager.updateAll();
-        }, 10);
+        setTimeout(ScrollbarManager.updateAll.bind(ScrollbarManager), 10);
     });
 }
 
