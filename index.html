@@ -326,20 +326,43 @@
 </div>
 
 <div class="audio-container">
-	<div class="category" id="recentlyPlayedTitle">
-		<span id="category-icon" class="material-icons history">history</span>Nedavno slušano
-	</div>
-		<div class="category-container" id="recentlyPlayedContainer"></div>
-    <div class="audio-wrapper">
-    <div class="audio-title-container">
-	<h2><span class="now-playing"></span></h2>
-        <h1><span class="audio-title" id="audiotext">Izaberite stanicu</span></h1>
-        <div class="info-icon">
+<div id="recentlyPlayedToggle" class="recently-played-toggle">
+    <div class="toggle-handle"></div>
+    <div class="toggle-buttons">
+        <button id="historyBtn" class="history-btn toggle-btn">
+            <span class="material-icons">history</span>
+            <span>Istorija</span>
+        </button>
+        <button class="info-icon toggle-btn">
             <span class="material-icons">info</span>
+            <span>Info</span>
             <div class="genre-tooltip"></div>
+        </button>
+    </div>
+    
+    <!-- History Dropdown Container -->
+    <div id="historyDropdown" class="history-dropdown">
+        <div class="recently-played-title">
+            <span class="material-icons">history</span>
+            <span>Nedavno slušano</span>
+        </div>
+        <div class="recently-played-wrapper">
+            <div class="history-nav-button left">
+                <span class="material-icons">chevron_left</span>
+            </div>
+            <div class="recently-played-stations"></div>
+            <div class="history-nav-button right">
+                <span class="material-icons">chevron_right</span>
+            </div>
         </div>
     </div>
-    <div id="audioPlayer" class="audio-player">
+</div>
+    <!-- Audio Player Content -->
+    <div class="audio-wrapper">
+        <div class="audio-title-container">
+            <h1><span class="audio-title" id="audiotext">Izaberite stanicu</span></h1>
+        </div>
+        <div id="audioPlayer" class="audio-player">
             <button id="playPauseBtn">
                 <span class="material-icons">play_arrow</span>
             </button>
@@ -349,7 +372,7 @@
             </div>
             <audio id="audioctrl"></audio>
         </div>
-	</div>
+    </div>
 </div>
 
     <script src="script.js"></script>

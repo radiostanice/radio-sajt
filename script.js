@@ -14,7 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
         setupGenreCategoriesSwipe,
         setupGenreFiltering,
         setupThemeControls,
-        setupNowPlayingMetadata
+        setupNowPlayingMetadata,
+		setupExpandableCategories
     ];
     
     initFunctions.forEach(fn => fn());
@@ -26,7 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
     // Final update
-    setTimeout(ScrollbarManager.updateAll, 500);
+    setTimeout(() => ScrollbarManager.updateAll(), 500);
     
     // Cleanup
     window.addEventListener('beforeunload', cleanupResources);
@@ -48,7 +49,7 @@ const METADATA_COOLDOWN = 3000;
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
-const COLLAPSED_HEIGHT = 159;
+const COLLAPSED_HEIGHT = 150;
 const SCROLLBAR_HIDE_DELAY = 1500;
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
@@ -76,6 +77,7 @@ async function changeStation(name, link) {
         audioTextElement.querySelector('.song-title')?.remove();
         audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
         audioTextElement.classList.remove('has-now-playing');
+		document.querySelector('.audio-container').classList.remove('has-now-playing');
     }
     
     // Update current station
@@ -206,13 +208,16 @@ function updateNowPlayingUI(title) {
     const audioTextElement = document.getElementById('audiotext');
     if (!audioTextElement || !title) return;
 
-    // Create or update station name
+    // Add has-now-playing class to audio container
+    const audioContainer = document.querySelector('.audio-container');
+    audioContainer.classList.add('has-now-playing');
+    
+    // Rest of your existing code...
     let stationNameElement = audioTextElement.querySelector('.station-name') || 
                            document.createElement('div');
     stationNameElement.className = 'station-name';
     stationNameElement.textContent = currentStation?.name || '';
     
-    // Create or update song title
     let songTitleElement = audioTextElement.querySelector('.song-title');
     if (!songTitleElement) {
         songTitleElement = document.createElement('div');
@@ -223,7 +228,6 @@ function updateNowPlayingUI(title) {
     songTitleElement.textContent = title;
     audioTextElement.classList.add('has-now-playing');
     
-    // Apply marquee effect after short delay for DOM update
     setTimeout(() => applyMarqueeEffect(songTitleElement), 300);
 }
 
@@ -303,7 +307,7 @@ function setupMarqueeAnimation(element, textWidth) {
     const cloneSpan = document.createElement('span');
     cloneSpan.className = 'marquee-clone';
     cloneSpan.innerHTML = originalContent;
-    cloneSpan.style.paddingLeft = '40px';
+    cloneSpan.style.paddingLeft = '100px';
     wrapper.appendChild(cloneSpan);
     
     element.innerHTML = '';
@@ -692,263 +696,191 @@ function setupGenreInfoIcon() {
 }
 
 function setupRecentlyPlayedToggle() {
-    const container = document.getElementById("recentlyPlayedContainer");
-    const title = document.getElementById("recentlyPlayedTitle");
-    const toggle = document.getElementById("recentlyPlayedToggle") || createToggleButton();
-    const scrollList = document.querySelector('.scroll-list');
+    const audioContainer = document.querySelector('.audio-container');
+    const toggle = document.getElementById('recentlyPlayedToggle');
+    const toggleHandle = toggle.querySelector('.toggle-handle');
+    const historyBtn = document.getElementById('historyBtn');
+    const historyDropdown = document.getElementById('historyDropdown');
+    const infoIcon = document.querySelector('.info-icon');
+    const genreTooltip = document.querySelector('.genre-tooltip');
+    
     let isExpanded = false;
-    let resizeObserver;
-    let touchStartY = 0;
-    let touchEndY = 0;
-    let touchStartTime = 0;
 
-    // Initial setup
-    container.style.maxHeight = '0';
-    container.style.opacity = '0';
-    container.style.display = 'none';
-    container.style.padding = '0';
-    container.style.overflow = 'hidden';
-    title.style.display = 'none';
-    title.style.height = '0';
-    title.style.opacity = '0';
-    title.style.margin = '0';
-    title.style.overflow = 'hidden';
-
-    // Setup ResizeObserver with debounce
-    let resizeTimeout;
-    resizeObserver = new ResizeObserver(entries => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            if (isExpanded && entries[0].target === container) {
-                const containerHeight = container.scrollHeight;
-                container.style.maxHeight = `${containerHeight}px`;
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
-                void container.offsetHeight; // Force reflow
-            }
-        }, 100);
+    // Handle toggle
+    toggleHandle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCollapse();
     });
 
-    if (container) {
-        resizeObserver.observe(container);
-    }
-
-    // Click handler
-    toggle.addEventListener('click', function() {
-        if (!container.querySelector('.radio')) return;
-        toggleRecentlyPlayed();
+    // Handle history button
+    historyBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (genreTooltip.classList.contains('visible')) {
+            genreTooltip.classList.remove('visible');
+        }
+        toggleHistoryDropdown();
     });
 
-    // Touch handlers for the entire container when expanded
-    function handleContainerTouchStart(e) {
-        if (!isExpanded) return;
-        touchStartY = e.changedTouches[0].screenY;
-        touchStartTime = Date.now();
-        container.style.transition = 'none';
-        title.style.transition = 'none';
-    }
-
-    function handleContainerTouchMove(e) {
-        if (!isExpanded) return;
-        touchEndY = e.changedTouches[0].screenY;
-        const swipeDistance = touchEndY - touchStartY;
-        
-        if (swipeDistance > 0) {
-            e.preventDefault();
-            const progress = Math.min(swipeDistance / 100, 1);
-            container.style.opacity = `${1 - progress}`;
-            title.style.opacity = `${1 - progress}`;
+    // Handle info icon
+    infoIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (historyDropdown.style.display === 'flex') {
+            historyDropdown.style.display = 'none';
         }
-    }
+        toggleGenreTooltip();
+    });
 
-    function handleContainerTouchEnd(e) {
-        if (!isExpanded) return;
-        const touchEndTime = Date.now();
-        const swipeDistance = touchEndY - touchStartY;
-        const swipeDuration = touchEndTime - touchStartTime;
-        
-        container.style.transition = 'opacity 0.2s linear';
-        title.style.transition = 'opacity 0.2s linear';
-        
-        if (swipeDistance > 50 && swipeDuration < 300) {
-            toggleRecentlyPlayed();
-        } else {
-            container.style.opacity = '1';
-            title.style.opacity = '1';
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!historyBtn.contains(e.target) && !historyDropdown.contains(e.target)) {
+            historyDropdown.style.display = 'none';
         }
-    }
-
-    // Touch handlers for the toggle button (both states)
-    function handleToggleTouchStart(e) {
-        touchStartY = e.changedTouches[0].screenY;
-        touchStartTime = Date.now();
-        
-        if (isExpanded) {
-            container.style.transition = 'none';
-            title.style.transition = 'none';
+        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+            genreTooltip.classList.remove('visible');
         }
-    }
+    });
 
-    function handleToggleTouchMove(e) {
-        touchEndY = e.changedTouches[0].screenY;
-        const swipeDistance = touchEndY - touchStartY;
-        
-        if (isExpanded) {
-            // Swipe down to close
-            if (swipeDistance > 0) {
-                e.preventDefault();
-                const progress = Math.min(swipeDistance / 100, 1);
-                container.style.opacity = `${1 - progress}`;
-                title.style.opacity = `${1 - progress}`;
-            }
-        } else {
-            // Swipe up to open
-            if (swipeDistance < 0) {
-                e.preventDefault();
-                const progress = Math.min(-swipeDistance / 100, 1);
-                toggle.style.transform = `translateY(-${progress * 10}px)`;
-            }
-        }
-    }
-
-    function handleToggleTouchEnd(e) {
-        const touchEndTime = Date.now();
-        const swipeDistance = touchEndY - touchStartY;
-        const swipeDuration = touchEndTime - touchStartTime;
-        
-        if (isExpanded) {
-            container.style.transition = 'opacity 0.2s linear';
-            title.style.transition = 'opacity 0.2s linear';
-            
-            if (swipeDistance > 50 && swipeDuration < 300) {
-                toggleRecentlyPlayed();
-            } else {
-                container.style.opacity = '1';
-                title.style.opacity = '1';
-            }
-        } else {
-            toggle.style.transform = '';
-            
-            if (swipeDistance < -50 && swipeDuration < 300 && container.querySelector('.radio')) {
-                toggleRecentlyPlayed();
-            }
-        }
-    }
-
-    // Add event listeners
-    container.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
-    container.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
-    title.addEventListener('touchstart', handleContainerTouchStart, { passive: true });
-    title.addEventListener('touchmove', handleContainerTouchMove, { passive: false });
-    title.addEventListener('touchend', handleContainerTouchEnd, { passive: true });
-    toggle.addEventListener('touchstart', handleToggleTouchStart, { passive: true });
-    toggle.addEventListener('touchmove', handleToggleTouchMove, { passive: false });
-    toggle.addEventListener('touchend', handleToggleTouchEnd, { passive: true });
-
-    function toggleRecentlyPlayed() {
-        if (!container.querySelector('.radio')) return;
+    // Helper functions
+    function toggleCollapse() {
         isExpanded = !isExpanded;
-        handleToggleAnimation();
+        audioContainer.classList.toggle('expanded', isExpanded);
+        ScrollbarManager.updateAll();
+    }
+
+    function toggleHistoryDropdown() {
+        historyDropdown.style.display = historyDropdown.style.display === 'flex' ? 'none' : 'flex';
+        if (historyDropdown.style.display === 'flex') {
+            loadRecentlyPlayed();
+        }
+    }
+
+    function toggleGenreTooltip() {
+        genreTooltip.classList.toggle('visible');
+    }
+}
+
+function setupRecentlyPlayedNavigation() {
+    const wrapper = document.querySelector('.recently-played-wrapper');
+    if (!wrapper) return;
+    
+    const stations = wrapper.querySelector('.recently-played-stations');
+    if (!stations) return;
+
+    // Create navigation buttons if they don't exist
+    let leftButton = wrapper.querySelector('.history-nav-button.left');
+    let rightButton = wrapper.querySelector('.history-nav-button.right');
+    
+    if (!leftButton) {
+        leftButton = document.createElement('button');
+        leftButton.className = 'history-nav-button left';
+        leftButton.innerHTML = '<span class="material-icons">chevron_left</span>';
+        leftButton.setAttribute('aria-label', 'Scroll left');
+        wrapper.appendChild(leftButton);
+    }
+    
+    if (!rightButton) {
+        rightButton = document.createElement('button');
+        rightButton.className = 'history-nav-button right';
+        rightButton.innerHTML = '<span class="material-icons">chevron_right</span>';
+        rightButton.setAttribute('aria-label', 'Scroll right');
+        wrapper.appendChild(rightButton);
+    }
+
+    function checkOverflow() {
+        const hasOverflow = stations.scrollWidth > stations.clientWidth;
+        leftButton.style.display = hasOverflow ? 'flex' : 'none';
+        rightButton.style.display = hasOverflow ? 'flex' : 'none';
+        updateButtonVisibility();
+    }
+
+    function updateButtonVisibility() {
+        const scrollLeft = stations.scrollLeft;
+        const maxScroll = stations.scrollWidth - stations.clientWidth;
         
-        // Update scrollbar after toggling
-        setTimeout(() => {
-            ScrollbarManager.updateAll();
-        }, 210); // Match the transition duration
+        leftButton.style.display = scrollLeft <= 10 ? 'none' : 'flex';
+        rightButton.style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
     }
 
-    function handleToggleAnimation() {
-        if (isExpanded) {
-            // Make sure container is properly initialized
-            container.style.display = 'flex';
-            container.style.maxHeight = '0';
-            container.style.opacity = '0';
-            container.style.padding = '5px 5px 10px 5px';
-            container.style.overflow = 'hidden';
-            container.style.transform = '';
+    function smoothScroll(direction) {
+        const scrollAmount = stations.clientWidth * 0.8;
+        const start = stations.scrollLeft;
+        const target = direction === 'left' 
+            ? Math.max(0, start - scrollAmount)
+            : Math.min(start + scrollAmount, stations.scrollWidth - stations.clientWidth);
+        
+        const duration = 200;
+        const startTime = performance.now();
+
+        function animateScroll(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
             
-            // Show title first
-            title.style.display = 'flex';
-            title.style.height = 'auto';
-            title.style.opacity = '0';
-            title.style.margin = '25px 15px 0px 15px';
-            title.style.overflow = 'visible';
+            // Ease in-out function
+            const easedProgress = progress < 0.5 
+                ? 2 * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
             
-            // Force reflow before animation
-            void container.offsetHeight;
+            stations.scrollLeft = start + (target - start) * easedProgress;
             
-            // Animate both elements together
-            const containerHeight = container.scrollHeight;
-            container.style.maxHeight = `${containerHeight}px`;
-            container.style.opacity = '1';
-            title.style.opacity = '1';
-            
-            // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
-        } else {
-            // Animate both elements together
-            container.style.maxHeight = '0';
-            container.style.opacity = '0';
-            container.style.padding = '0';
-            
-            title.style.height = '0';
-            title.style.opacity = '0';
-            title.style.margin = '0';
-            title.style.overflow = 'hidden';
-            
-            // Adjust scroll list
-            scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
-            
-            // Clean up after transition completes
-            setTimeout(() => {
-                if (!isExpanded) {
-                    container.style.display = 'none';
-                    title.style.display = 'none';
-                }
-            }, 200);
+            if (progress < 1) {
+                requestAnimationFrame(animateScroll);
+            } else {
+                updateButtonVisibility();
+            }
         }
+
+        requestAnimationFrame(animateScroll);
     }
 
-    function createToggleButton() {
-        const btn = document.createElement('button');
-        btn.id = "recentlyPlayedToggle";
-        btn.className = "recently-played-toggle";
-        document.querySelector('.audio-container').prepend(btn);
-        return btn;
-    }
+    // Event listeners
+    leftButton.addEventListener('click', () => smoothScroll('left'));
+    rightButton.addEventListener('click', () => smoothScroll('right'));
+    stations.addEventListener('scroll', updateButtonVisibility);
+    window.addEventListener('resize', checkOverflow);
 
-    return function cleanup() {
-        toggle.removeEventListener('click', toggleRecentlyPlayed);
-        container.removeEventListener('touchstart', handleContainerTouchStart);
-        container.removeEventListener('touchmove', handleContainerTouchMove);
-        container.removeEventListener('touchend', handleContainerTouchEnd);
-        title.removeEventListener('touchstart', handleContainerTouchStart);
-        title.removeEventListener('touchmove', handleContainerTouchMove);
-        title.removeEventListener('touchend', handleContainerTouchEnd);
-        toggle.removeEventListener('touchstart', handleToggleTouchStart);
-        toggle.removeEventListener('touchmove', handleToggleTouchMove);
-        toggle.removeEventListener('touchend', handleToggleTouchEnd);
-        if (resizeObserver) {
-            resizeObserver.disconnect();
-        }
-    };
+    // Touch events for swipe
+    let touchStartX = 0;
+    let isSwiping = false;
+    let scrollLeftStart = 0;
+    
+    stations.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        scrollLeftStart = stations.scrollLeft;
+        isSwiping = true;
+        stations.style.scrollBehavior = 'auto';
+    }, { passive: true });
+    
+    stations.addEventListener('touchmove', (e) => {
+        if (!isSwiping) return;
+        const touchX = e.touches[0].clientX;
+        const diff = touchStartX - touchX;
+        stations.scrollLeft = scrollLeftStart + diff;
+    }, { passive: false });
+    
+    stations.addEventListener('touchend', () => {
+        isSwiping = false;
+        stations.style.scrollBehavior = 'smooth';
+        updateButtonVisibility();
+    }, { passive: true });
+
+    // Initial check
+    checkOverflow();
 }
 
 function loadRecentlyPlayed() {
-    const container = document.getElementById("recentlyPlayedContainer");
-    const toggle = document.getElementById("recentlyPlayedToggle");
-    const title = document.getElementById("recentlyPlayedTitle");
-    const scrollList = document.querySelector('.scroll-list');
-    const audioContainer = document.querySelector('.audio-container');
-    
-    if (!container || !toggle) return;
+    const container = document.querySelector('.recently-played-stations');
+    if (!container) return;
 
-    const recentlyPlayed = safeParseJSON("recentlyPlayed", []);
+    const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
     const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
 
-    // Store the current expanded state
-    const wasExpanded = container.style.maxHeight !== '0px';
-    
     container.innerHTML = '';
+    
+    if (uniqueStations.length === 0) {
+        container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica</div>';
+        return;
+    }
+
     uniqueStations.forEach(station => {
         const radio = document.createElement('div');
         radio.className = 'radio';
@@ -956,56 +888,15 @@ function loadRecentlyPlayed() {
         radio.dataset.link = station.link;
         radio.dataset.genre = station.genre || '';
         radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
-        radio.addEventListener('click', () => changeStation(station.name, station.link));
+        radio.addEventListener('click', () => {
+            changeStation(station.name, station.link);
+            document.getElementById('historyDropdown').style.display = 'none';
+        });
         container.appendChild(radio);
     });
 
-    const hasContent = container.querySelectorAll('.radio').length > 0;
-    toggle.classList.toggle('empty', !hasContent);
-    toggle.style.cursor = hasContent ? 'pointer' : 'default';
-    
-    if (!hasContent) {
-        container.style.display = 'none';
-        container.style.maxHeight = '0';
-        container.style.opacity = '0';
-        container.classList.remove('expanded');
-        title.classList.remove('expanded');
-        scrollList.style.bottom = `${COLLAPSED_HEIGHT}px`;
-        audioContainer.style.height = `${COLLAPSED_HEIGHT}px`;
-    } else {
-        if (wasExpanded) {
-            container.style.display = 'flex';
-            const containerHeight = container.scrollHeight;
-            container.style.maxHeight = `${containerHeight}px`;
-            container.style.opacity = '1';
-            
-            if (scrollList) {
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 40}px`;
-            }
-            
-            if (audioContainer) {
-                audioContainer.style.height = 'auto';
-            }
-        } else if (container.classList.contains('expanded')) {
-            container.style.display = 'flex';
-            const containerHeight = container.scrollHeight;
-            container.style.maxHeight = `${containerHeight}px`;
-            container.style.opacity = '1';
-            
-            if (scrollList) {
-                scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight}px`;
-            }
-            
-            if (audioContainer) {
-                audioContainer.style.height = `${COLLAPSED_HEIGHT + containerHeight}px`;
-            }
-        }
-    }
-    
-    // Update scrollbar after loading
-    setTimeout(() => {
-        ScrollbarManager.updateAll();
-    }, 10);
+    // Setup navigation after stations are loaded
+    setTimeout(setupRecentlyPlayedNavigation, 100);
 }
 
 function createExpandButton(stations, category) {
@@ -1372,11 +1263,11 @@ setupResizeObservers() {
         });
     },
     
-    updateAll() {
-        this.updateThumbSize();
-        this.positionThumb();
-        this.updateTrackPosition();
-    },
+	updateAll() {
+		this.updateThumbSize();
+		this.positionThumb();
+		this.updateTrackPosition();
+	},
     
     updateThumbSize() {
         const scrollHeight = this.scrollList.scrollHeight;
