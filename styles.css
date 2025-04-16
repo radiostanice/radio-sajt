@@ -535,7 +535,7 @@ button {
 
 .dropdown-menu {
     opacity: 0;
-	display: none;
+    display: none;
     position: absolute;
     right: 0;
     background-color: #222222;
@@ -544,14 +544,18 @@ button {
     white-space: nowrap;
     border: 2px solid #444444;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-	padding: 10px 7px;
+    padding: 10px 7px;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    visibility: hidden;
+	    flex-direction: column;
 }
 
 .dropdown-menu.show {
-	opacity: 1;
+    opacity: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
+    visibility: visible;
 }
 
 .theme-option {
@@ -638,19 +642,19 @@ button {
 }
 
 .audio-container.expanded ~ .scroll-list {
-    bottom: 210px;
+    bottom: 215px;
 }
 
 .audio-container.expanded ~ .scroll-list .scrollbar-track {
-    bottom: 210px;
+    bottom: 215px;
 }
 
 .audio-container.has-now-playing.expanded ~ .scroll-list {
-    bottom: 220px;
+    bottom: 235px;
 }
 
 .audio-container.has-now-playing.expanded ~ .scroll-list .scrollbar-track {
-    bottom: 220px;
+    bottom: 235px;
 }
 
 .scrollbar-track {
@@ -849,18 +853,18 @@ button {
 }
 
 .audio-container.has-now-playing {
-    height: 160px;
+    height: 170px;
 	display: flex;
     flex-direction: column;
     justify-content: flex-end;
 }
 
 .audio-container.has-now-playing.expanded {
-    height: 220px;
+    height: 235px;
 }
 
 .audio-container.expanded {
-    height: 210px;
+    height: 215px;
 }
 
 .audio-wrapper {
@@ -1182,9 +1186,9 @@ button {
     top: 0;
     left: 0;
     width: 100%;
-    height: 70px;
+    height: 80px;
     background: #222;
-    border-top: 2px solid #444;
+    border-top: 1px solid #444;
     border-bottom: none;
     overflow: hidden;
     transition: height 0.3s ease;
@@ -1196,11 +1200,12 @@ button {
 /* Toggle Handle (always visible) */
 .toggle-handle {
     width: 100%;
-    height: 20px;
+    height: 13px;
     display: flex;
-    align-items: center;
+	background: #181818;
     justify-content: center;
     cursor: pointer;
+	box-shadow: 0 2px 10px #181818;
 }
 
 .toggle-handle::before {
@@ -1208,6 +1213,7 @@ button {
     display: block;
     width: 40px;
     height: 4px;
+	margin: 5px 0;
     background: #777;
     border-radius: 2px;
     transition: all 0.2s ease;
@@ -1218,59 +1224,132 @@ button {
     width: 60px;
 }
 
+
+.segmented-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border: 2px solid var(--accent-dark);
+    border-radius: 20px;
+    height: 40px;
+    padding: 0 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.segmented-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--accent-color);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.segmented-button:hover::before {
+    opacity: 0.08;
+}
+
+
+
+.segmented-button .material-icons {
+    font-size: 20px;
+    margin-right: 8px;
+}
+
+.segmented-button-group {
+    display: flex;
+    background-color: transparent;
+    border-radius: 20px;
+  
+    margin: 0 8px;
+}
+
+.segmented-button-group .segmented-button {
+    margin: 0;
+    border-radius: 16px;
+}
+
+.segmented-button-group .segmented-button:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.segmented-button-group .segmented-button:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.segmented-button-group .segmented-button:not(:last-child) {
+    border-right: none;
+}
+
+.info-icon.active {
+    background-color: var(--accent-color) !important;
+    color: #000000 !important;
+}
+
+#historyBtn.active {
+    background-color: var(--accent-color) !important;
+    color: #000000 !important;
+}
+
 /* Buttons Container */
 .toggle-buttons {
     flex: 1;
     display: none;
     align-items: center;
     justify-content: center;
-    border-bottom: 2px dashed #444;
+    border-bottom: 1px solid #444;
 }
 
 .audio-container.expanded .toggle-buttons {
     display: flex;
 }
 
-/* Buttons */
-.history-btn, .info-icon {
-    background: transparent;
-    border: 2px solid var(--accent-dark);
-    border-radius: 20px;
-    width: auto;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-	padding: 5px 10px;
-	color: #fff;
-	font-size: 16px;
-	margin: 10px;
-}
+
 
 .history-btn .material-icons,
 .info-icon .material-icons {
-    font-size: 20px;
+    font-size: 16px;
     color: #fff;
 	margin-right: 2px;
 }
 
-/* History Dropdown */
 .history-dropdown {
     position: fixed;
     bottom: 195px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80%;
-    max-width: auto;
-    max-height: 300px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 60vh;
     background: #222;
     border: 2px solid #444;
     border-radius: 8px;
-    display: none;
+    opacity: 0;
+    visibility: hidden;
     flex-direction: column;
     z-index: 120;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+}
+
+.history-dropdown.show {
+    opacity: 1;
+    visibility: visible;
+    display: flex;
+    transform: translateX(-50%) translateY(0);
 }
 
 .recently-played-wrapper {
@@ -1279,62 +1358,64 @@ button {
     background-color: #222;
     padding: 0;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .recently-played-stations {
     display: flex;
+    flex-direction: column;
+    overflow-y: auto;
     overflow-x: hidden;
-    white-space: nowrap;
     scrollbar-width: none;
-    margin: 5px ;
+    margin: 5px;
+    max-height: 300px;
     scroll-behavior: smooth;
 }
 
-.recently-played-stations::-webkit-scrollbar {
-    display: none;
-}
-
+/* Updated Navigation Button Styles */
 .history-nav-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 40px;
-    height: 100%;
+    position: relative;
+    width: 100%;
+    height: 40px;
     background-color: #222;
     border: none;
     color: #ffffff;
     cursor: pointer;
     z-index: 2;
     display: none;
-    -moz-box-align: center;
-    -moz-box-pack: center;
     align-items: center;
     justify-content: center;
-    transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear;
+    transition: border-color 0.2s linear;
 }
 
-.history-nav-button.left {
-    left: 0;
-    border-right: 2px solid transparent;
-    box-shadow: 30px 0px 12px rgba(34, 34, 34, 1);
+.history-nav-button.top {
+    border-top: 2px solid transparent;
+	box-shadow: 0px 30px 12px rgba(34, 34, 34, 1);
 }
 
-.history-nav-button.right {
-    right: 0;
-    border-left: 2px solid transparent;
-    box-shadow: -30px 0px 12px rgba(34, 34, 34, 1);
+.history-nav-button.bottom {
+    border-bottom: 2px solid transparent;
+	box-shadow: 0px -30px 12px rgba(34, 34, 34, 1);
 }
 
-.history-nav-button.left:hover {
-    border-right: 2px solid var(--accent-color);
+.history-nav-button.top:hover {
+    border-top: 2px solid var(--accent-color);
 }
 
-.history-nav-button.right:hover {
-    border-left: 2px solid var(--accent-color);
+.history-nav-button.bottom:hover {
+    border-bottom: 2px solid var(--accent-color);
 }
 
 .history-nav-button .material-icons {
     font-size: 26px;
+}
+
+/* Adjust radio station styles for vertical layout */
+.recently-played-stations .radio {
+    width: calc(100% - 20px);
+    margin: 5px auto;
+	
 }
 
 .recently-played-title {
@@ -1352,11 +1433,10 @@ button {
 }
 
 .genre-tooltip {
-	display: none;
     position: fixed;
     bottom: 195px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateY(10px);
     max-width: 350px;
     background-color: #222;
     color: #ffffff;
@@ -1365,14 +1445,18 @@ button {
     font-size: 16px;
     max-width: 500px;
     opacity: 0;
-    transition: opacity 0.1s linear, box-shadow 0.1s linear;
-	-moz-transition: opacity 0.1s linear, box-shadow 0.1s linear;
-    -webkit-transition: opacity 0.1s linear, box-shadow 0.1s linear;
-    -o-transition: opacity 0.1s linear, box-shadow 0.1s linear;
-    -ms-transition: opacity 0.1s linear, box-shadow 0.1s linear;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-	border: 2px solid #444;
-	cursor: default;
+    border: 2px solid #444;
+    cursor: default;
+}
+
+.genre-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    display: block;
+    transform: translateX(-50%) translateY(0);
 }
 
 .genre-tooltip-item {
@@ -1417,11 +1501,6 @@ button {
 	font-weight: 600;
 	border-bottom: 1px solid #777;
 	margin: -2px -10px 10px -10px;
-}
-
-.genre-tooltip.visible {
-    opacity: 1;
-	display: block;
 }
 
 /* ============ */

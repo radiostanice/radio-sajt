@@ -44,7 +44,7 @@ function cleanupResources() {
 // Global Elements and Constants
 const audio = document.getElementById("audioctrl");
 const METADATA_PROXY = 'https://radiometadata.kosta04miletic.workers.dev';
-const METADATA_CHECK_INTERVAL = 15000;
+const METADATA_CHECK_INTERVAL = 5000;
 const METADATA_COOLDOWN = 3000;
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
@@ -89,12 +89,14 @@ async function changeStation(name, link) {
     audio.src = link;
     audio.load();
     
-    audio.oncanplay = async () => {
+	audio.oncanplay = async () => {
         try {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
                 await playPromise.catch(handlePlayError);
             }
+            // Immediately check metadata after play starts
+            checkMetadata(true);
             setupNowPlayingMetadata();
         } catch (e) {
             handlePlayError(e);
@@ -110,6 +112,14 @@ async function changeStation(name, link) {
     
     updateRecentlyPlayed(name, link, genre);
     updateSelectedStation(name);
+	// Auto-scroll to the selected station
+	const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
+	if (selectedStation) {
+		selectedStation.scrollIntoView({
+			behavior: 'smooth',
+			block: 'center'
+		});
+	}
     updatePlayPauseButton();
     
     // Check metadata after short delay
@@ -139,46 +149,6 @@ async function getNowPlaying(station) {
         console.error('Metadata fetch failed:', e);
         return null;
     }
-}
-
-// Helper function inspired by icecast-metadata.js
-async function getMetadataViaAudioElement(streamUrl) {
-    return new Promise((resolve) => {
-        const audio = new Audio();
-        audio.crossOrigin = 'anonymous';
-        audio.preload = 'metadata';
-        audio.src = streamUrl;
-        
-        let timeout = setTimeout(() => {
-            audio.removeEventListener('loadedmetadata', handleMetadata);
-            resolve(null);
-        }, 5000);
-
-        function handleMetadata() {
-            clearTimeout(timeout);
-            try {
-                // Try standard HTML5 metadata
-                if (audio.metadata && audio.metadata.title) {
-                    resolve(audio.metadata.title);
-                    return;
-                }
-                
-                // Fallback to parsing currentSrc if available
-                if (audio.currentSrc) {
-                    const url = new URL(audio.currentSrc);
-                    const title = url.searchParams.get('title') || 
-                                 url.pathname.split('/').pop().replace(/\.[^/.]+$/, '');
-                    if (title) resolve(title);
-                }
-            } catch (e) {
-                console.log('Metadata parsing error:', e);
-                resolve(null);
-            }
-        }
-
-        audio.addEventListener('loadedmetadata', handleMetadata, { once: true });
-        audio.load();
-    });
 }
 
 // Enhanced metadata cleaning
@@ -314,7 +284,7 @@ function setupMarqueeAnimation(element, textWidth) {
     element.appendChild(wrapper);
 
     // Animation parameters
-    const scrollDistance = textWidth + 40;
+    const scrollDistance = textWidth + 100;
     const scrollSpeed = 40; // pixels per second
     const scrollDuration = scrollDistance / scrollSpeed;
     const pauseDuration = 2; // seconds
@@ -376,7 +346,16 @@ async function checkMetadata(silent = false) {
     if (!currentStation || audio.paused) return;
     
     try {
-        const title = await getNowPlaying(currentStation);
+        // Try both methods with a short timeout
+        const metadataPromises = [
+            getNowPlaying(currentStation),
+        ];
+        
+        const title = await Promise.race([
+            Promise.any(metadataPromises),
+            new Promise(resolve => setTimeout(() => resolve(null), 3000))
+        ]);
+        
         if (title && title !== lastTitle && !silent) {
             lastTitle = title;
             updateNowPlayingUI(title);
@@ -590,12 +569,24 @@ function setupDropdown() {
 
     dropdownToggle.addEventListener("click", (event) => {
         event.stopPropagation();
-        dropdownMenu.classList.toggle("show");
+        dropdownToggle.classList.toggle("active");
+        if (dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+        } else {
+            dropdownMenu.style.display = 'flex';
+            // Trigger reflow before adding class for animation
+            void dropdownMenu.offsetWidth;
+            dropdownMenu.classList.add('show');
+        }
     });
 
     document.addEventListener("click", (event) => {
         if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
-            dropdownMenu.classList.remove("show");
+            dropdownToggle.classList.remove("active");
+            dropdownMenu.classList.remove('show');
+            setTimeout(() => {
+                dropdownMenu.style.display = 'none';
+            }, 200);
         }
     });
 }
@@ -613,6 +604,7 @@ function setupGenreInfoIcon() {
     infoIcon.addEventListener('click', (e) => {
         e.stopPropagation();
         isTooltipVisible = !isTooltipVisible;
+        infoIcon.classList.toggle("active", isTooltipVisible); // Explicitly set based on visibility
         tooltip.classList.toggle('visible', isTooltipVisible);
         updateTooltipContent();
     });
@@ -621,6 +613,7 @@ function setupGenreInfoIcon() {
     document.addEventListener('click', (e) => {
         if (!infoIcon.contains(e.target)) {
             isTooltipVisible = false;
+			infoIcon.classList.remove("active");
             tooltip.classList.remove('visible');
         }
     });
@@ -712,20 +705,40 @@ function setupRecentlyPlayedToggle() {
         toggleCollapse();
     });
 
-    // Handle history button
+    // Handle history button - simplified version
     historyBtn.addEventListener('click', function(e) {
         e.stopPropagation();
+        const isVisible = historyDropdown.classList.contains('show');
+        
+        // Close other open elements
         if (genreTooltip.classList.contains('visible')) {
             genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
         }
-        toggleHistoryDropdown();
+        
+        // Toggle history dropdown
+        if (isVisible) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                historyBtn.classList.remove('active');
+            }, 200);
+        } else {
+            historyDropdown.style.display = 'flex';
+            // Trigger reflow
+            void historyDropdown.offsetWidth;
+            historyDropdown.classList.add('show');
+            historyBtn.classList.add('active');
+        }
     });
 
     // Handle info icon
     infoIcon.addEventListener('click', function(e) {
         e.stopPropagation();
+        infoIcon.classList.toggle('active'); // Add/remove active class
         if (historyDropdown.style.display === 'flex') {
             historyDropdown.style.display = 'none';
+            historyBtn.classList.remove('active');
         }
         toggleGenreTooltip();
     });
@@ -734,9 +747,11 @@ function setupRecentlyPlayedToggle() {
     document.addEventListener('click', function(e) {
         if (!historyBtn.contains(e.target) && !historyDropdown.contains(e.target)) {
             historyDropdown.style.display = 'none';
+            historyBtn.classList.remove('active');
         }
         if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
             genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
         }
     });
 
@@ -747,16 +762,31 @@ function setupRecentlyPlayedToggle() {
         ScrollbarManager.updateAll();
     }
 
-    function toggleHistoryDropdown() {
-        historyDropdown.style.display = historyDropdown.style.display === 'flex' ? 'none' : 'flex';
-        if (historyDropdown.style.display === 'flex') {
-            loadRecentlyPlayed();
-        }
+function toggleHistoryDropdown() {
+    const isVisible = historyDropdown.classList.contains('show');
+    if (isVisible) {
+        historyDropdown.classList.remove('show');
+        setTimeout(() => {
+            historyDropdown.style.display = 'none';
+        }, 200); // Match this with your CSS transition duration
+    } else {
+        historyDropdown.style.display = 'flex';
+        // Trigger reflow before adding class for animation
+        void historyDropdown.offsetWidth;
+        historyDropdown.classList.add('show');
     }
+}
 
-    function toggleGenreTooltip() {
-        genreTooltip.classList.toggle('visible');
+function toggleGenreTooltip() {
+    const isVisible = genreTooltip.classList.contains('visible');
+    if (isVisible) {
+        genreTooltip.classList.remove('visible');
+    } else {
+        // Trigger reflow before adding class for animation
+        void genreTooltip.offsetWidth;
+        genreTooltip.classList.add('visible');
     }
+}
 }
 
 function setupRecentlyPlayedNavigation() {
@@ -767,46 +797,46 @@ function setupRecentlyPlayedNavigation() {
     if (!stations) return;
 
     // Create navigation buttons if they don't exist
-    let leftButton = wrapper.querySelector('.history-nav-button.left');
-    let rightButton = wrapper.querySelector('.history-nav-button.right');
+    let topButton = wrapper.querySelector('.history-nav-button.top');
+    let bottomButton = wrapper.querySelector('.history-nav-button.bottom');
     
-    if (!leftButton) {
-        leftButton = document.createElement('button');
-        leftButton.className = 'history-nav-button left';
-        leftButton.innerHTML = '<span class="material-icons">chevron_left</span>';
-        leftButton.setAttribute('aria-label', 'Scroll left');
-        wrapper.appendChild(leftButton);
+    if (!topButton) {
+        topButton = document.createElement('button');
+        topButton.className = 'history-nav-button top';
+        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
+        topButton.setAttribute('aria-label', 'Scroll up');
+        wrapper.insertBefore(topButton, stations);
     }
     
-    if (!rightButton) {
-        rightButton = document.createElement('button');
-        rightButton.className = 'history-nav-button right';
-        rightButton.innerHTML = '<span class="material-icons">chevron_right</span>';
-        rightButton.setAttribute('aria-label', 'Scroll right');
-        wrapper.appendChild(rightButton);
+    if (!bottomButton) {
+        bottomButton = document.createElement('button');
+        bottomButton.className = 'history-nav-button bottom';
+        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+        bottomButton.setAttribute('aria-label', 'Scroll down');
+        wrapper.appendChild(bottomButton);
     }
 
     function checkOverflow() {
-        const hasOverflow = stations.scrollWidth > stations.clientWidth;
-        leftButton.style.display = hasOverflow ? 'flex' : 'none';
-        rightButton.style.display = hasOverflow ? 'flex' : 'none';
+        const hasOverflow = stations.scrollHeight > stations.clientHeight;
+        topButton.style.display = hasOverflow ? 'flex' : 'none';
+        bottomButton.style.display = hasOverflow ? 'flex' : 'none';
         updateButtonVisibility();
     }
 
     function updateButtonVisibility() {
-        const scrollLeft = stations.scrollLeft;
-        const maxScroll = stations.scrollWidth - stations.clientWidth;
+        const scrollTop = stations.scrollTop;
+        const maxScroll = stations.scrollHeight - stations.clientHeight;
         
-        leftButton.style.display = scrollLeft <= 10 ? 'none' : 'flex';
-        rightButton.style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
+        topButton.style.display = scrollTop <= 10 ? 'none' : 'flex';
+        bottomButton.style.display = scrollTop >= maxScroll - 10 ? 'none' : 'flex';
     }
 
     function smoothScroll(direction) {
-        const scrollAmount = stations.clientWidth * 0.8;
-        const start = stations.scrollLeft;
-        const target = direction === 'left' 
+        const scrollAmount = stations.clientHeight * 0.8;
+        const start = stations.scrollTop;
+        const target = direction === 'top' 
             ? Math.max(0, start - scrollAmount)
-            : Math.min(start + scrollAmount, stations.scrollWidth - stations.clientWidth);
+            : Math.min(start + scrollAmount, stations.scrollHeight - stations.clientHeight);
         
         const duration = 200;
         const startTime = performance.now();
@@ -820,7 +850,7 @@ function setupRecentlyPlayedNavigation() {
                 ? 2 * progress * progress 
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
             
-            stations.scrollLeft = start + (target - start) * easedProgress;
+            stations.scrollTop = start + (target - start) * easedProgress;
             
             if (progress < 1) {
                 requestAnimationFrame(animateScroll);
@@ -833,35 +863,10 @@ function setupRecentlyPlayedNavigation() {
     }
 
     // Event listeners
-    leftButton.addEventListener('click', () => smoothScroll('left'));
-    rightButton.addEventListener('click', () => smoothScroll('right'));
+    topButton.addEventListener('click', () => smoothScroll('top'));
+    bottomButton.addEventListener('click', () => smoothScroll('bottom'));
     stations.addEventListener('scroll', updateButtonVisibility);
     window.addEventListener('resize', checkOverflow);
-
-    // Touch events for swipe
-    let touchStartX = 0;
-    let isSwiping = false;
-    let scrollLeftStart = 0;
-    
-    stations.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        scrollLeftStart = stations.scrollLeft;
-        isSwiping = true;
-        stations.style.scrollBehavior = 'auto';
-    }, { passive: true });
-    
-    stations.addEventListener('touchmove', (e) => {
-        if (!isSwiping) return;
-        const touchX = e.touches[0].clientX;
-        const diff = touchStartX - touchX;
-        stations.scrollLeft = scrollLeftStart + diff;
-    }, { passive: false });
-    
-    stations.addEventListener('touchend', () => {
-        isSwiping = false;
-        stations.style.scrollBehavior = 'smooth';
-        updateButtonVisibility();
-    }, { passive: true });
 
     // Initial check
     checkOverflow();
@@ -870,11 +875,18 @@ function setupRecentlyPlayedNavigation() {
 function loadRecentlyPlayed() {
     const container = document.querySelector('.recently-played-stations');
     if (!container) return;
-
+	
+	container.scrollTop = 0;
+	
     const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
     const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
 
     container.innerHTML = '';
+    
+    // Change to vertical layout
+    container.style.flexDirection = 'column';
+    container.style.overflowY = 'auto';
+    container.style.overflowX = 'hidden';
     
     if (uniqueStations.length === 0) {
         container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica</div>';
@@ -961,7 +973,15 @@ function createExpandButton(stations, category) {
 
 // Playback Control Functions
 playPauseBtn.addEventListener("click", () => {
-    audio[audio.paused ? "play" : "pause"]();
+    if (audio.paused) {
+        audio.play().then(() => {
+            // Immediately check metadata after play starts
+            checkMetadata(true);
+            setupNowPlayingMetadata();
+        }).catch(handlePlayError);
+    } else {
+        audio.pause();
+    }
 });
 
 audio.addEventListener("play", updatePlayPauseButton);
@@ -978,6 +998,9 @@ function updatePlayPauseButton() {
     } else {
         playPauseBtn.classList.remove('play-mode');
         audioPlayer.classList.remove('play-mode');
+        // Check metadata when playback starts
+        checkMetadata(true);
+        setupNowPlayingMetadata();
     }
 
     document.querySelectorAll(".radio.selected .equalizer").forEach(equalizer => {
