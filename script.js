@@ -3,6 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ScrollbarManager.init();
 	ScrollbarManager.setupAutoHide();
     loadPreferences();
+	setupAudioContainerObserver();
+	setupAudioContainerGestures();
     
     // Initialize all other components
     const initFunctions = [
@@ -44,8 +46,7 @@ function cleanupResources() {
 // Global Elements and Constants
 const audio = document.getElementById("audioctrl");
 const METADATA_PROXY = 'https://radiometadata.kosta04miletic.workers.dev';
-const METADATA_CHECK_INTERVAL = 5000;
-const METADATA_COOLDOWN = 3000;
+const METADATA_CHECK_INTERVAL = 15000;
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
@@ -66,18 +67,21 @@ let lastTitle = '';
 
 // Station Functions
 async function changeStation(name, link) {
-    // Clear existing metadata
-    if (metadataInterval) clearInterval(metadataInterval);
-    
-    // Cache DOM elements
+	
+    // Clear existing metadata immediately
     const audioTextElement = document.getElementById('audiotext');
-    
-    // Clear previous UI
     if (audioTextElement) {
-        audioTextElement.querySelector('.song-title')?.remove();
         audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
         audioTextElement.classList.remove('has-now-playing');
-		document.querySelector('.audio-container').classList.remove('has-now-playing');
+        document.querySelector('.audio-container').classList.remove('has-now-playing');
+		updateAudioContainerHeight();
+    }
+    
+    // Reset metadata state
+    lastTitle = '';
+    if (metadataInterval) {
+        clearInterval(metadataInterval);
+        metadataInterval = null;
     }
     
     // Update current station
@@ -88,15 +92,17 @@ async function changeStation(name, link) {
     audio.pause();
     audio.src = link;
     audio.load();
-    
-	audio.oncanplay = async () => {
+	
+    // Metadata check setup
+    audio.oncanplay = async () => {
         try {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
                 await playPromise.catch(handlePlayError);
             }
-            // Immediately check metadata after play starts
+            // Immediate metadata check on play
             checkMetadata(true);
+            // Setup continuous checking
             setupNowPlayingMetadata();
         } catch (e) {
             handlePlayError(e);
@@ -181,6 +187,7 @@ function updateNowPlayingUI(title) {
     // Add has-now-playing class to audio container
     const audioContainer = document.querySelector('.audio-container');
     audioContainer.classList.add('has-now-playing');
+	updateAudioContainerHeight();
     
     // Rest of your existing code...
     let stationNameElement = audioTextElement.querySelector('.station-name') || 
@@ -320,49 +327,41 @@ function setupMarqueeAnimation(element, textWidth) {
     leftFade.style.animation = `${animationName}-left-fade ${totalDuration}s linear infinite`;
 }
 
+ // Define checkMetadata function
+    async function checkMetadata(force = false) {
+        if (!currentStation?.link) return;
+        
+        try {
+            const now = Date.now();
+            if (!force && now - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
+            
+            lastMetadataCheck = now;
+            const title = await getNowPlaying(currentStation);
+            
+            if (title && title !== lastTitle) {
+                lastTitle = title;
+                updateNowPlayingUI(title);
+            }
+        } catch (e) {
+            console.error('Metadata check failed:', e);
+        }
+    }
+
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
     
-    // Immediate check with cooldown handling
-    const checkWithCooldown = () => {
-        const now = Date.now();
-        if (now - lastMetadataCheck >= METADATA_COOLDOWN) {
-            checkMetadata();
-            lastMetadataCheck = now;
-        }
-    };
+    // Immediate check with no cooldown on first run
+    checkMetadata(true);
     
-    checkWithCooldown();
-    metadataInterval = setInterval(checkWithCooldown, METADATA_CHECK_INTERVAL);
+    // Set up regular checking
+    metadataInterval = setInterval(() => {
+        checkMetadata();
+    }, METADATA_CHECK_INTERVAL);
     
+    // Also check when playback starts
     audio.addEventListener('play', () => {
-        clearInterval(metadataInterval);
-        checkWithCooldown();
-        metadataInterval = setInterval(checkWithCooldown, METADATA_CHECK_INTERVAL);
-    });
-}
-
-async function checkMetadata(silent = false) {
-    if (!currentStation || audio.paused) return;
-    
-    try {
-        // Try both methods with a short timeout
-        const metadataPromises = [
-            getNowPlaying(currentStation),
-        ];
-        
-        const title = await Promise.race([
-            Promise.any(metadataPromises),
-            new Promise(resolve => setTimeout(() => resolve(null), 3000))
-        ]);
-        
-        if (title && title !== lastTitle && !silent) {
-            lastTitle = title;
-            updateNowPlayingUI(title);
-        }
-    } catch (e) {
-        console.error("Metadata check failed:", e);
-    }
+        checkMetadata(true);
+    }, { once: true });
 }
 
 function updateSelectedStation(name) {
@@ -705,7 +704,7 @@ function setupRecentlyPlayedToggle() {
         toggleCollapse();
     });
 
-    // Handle history button - simplified version
+	// Handle history button
     historyBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         const isVisible = historyDropdown.classList.contains('show');
@@ -716,7 +715,7 @@ function setupRecentlyPlayedToggle() {
             infoIcon.classList.remove('active');
         }
         
-        // Toggle history dropdown
+        // Immediately show/hide dropdown
         if (isVisible) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -725,7 +724,7 @@ function setupRecentlyPlayedToggle() {
             }, 200);
         } else {
             historyDropdown.style.display = 'flex';
-            // Trigger reflow
+            // Force reflow before adding class for animation
             void historyDropdown.offsetWidth;
             historyDropdown.classList.add('show');
             historyBtn.classList.add('active');
@@ -735,25 +734,38 @@ function setupRecentlyPlayedToggle() {
     // Handle info icon
     infoIcon.addEventListener('click', function(e) {
         e.stopPropagation();
-        infoIcon.classList.toggle('active'); // Add/remove active class
-        if (historyDropdown.style.display === 'flex') {
-            historyDropdown.style.display = 'none';
-            historyBtn.classList.remove('active');
+        // Close history dropdown immediately if open
+        if (historyDropdown.classList.contains('show')) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                historyBtn.classList.remove('active');
+            }, 200);
         }
-        toggleGenreTooltip();
+        // Toggle tooltip
+        infoIcon.classList.toggle('active');
+        genreTooltip.classList.toggle('visible');
     });
 
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!historyBtn.contains(e.target) && !historyDropdown.contains(e.target)) {
+document.addEventListener('click', function(e) {
+    // Check if click is outside both the button and dropdown
+    const isClickInside = historyBtn.contains(e.target) || 
+                         historyDropdown.contains(e.target);
+    
+    if (!isClickInside && historyDropdown.classList.contains('show')) {
+        historyDropdown.classList.remove('show');
+        setTimeout(() => {
             historyDropdown.style.display = 'none';
             historyBtn.classList.remove('active');
-        }
-        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
-            genreTooltip.classList.remove('visible');
-            infoIcon.classList.remove('active');
-        }
-    });
+        }, 200);
+    }
+    
+    // Also handle info icon
+    if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+        genreTooltip.classList.remove('visible');
+        infoIcon.classList.remove('active');
+    }
+});
 
     // Helper functions
     function toggleCollapse() {
@@ -789,6 +801,79 @@ function toggleGenreTooltip() {
 }
 }
 
+function setupAudioContainerObserver() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
+    
+    const observer = new ResizeObserver(() => {
+        ScrollbarManager.updateAll();
+    });
+    observer.observe(audioContainer);
+    
+    // Add to cleanup:
+    window.addEventListener('beforeunload', () => {
+        observer.disconnect();
+    });
+}
+
+function setupAudioContainerGestures() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
+
+    let startY = 0;
+    let startHeight = 0;
+    let isDragging = false;
+
+    audioContainer.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.audio-player')) return;
+        
+        startY = e.touches[0].clientY;
+        startHeight = audioContainer.clientHeight;
+        isDragging = true;
+        audioContainer.style.transition = 'none'; // Disable during drag
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        const currentY = e.touches[0].clientY;
+        const deltaY = startY - currentY;
+        const newHeight = Math.min(Math.max(COLLAPSED_HEIGHT, startHeight + deltaY), 300);
+        
+        audioContainer.style.height = `${newHeight}px`;
+        ScrollbarManager.updateAll();
+        e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const currentHeight = audioContainer.clientHeight;
+        audioContainer.style.transition = ''; // Re-enable transitions
+        
+        // Snap to nearest state
+        if (currentHeight > COLLAPSED_HEIGHT + 50) {
+            audioContainer.classList.add('expanded');
+        } else {
+            audioContainer.classList.remove('expanded');
+        }
+        
+        updateAudioContainerHeight(); // Let the centralized function handle the final height
+    });
+
+    // Handle toggle handle click
+    const toggleHandle = document.querySelector('.toggle-handle');
+    if (toggleHandle) {
+        toggleHandle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audioContainer.classList.toggle('expanded');
+            updateAudioContainerHeight();
+        });
+    }
+}
+
 function setupRecentlyPlayedNavigation() {
     const wrapper = document.querySelector('.recently-played-wrapper');
     if (!wrapper) return;
@@ -816,11 +901,21 @@ function setupRecentlyPlayedNavigation() {
         wrapper.appendChild(bottomButton);
     }
 
+    // Initialize as hidden
+    topButton.style.display = 'none';
+    bottomButton.style.display = 'none';
+
     function checkOverflow() {
+        // Force reflow before checking
+        void stations.offsetHeight;
+        
         const hasOverflow = stations.scrollHeight > stations.clientHeight;
-        topButton.style.display = hasOverflow ? 'flex' : 'none';
-        bottomButton.style.display = hasOverflow ? 'flex' : 'none';
-        updateButtonVisibility();
+        if (hasOverflow) {
+            updateButtonVisibility();
+        } else {
+            topButton.style.display = 'none';
+            bottomButton.style.display = 'none';
+        }
     }
 
     function updateButtonVisibility() {
@@ -868,8 +963,17 @@ function setupRecentlyPlayedNavigation() {
     stations.addEventListener('scroll', updateButtonVisibility);
     window.addEventListener('resize', checkOverflow);
 
-    // Initial check
+	// Add this to prevent height jumps
+    stations.style.minHeight = '0';
+    stations.style.maxHeight = '60vh';
+    stations.style.overflowY = 'auto';
+    stations.style.overflowX = 'hidden';
+    
+    // Initial check without delay
     checkOverflow();
+    
+    // Also check when dropdown is shown - remove setTimeout
+    document.getElementById('historyBtn').addEventListener('click', checkOverflow);
 }
 
 function loadRecentlyPlayed() {
@@ -1163,13 +1267,40 @@ function loadPreferences() {
         // Set initial play/pause button state
         updatePlayPauseButton();
         
-        // Check metadata immediately on load
+        // Set current station and check metadata immediately
         currentStation = savedStation;
-        setTimeout(() => checkMetadata(), 100);
+        setTimeout(() => {
+            checkMetadata(true);
+            setupNowPlayingMetadata();
+        }, 100);
     } else {
         document.title = "Radio";
         updatePlayPauseButton();
     }
+}
+
+function updateAudioContainerHeight() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
+    
+    // Calculate new height based on current state
+    let newHeight = COLLAPSED_HEIGHT;
+    
+    if (audioContainer.classList.contains('has-now-playing')) {
+        newHeight = audioContainer.classList.contains('expanded') ? 235 : 170;
+    } else {
+        newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
+    }
+    
+    // Only update if height is actually changing
+    const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
+    if (Math.abs(currentHeight - newHeight) < 1) return;
+    
+    // Apply the new height with transition
+    audioContainer.style.height = `${newHeight}px`;
+    
+    // Update scrollbar and other dependent elements
+    ScrollbarManager.updateAll();
 }
 
 const ScrollbarManager = {
@@ -1427,15 +1558,14 @@ setupResizeObservers() {
     
 updateTrackPosition() {
     const audioContainer = document.querySelector('.audio-container');
-    const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
-    
     if (!audioContainer) return;
     
-    // Get the current height of the audio container
-    const audioContainerHeight = audioContainer.clientHeight;
+    // Use getComputedStyle to get the actual rendered height
+    const audioContainerHeight = parseFloat(getComputedStyle(audioContainer).height);
     
     // Calculate recently played height if expanded
     let recentlyPlayedHeight = 0;
+    const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
     if (recentlyPlayedContainer && 
         recentlyPlayedContainer.style.maxHeight !== '0px' && 
         recentlyPlayedContainer.style.display !== 'none') {
@@ -1448,7 +1578,7 @@ updateTrackPosition() {
     const availableHeight = viewportHeight - scrollListTop - audioContainerHeight;
     
     // Ensure minimum height
-    const minHeight = 100; // Minimum height to prevent disappearing
+    const minHeight = 100;
     const finalHeight = Math.max(minHeight, availableHeight);
     
     // Update the scroll list dimensions
@@ -1459,9 +1589,6 @@ updateTrackPosition() {
     // Update scrollbar thumb
     this.updateThumbSize();
     this.positionThumb();
-    
-    // Force a reflow to ensure updates are applied
-    void this.scrollList.offsetHeight;
 },
 
     setupAutoHide() {
