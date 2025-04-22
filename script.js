@@ -397,11 +397,8 @@ function updateSelectedStation(name) {
 
 // Genre Filtering Functions
 function setupGenreFiltering() {
-    const genreButtons = document.querySelector('.genre-buttons');
-    if (!genreButtons) return;
-
-    // Use event delegation for both click and touch events
-    genreButtons.addEventListener('click touchstart', (e) => {
+    // Use event delegation instead of individual listeners
+    document.querySelector('.genre-buttons')?.addEventListener('click', (e) => {
         const button = e.target.closest('.genre-button');
         if (!button) return;
         
@@ -418,7 +415,7 @@ function setupGenreFiltering() {
         currentGenre = button.dataset.genre;
         applyGenreFilter();
         setupExpandableCategories();
-    }, { passive: false });
+    });
 }
 
 function applyGenreFilter() {
@@ -579,54 +576,28 @@ function setupDropdown() {
     const dropdownToggle = document.querySelector(".dropdown-toggle");
     const dropdownMenu = document.querySelector(".dropdown-menu");
 
-    // Handle click and touch events
     dropdownToggle.addEventListener("click", (event) => {
         event.stopPropagation();
-        toggleDropdown();
-    });
-    
-    // Add touch event
-    dropdownToggle.addEventListener("touchend", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleDropdown();
-    }, { passive: false });
-
-    // Handle document clicks and touches
-    document.addEventListener("click", (event) => {
-        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
-            closeDropdown();
-        }
-    });
-
-    document.addEventListener("touchstart", (event) => {
-        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
-            closeDropdown();
-        }
-    }, { passive: true });
-
-    function toggleDropdown() {
         dropdownToggle.classList.toggle("active");
         if (dropdownMenu.classList.contains('show')) {
-            closeDropdown();
+            dropdownMenu.classList.remove('show');
         } else {
-            openDropdown();
+            dropdownMenu.style.display = 'flex';
+            // Trigger reflow before adding class for animation
+            void dropdownMenu.offsetWidth;
+            dropdownMenu.classList.add('show');
         }
-    }
+    });
 
-    function openDropdown() {
-        dropdownMenu.style.display = 'flex';
-        void dropdownMenu.offsetWidth; // Trigger reflow
-        dropdownMenu.classList.add('show');
-    }
-
-    function closeDropdown() {
-        dropdownMenu.classList.remove('show');
-        dropdownToggle.classList.remove("active");
-        setTimeout(() => {
-            dropdownMenu.style.display = 'none';
-        }, 200);
-    }
+    document.addEventListener("click", (event) => {
+        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+            dropdownToggle.classList.remove("active");
+            dropdownMenu.classList.remove('show');
+            setTimeout(() => {
+                dropdownMenu.style.display = 'none';
+            }, 200);
+        }
+    });
 }
 
 function setupGenreInfoIcon() {
@@ -675,29 +646,29 @@ function setupGenreInfoIcon() {
         }
     }
     
-function updateTooltipContent() {
-    const audioTextElement = document.getElementById('audiotext');
-    const tooltip = document.querySelector('.genre-tooltip');
-    
-    if (!audioTextElement || !tooltip) return;
-    
-    // Default empty state
-    if (!audioTextElement.textContent || audioTextElement.textContent === "Izaberite stanicu") {
-        tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema pronađenih žanrova</div>';
-        return;
+    function updateTooltipContent() {
+        const currentStation = document.querySelector('.radio.selected') || 
+                             document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
+        
+        if (!currentStation) {
+            tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
+            return;
+        }
+        
+        const genres = currentStation.dataset.genre;
+		if (!genres) {
+			tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
+			return;
     }
-    
-	const currentStation = document.querySelector('.radio.selected') || 
-                           document.querySelector(`.radio[data-name="${audioTextElement.textContent}"]`);
-    const genres = currentStation.dataset.genre;
-    const genreArray = genres.split(',');
-    const formattedGenres = genreArray.map(genre => {
+        
+        const genreArray = genres.split(',');
+        const formattedGenres = genreArray.map(genre => {
         const icon = getGenreIcon(genre.trim());
-        return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
-    }).join('');
+			return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
+			}).join('');
     
-    tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
-}
+			tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
+    }
 
     function getGenreIcon(genre) {
         const genreIcons = {
@@ -734,109 +705,18 @@ function setupRecentlyPlayedToggle() {
     const historyDropdown = document.getElementById('historyDropdown');
     const infoIcon = document.querySelector('.info-icon');
     const genreTooltip = document.querySelector('.genre-tooltip');
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    const dropdownMenu = document.querySelector('.dropdown-menu');
     
     let isExpanded = false;
 
-    // Handle toggle - add touch events
+    // Handle toggle
     toggleHandle.addEventListener('click', function(e) {
         e.stopPropagation();
         toggleCollapse();
     });
-    
-    toggleHandle.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleCollapse();
-    }, { passive: false });
 
-    // Handle history button - update for touch
+	// Handle history button
     historyBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        toggleHistoryDropdown();
-    });
-    
-    historyBtn.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleHistoryDropdown();
-    }, { passive: false });
-
-    // Handle info icon - update for touch
-    infoIcon.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleGenreTooltip();
-    });
-    
-    infoIcon.addEventListener('touchend', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleGenreTooltip();
-    }, { passive: false });
-
-    // Close all dropdowns when collapsing
-    function toggleCollapse() {
-        isExpanded = !isExpanded;
-        audioContainer.classList.toggle('expanded', isExpanded);
-        
-        // Close all dropdowns when collapsing
-        if (!isExpanded) {
-            closeAllDropdowns();
-        }
-        
-        ScrollbarManager.updateAll();
-    }
-
-    // Update document click handler to also handle touch
-    document.addEventListener('click', function(e) {
-        closeAllDropdowns(e);
-    });
-
-    document.addEventListener('touchstart', function(e) {
-        closeAllDropdowns(e);
-    }, { passive: true });
-
-    function closeAllDropdowns(e) {
-        // Only close if click is outside all dropdown elements
-        if (e && (
-            (historyBtn && historyBtn.contains(e.target)) ||
-            (historyDropdown && historyDropdown.contains(e.target)) ||
-            (infoIcon && infoIcon.contains(e.target)) ||
-            (genreTooltip && genreTooltip.contains(e.target)) ||
-            (dropdownToggle && dropdownToggle.contains(e.target)) ||
-            (dropdownMenu && dropdownMenu.contains(e.target))
-        )) {
-            return;
-        }
-
-        // Close history dropdown
-        if (historyDropdown && historyDropdown.classList.contains('show')) {
-            historyDropdown.classList.remove('show');
-            setTimeout(() => {
-                historyDropdown.style.display = 'none';
-                if (historyBtn) historyBtn.classList.remove('active');
-            }, 200);
-        }
-
-        // Close genre tooltip
-        if (genreTooltip && genreTooltip.classList.contains('visible')) {
-            genreTooltip.classList.remove('visible');
-            if (infoIcon) infoIcon.classList.remove('active');
-        }
-
-        // Close theme dropdown
-        if (dropdownMenu && dropdownMenu.classList.contains('show')) {
-            dropdownMenu.classList.remove('show');
-            setTimeout(() => {
-                dropdownMenu.style.display = 'none';
-                if (dropdownToggle) dropdownToggle.classList.remove("active");
-            }, 200);
-        }
-    }
-
-    // Helper functions
-    function toggleHistoryDropdown() {
         const isVisible = historyDropdown.classList.contains('show');
         
         // Close other open elements
@@ -845,14 +725,7 @@ function setupRecentlyPlayedToggle() {
             infoIcon.classList.remove('active');
         }
         
-        if (dropdownMenu.classList.contains('show')) {
-            dropdownToggle.classList.remove("active");
-            dropdownMenu.classList.remove('show');
-            setTimeout(() => {
-                dropdownMenu.style.display = 'none';
-            }, 200);
-        }
-        
+        // Immediately show/hide dropdown
         if (isVisible) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -866,12 +739,12 @@ function setupRecentlyPlayedToggle() {
             historyDropdown.classList.add('show');
             historyBtn.classList.add('active');
         }
-    }
+    });
 
-    function toggleGenreTooltip() {
-        const isVisible = genreTooltip.classList.contains('visible');
-        
-        // Close other open elements
+    // Handle info icon
+    infoIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        // Close history dropdown immediately if open
         if (historyDropdown.classList.contains('show')) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -879,25 +752,63 @@ function setupRecentlyPlayedToggle() {
                 historyBtn.classList.remove('active');
             }, 200);
         }
-        
-        if (dropdownMenu.classList.contains('show')) {
-            dropdownToggle.classList.remove("active");
-            dropdownMenu.classList.remove('show');
-            setTimeout(() => {
-                dropdownMenu.style.display = 'none';
-            }, 200);
-        }
-        
-        if (isVisible) {
-            genreTooltip.classList.remove('visible');
-            infoIcon.classList.remove('active');
-        } else {
-            // Trigger reflow before adding class for animation
-            void genreTooltip.offsetWidth;
-            genreTooltip.classList.add('visible');
-            infoIcon.classList.add('active');
-        }
+        // Toggle tooltip
+        infoIcon.classList.toggle('active');
+        genreTooltip.classList.toggle('visible');
+    });
+
+document.addEventListener('click', function(e) {
+    // Check if click is outside both the button and dropdown
+    const isClickInside = historyBtn.contains(e.target) || 
+                         historyDropdown.contains(e.target);
+    
+    if (!isClickInside && historyDropdown.classList.contains('show')) {
+        historyDropdown.classList.remove('show');
+        setTimeout(() => {
+            historyDropdown.style.display = 'none';
+            historyBtn.classList.remove('active');
+        }, 200);
     }
+    
+    // Also handle info icon
+    if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+        genreTooltip.classList.remove('visible');
+        infoIcon.classList.remove('active');
+    }
+});
+
+    // Helper functions
+    function toggleCollapse() {
+        isExpanded = !isExpanded;
+        audioContainer.classList.toggle('expanded', isExpanded);
+        ScrollbarManager.updateAll();
+    }
+
+function toggleHistoryDropdown() {
+    const isVisible = historyDropdown.classList.contains('show');
+    if (isVisible) {
+        historyDropdown.classList.remove('show');
+        setTimeout(() => {
+            historyDropdown.style.display = 'none';
+        }, 200); // Match this with your CSS transition duration
+    } else {
+        historyDropdown.style.display = 'flex';
+        // Trigger reflow before adding class for animation
+        void historyDropdown.offsetWidth;
+        historyDropdown.classList.add('show');
+    }
+}
+
+function toggleGenreTooltip() {
+    const isVisible = genreTooltip.classList.contains('visible');
+    if (isVisible) {
+        genreTooltip.classList.remove('visible');
+    } else {
+        // Trigger reflow before adding class for animation
+        void genreTooltip.offsetWidth;
+        genreTooltip.classList.add('visible');
+    }
+}
 }
 
 function setupAudioContainerObserver() {
@@ -922,17 +833,14 @@ function setupAudioContainerGestures() {
     let startY = 0;
     let startHeight = 0;
     let isDragging = false;
-    const MIN_SWIPE_DISTANCE = 30;
-    const SWIPE_VELOCITY_THRESHOLD = 0.3;
 
-    const toggleHandle = document.querySelector('.toggle-handle');
-    
-    // Touch events
-    toggleHandle.addEventListener('touchstart', (e) => {
+    audioContainer.addEventListener('touchstart', (e) => {
+        if (e.target.closest('.audio-player')) return;
+        
         startY = e.touches[0].clientY;
         startHeight = audioContainer.clientHeight;
         isDragging = true;
-        audioContainer.style.transition = 'none';
+        audioContainer.style.transition = 'none'; // Disable during drag
         e.preventDefault();
     }, { passive: false });
 
@@ -940,56 +848,39 @@ function setupAudioContainerGestures() {
         if (!isDragging) return;
         
         const currentY = e.touches[0].clientY;
-        const deltaY = currentY - startY;
+        const deltaY = startY - currentY;
+        const newHeight = Math.min(Math.max(COLLAPSED_HEIGHT, startHeight + deltaY), 300);
         
-        // Prevent dragging up when collapsed
-        if (deltaY < 0 && !audioContainer.classList.contains('expanded')) {
-            return;
-        }
-        
-        const newHeight = Math.max(COLLAPSED_HEIGHT, Math.min(startHeight - deltaY, 300));
         audioContainer.style.height = `${newHeight}px`;
+        ScrollbarManager.updateAll();
         e.preventDefault();
     }, { passive: false });
 
-    document.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', () => {
         if (!isDragging) return;
         isDragging = false;
         
         const currentHeight = audioContainer.clientHeight;
-        const threshold = COLLAPSED_HEIGHT + 50;
-        
-        // Apply transition
-        audioContainer.style.transition = 'height 0.3s ease';
+        audioContainer.style.transition = ''; // Re-enable transitions
         
         // Snap to nearest state
-        if (currentHeight > threshold) {
+        if (currentHeight > COLLAPSED_HEIGHT + 50) {
             audioContainer.classList.add('expanded');
         } else {
             audioContainer.classList.remove('expanded');
         }
         
-        updateAudioContainerHeight();
+        updateAudioContainerHeight(); // Let the centralized function handle the final height
     });
 
-    // Click event for toggle handle
-    toggleHandle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        audioContainer.style.transition = 'height 0.3s ease';
-        audioContainer.classList.toggle('expanded');
-        updateAudioContainerHeight();
-    });
-    
-    // Ensure we don't have conflicting event listeners
-    toggleHandle.removeEventListener('touchend', handleToggleTouchEnd);
-    toggleHandle.addEventListener('touchend', handleToggleTouchEnd, { passive: false });
-    
-    function handleToggleTouchEnd(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        audioContainer.style.transition = 'height 0.3s ease';
-        audioContainer.classList.toggle('expanded');
-        updateAudioContainerHeight();
+    // Handle toggle handle click
+    const toggleHandle = document.querySelector('.toggle-handle');
+    if (toggleHandle) {
+        toggleHandle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            audioContainer.classList.toggle('expanded');
+            updateAudioContainerHeight();
+        });
     }
 }
 
@@ -1411,22 +1302,14 @@ function updateAudioContainerHeight() {
         newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
     }
     
-    // Apply the new height
+    // Only update if height is actually changing
+    const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
+    if (Math.abs(currentHeight - newHeight) < 1) return;
+    
+    // Apply the new height with transition
     audioContainer.style.height = `${newHeight}px`;
     
-    // Handle segmented buttons opacity
-    const segmentedButtons = document.querySelector('.segmented-button-group');
-    if (segmentedButtons) {
-        if (audioContainer.classList.contains('expanded')) {
-            segmentedButtons.style.opacity = '1';
-            segmentedButtons.style.pointerEvents = 'auto';
-        } else {
-            segmentedButtons.style.opacity = '0';
-            segmentedButtons.style.pointerEvents = 'none';
-        }
-    }
-    
-    // Update scrollbar
+    // Update scrollbar and other dependent elements
     ScrollbarManager.updateAll();
 }
 
