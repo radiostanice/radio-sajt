@@ -676,8 +676,14 @@ function setupGenreInfoIcon() {
     }
     
 function updateTooltipContent() {
+    const audioTextElement = document.getElementById('audiotext');
+    if (!audioTextElement || audioTextElement.textContent === "Izaberite stanicu") {
+        tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema pronađenih žanrova</div>';
+        return;
+    }
+    
     const currentStation = document.querySelector('.radio.selected') || 
-                         document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
+                         document.querySelector(`.radio[data-name="${audioTextElement.textContent}"]`);
     
     if (!currentStation || !currentStation.dataset.genre) {
         tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
@@ -926,7 +932,7 @@ function setupAudioContainerGestures() {
     const toggleHandle = document.querySelector('.toggle-handle');
     
     // Only allow gestures on the toggle handle
-    toggleHandle.addEventListener('touchstart', (e) => {
+	toggleHandle.addEventListener('touchstart', (e) => {
         if (e.target.closest('.audio-player') || 
             e.target.closest('.dropdown-menu') || 
             e.target.closest('.genre-tooltip')) {
@@ -943,15 +949,19 @@ function setupAudioContainerGestures() {
         e.preventDefault();
     }, { passive: false });
 
-    // Handle touch move
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        
+
         const currentY = e.touches[0].clientY;
         const deltaY = startY - currentY;
         const currentTime = Date.now();
         const timeDiff = currentTime - lastTime;
         
+		if (deltaY < 0 && !audioContainer.classList.contains('expanded')) {
+            isDragging = false;
+            return;
+        }
+		
         // Only process if touch started on the toggle handle
         if (!e.target.closest('.toggle-handle') && !isDragging) return;
         
@@ -973,7 +983,7 @@ function setupAudioContainerGestures() {
     }, { passive: false });
 
     // Handle touch end
-    document.addEventListener('touchend', (e) => {
+	document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
         
@@ -986,19 +996,16 @@ function setupAudioContainerGestures() {
         }
         
         const currentHeight = audioContainer.clientHeight;
-        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+        const threshold = COLLAPSED_HEIGHT + 50;
         
-        // Use velocity to determine if it's a swipe
-        const isSwipeUp = velocity > SWIPE_THRESHOLD;
-        const isSwipeDown = velocity < -SWIPE_THRESHOLD;
-        
-        // Snap to nearest state based on swipe direction or position
-        if (isSwipeUp || (!isSwipeDown && currentHeight > COLLAPSED_HEIGHT + 50)) {
+        // Force transition to end state if stuck in the middle
+        if (currentHeight > threshold) {
             audioContainer.classList.add('expanded');
         } else {
             audioContainer.classList.remove('expanded');
         }
         
+        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
         updateAudioContainerHeight();
     });
 
@@ -1439,28 +1446,26 @@ function updateAudioContainerHeight() {
         newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
     }
     
-    // Fade out when collapsing
-    if (!audioContainer.classList.contains('expanded')) {
-        newOpacity = 0.9;
-    }
-    
-    // Only update if height is actually changing
-    const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
-    if (Math.abs(currentHeight - newHeight) < 1) return;
-    
     // Apply the new height and opacity with transition
     audioContainer.style.height = `${newHeight}px`;
     audioContainer.style.opacity = newOpacity;
     
+    // Handle segmented buttons opacity
+    const segmentedButtons = document.querySelectorAll('.segmented-button');
+    if (audioContainer.classList.contains('expanded')) {
+        segmentedButtons.forEach(btn => {
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        });
+    } else {
+        segmentedButtons.forEach(btn => {
+            btn.style.opacity = '0';
+            btn.style.pointerEvents = 'none';
+        });
+    }
+    
     // Update scrollbar and other dependent elements
     ScrollbarManager.updateAll();
-    
-    // Reset opacity after transition
-    if (newOpacity < 1) {
-        setTimeout(() => {
-            audioContainer.style.opacity = 1;
-        }, 300);
-    }
 }
 
 const ScrollbarManager = {
