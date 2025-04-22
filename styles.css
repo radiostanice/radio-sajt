@@ -840,7 +840,6 @@ button {
 .audio-container {
     height: 150px;
     overflow: visible !important;
-    will-change: height;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -850,7 +849,8 @@ button {
     z-index: 100;
     border: none;
     box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.2);
-	transition: height 0.3s ease;
+	transition: height 0.3s ease, opacity 0.3s ease;
+    will-change: height, opacity;
 	display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -1210,6 +1210,7 @@ button {
 	transition: border-bottom 0.2s ease;
 	border-radius: 20px 20px 0 0;
 	box-shadow: 20px 0px 0px #0f0f0f, -20px 0px 0px #0f0f0f;
+	touch-action: manipulation;
 }
 
 .audio-container.expanded .toggle-handle {
@@ -1325,9 +1326,15 @@ button {
     justify-content: center;
     border-bottom: 1px solid #444;
 }
+.audio-container:not(.expanded) .toggle-buttons {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
 
 .audio-container.expanded .toggle-buttons {
     display: flex;
+	opacity: 1;
+    transition: opacity 0.3s ease;
 }
 .has-now-playing .history-dropdown,
 .has-now-playing .genre-tooltip.visible {

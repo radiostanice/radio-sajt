@@ -891,9 +891,17 @@ function setupAudioContainerGestures() {
     let startY = 0;
     let startHeight = 0;
     let isDragging = false;
-    let isClick = true; // Track if it's a click vs swipe
+    let isClick = true;
+    let lastTime = 0;
+    let velocity = 0;
+    const MIN_SWIPE_DISTANCE = 30;
+    const SWIPE_THRESHOLD = 0.3;
 
-    audioContainer.addEventListener('touchstart', (e) => {
+    // Only allow gestures on the toggle handle
+    const toggleHandle = document.querySelector('.toggle-handle');
+    
+    // Handle touch start on toggle handle
+    toggleHandle.addEventListener('touchstart', (e) => {
         if (e.target.closest('.audio-player') || 
             e.target.closest('.dropdown-menu') || 
             e.target.closest('.genre-tooltip')) {
@@ -903,16 +911,27 @@ function setupAudioContainerGestures() {
         startY = e.touches[0].clientY;
         startHeight = audioContainer.clientHeight;
         isDragging = true;
-        isClick = true; // Assume it's a click until we detect movement
+        isClick = true;
+        lastTime = Date.now();
+        velocity = 0;
         audioContainer.style.transition = 'none';
         e.preventDefault();
     }, { passive: false });
 
+    // Handle touch move
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
         
         const currentY = e.touches[0].clientY;
         const deltaY = startY - currentY;
+        const currentTime = Date.now();
+        const timeDiff = currentTime - lastTime;
+        
+        // Calculate velocity
+        if (timeDiff > 0) {
+            velocity = deltaY / timeDiff;
+        }
+        lastTime = currentTime;
         
         // If movement is significant, it's not a click
         if (Math.abs(deltaY) > 5) {
@@ -925,22 +944,28 @@ function setupAudioContainerGestures() {
         e.preventDefault();
     }, { passive: false });
 
+    // Handle touch end
     document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
         
         // If it was a click, toggle the state
         if (isClick) {
+            audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
             audioContainer.classList.toggle('expanded');
             updateAudioContainerHeight();
             return;
         }
         
         const currentHeight = audioContainer.clientHeight;
-        audioContainer.style.transition = '';
+        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
         
-        // Snap to nearest state
-        if (currentHeight > COLLAPSED_HEIGHT + 50) {
+        // Use velocity to determine if it's a swipe
+        const isSwipeUp = velocity > SWIPE_THRESHOLD;
+        const isSwipeDown = velocity < -SWIPE_THRESHOLD;
+        
+        // Snap to nearest state based on swipe direction or position
+        if (isSwipeUp || (!isSwipeDown && currentHeight > COLLAPSED_HEIGHT + 50)) {
             audioContainer.classList.add('expanded');
         } else {
             audioContainer.classList.remove('expanded');
@@ -950,22 +975,21 @@ function setupAudioContainerGestures() {
     });
 
     // Handle toggle handle click
-    const toggleHandle = document.querySelector('.toggle-handle');
-    if (toggleHandle) {
-        toggleHandle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            audioContainer.classList.toggle('expanded');
-            updateAudioContainerHeight();
-        });
-        
-        // Add touch event for toggle handle
-        toggleHandle.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            audioContainer.classList.toggle('expanded');
-            updateAudioContainerHeight();
-        }, { passive: false });
-    }
+    toggleHandle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+        audioContainer.classList.toggle('expanded');
+        updateAudioContainerHeight();
+    });
+    
+    // Add touch event for toggle handle
+    toggleHandle.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+        audioContainer.classList.toggle('expanded');
+        updateAudioContainerHeight();
+    }, { passive: false });
 }
 
 function setupRecentlyPlayedNavigation() {
@@ -1379,6 +1403,7 @@ function updateAudioContainerHeight() {
     
     // Calculate new height based on current state
     let newHeight = COLLAPSED_HEIGHT;
+    let newOpacity = 1;
     
     if (audioContainer.classList.contains('has-now-playing')) {
         newHeight = audioContainer.classList.contains('expanded') ? 235 : 170;
@@ -1386,15 +1411,28 @@ function updateAudioContainerHeight() {
         newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
     }
     
+    // Fade out when collapsing
+    if (!audioContainer.classList.contains('expanded')) {
+        newOpacity = 0.9;
+    }
+    
     // Only update if height is actually changing
     const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
     if (Math.abs(currentHeight - newHeight) < 1) return;
     
-    // Apply the new height with transition
+    // Apply the new height and opacity with transition
     audioContainer.style.height = `${newHeight}px`;
+    audioContainer.style.opacity = newOpacity;
     
     // Update scrollbar and other dependent elements
     ScrollbarManager.updateAll();
+    
+    // Reset opacity after transition
+    if (newOpacity < 1) {
+        setTimeout(() => {
+            audioContainer.style.opacity = 1;
+        }, 300);
+    }
 }
 
 const ScrollbarManager = {
