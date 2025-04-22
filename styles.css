@@ -1293,7 +1293,7 @@ button {
     border-radius: 20px;
     margin: 0 8px;
 	    opacity: 0;
-    transition: opacity 10s ease;
+    transition: opacity 1s ease;
 }
 
 

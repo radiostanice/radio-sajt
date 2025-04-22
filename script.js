@@ -927,6 +927,7 @@ function setupAudioContainerGestures() {
 
     const toggleHandle = document.querySelector('.toggle-handle');
     
+    // Touch events
     toggleHandle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         startHeight = audioContainer.clientHeight;
@@ -958,10 +959,10 @@ function setupAudioContainerGestures() {
         const currentHeight = audioContainer.clientHeight;
         const threshold = COLLAPSED_HEIGHT + 50;
         
-        // Apply proper transition
-        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+        // Apply transition
+        audioContainer.style.transition = 'height 0.3s ease';
         
-        // Determine final state based on current position and velocity
+        // Snap to nearest state
         if (currentHeight > threshold) {
             audioContainer.classList.add('expanded');
         } else {
@@ -970,6 +971,26 @@ function setupAudioContainerGestures() {
         
         updateAudioContainerHeight();
     });
+
+    // Click event for toggle handle
+    toggleHandle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        audioContainer.style.transition = 'height 0.3s ease';
+        audioContainer.classList.toggle('expanded');
+        updateAudioContainerHeight();
+    });
+    
+    // Ensure we don't have conflicting event listeners
+    toggleHandle.removeEventListener('touchend', handleToggleTouchEnd);
+    toggleHandle.addEventListener('touchend', handleToggleTouchEnd, { passive: false });
+    
+    function handleToggleTouchEnd(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        audioContainer.style.transition = 'height 0.3s ease';
+        audioContainer.classList.toggle('expanded');
+        updateAudioContainerHeight();
+    }
 }
 
 function setupRecentlyPlayedNavigation() {
@@ -1390,21 +1411,22 @@ function updateAudioContainerHeight() {
         newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
     }
     
-    // Apply the new height and opacity with transition
+    // Apply the new height
     audioContainer.style.height = `${newHeight}px`;
     
     // Handle segmented buttons opacity
     const segmentedButtons = document.querySelector('.segmented-button-group');
-    
-    if (audioContainer.classList.contains('expanded')) {
-        segmentedButtons.style.opacity = '1';
-        segmentedButtons.style.pointerEvents = 'auto';
-    } else {
-        segmentedButtons.style.opacity = '0';
-        segmentedButtons.style.pointerEvents = 'none';
+    if (segmentedButtons) {
+        if (audioContainer.classList.contains('expanded')) {
+            segmentedButtons.style.opacity = '1';
+            segmentedButtons.style.pointerEvents = 'auto';
+        } else {
+            segmentedButtons.style.opacity = '0';
+            segmentedButtons.style.pointerEvents = 'none';
+        }
     }
     
-    // Update scrollbar and other dependent elements
+    // Update scrollbar
     ScrollbarManager.updateAll();
 }
 
