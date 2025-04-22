@@ -1325,17 +1325,21 @@ button {
     align-items: center;
     justify-content: center;
     border-bottom: 1px solid #444;
+    transition: opacity 0.3s ease;
+    opacity: 1;
 }
+
 .audio-container:not(.expanded) .toggle-buttons {
     opacity: 0;
-    transition: opacity 0.3s ease;
+    pointer-events: none;
 }
 
 .audio-container.expanded .toggle-buttons {
     display: flex;
-	opacity: 1;
-    transition: opacity 0.3s ease;
+    opacity: 1;
+    pointer-events: auto;
 }
+
 .has-now-playing .history-dropdown,
 .has-now-playing .genre-tooltip.visible {
     bottom: 215px;

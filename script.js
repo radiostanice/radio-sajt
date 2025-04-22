@@ -593,11 +593,17 @@ function setupDropdown() {
     }, { passive: false });
 
     // Handle document clicks and touches
-    document.addEventListener("click touchstart", (event) => {
+    document.addEventListener("click", (event) => {
         if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
             closeDropdown();
         }
     });
+
+    document.addEventListener("touchstart", (event) => {
+        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+            closeDropdown();
+        }
+    }, { passive: true });
 
     function toggleDropdown() {
         dropdownToggle.classList.toggle("active");
@@ -610,14 +616,13 @@ function setupDropdown() {
 
     function openDropdown() {
         dropdownMenu.style.display = 'flex';
-        // Trigger reflow before adding class for animation
-        void dropdownMenu.offsetWidth;
+        void dropdownMenu.offsetWidth; // Trigger reflow
         dropdownMenu.classList.add('show');
     }
 
     function closeDropdown() {
-        dropdownToggle.classList.remove("active");
         dropdownMenu.classList.remove('show');
+        dropdownToggle.classList.remove("active");
         setTimeout(() => {
             dropdownMenu.style.display = 'none';
         }, 200);
@@ -670,29 +675,24 @@ function setupGenreInfoIcon() {
         }
     }
     
-    function updateTooltipContent() {
-        const currentStation = document.querySelector('.radio.selected') || 
-                             document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
-        
-        if (!currentStation) {
-            tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
-            return;
-        }
-        
-        const genres = currentStation.dataset.genre;
-		if (!genres) {
-			tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
-			return;
-    }
-        
-        const genreArray = genres.split(',');
-        const formattedGenres = genreArray.map(genre => {
-        const icon = getGenreIcon(genre.trim());
-			return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
-			}).join('');
+function updateTooltipContent() {
+    const currentStation = document.querySelector('.radio.selected') || 
+                         document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
     
-			tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
+    if (!currentStation || !currentStation.dataset.genre) {
+        tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
+        return;
     }
+    
+    const genres = currentStation.dataset.genre;
+    const genreArray = genres.split(',');
+    const formattedGenres = genreArray.map(genre => {
+        const icon = getGenreIcon(genre.trim());
+        return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
+    }).join('');
+    
+    tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
+}
 
     function getGenreIcon(genre) {
         const genreIcons = {
@@ -740,7 +740,6 @@ function setupRecentlyPlayedToggle() {
         toggleCollapse();
     });
     
-    // Add touch events for better mobile support
     toggleHandle.addEventListener('touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -753,7 +752,6 @@ function setupRecentlyPlayedToggle() {
         toggleHistoryDropdown();
     });
     
-    // Add touch event for history button
     historyBtn.addEventListener('touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -766,45 +764,73 @@ function setupRecentlyPlayedToggle() {
         toggleGenreTooltip();
     });
     
-    // Add touch event for info icon
     infoIcon.addEventListener('touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
         toggleGenreTooltip();
     }, { passive: false });
 
-    // Update document click handler to also handle touch
-    document.addEventListener('click touchstart', function(e) {
-        // Close dropdowns when clicking outside
-        if (!historyBtn.contains(e.target) && !historyDropdown.contains(e.target)) {
-            historyDropdown.classList.remove('show');
-            setTimeout(() => {
-                historyDropdown.style.display = 'none';
-                historyBtn.classList.remove('active');
-            }, 200);
-        }
-        
-        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
-            genreTooltip.classList.remove('visible');
-            infoIcon.classList.remove('active');
-        }
-        
-        if (!dropdownToggle.contains(e.target) && !dropdownMenu.contains(e.target)) {
-            dropdownToggle.classList.remove("active");
-            dropdownMenu.classList.remove('show');
-            setTimeout(() => {
-                dropdownMenu.style.display = 'none';
-            }, 200);
-        }
-    });
-
-    // Helper functions
+    // Close all dropdowns when collapsing
     function toggleCollapse() {
         isExpanded = !isExpanded;
         audioContainer.classList.toggle('expanded', isExpanded);
+        
+        // Close all dropdowns when collapsing
+        if (!isExpanded) {
+            closeAllDropdowns();
+        }
+        
         ScrollbarManager.updateAll();
     }
 
+    // Update document click handler to also handle touch
+    document.addEventListener('click', function(e) {
+        closeAllDropdowns(e);
+    });
+
+    document.addEventListener('touchstart', function(e) {
+        closeAllDropdowns(e);
+    }, { passive: true });
+
+    function closeAllDropdowns(e) {
+        // Only close if click is outside all dropdown elements
+        if (e && (
+            (historyBtn && historyBtn.contains(e.target)) ||
+            (historyDropdown && historyDropdown.contains(e.target)) ||
+            (infoIcon && infoIcon.contains(e.target)) ||
+            (genreTooltip && genreTooltip.contains(e.target)) ||
+            (dropdownToggle && dropdownToggle.contains(e.target)) ||
+            (dropdownMenu && dropdownMenu.contains(e.target))
+        )) {
+            return;
+        }
+
+        // Close history dropdown
+        if (historyDropdown && historyDropdown.classList.contains('show')) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                if (historyBtn) historyBtn.classList.remove('active');
+            }, 200);
+        }
+
+        // Close genre tooltip
+        if (genreTooltip && genreTooltip.classList.contains('visible')) {
+            genreTooltip.classList.remove('visible');
+            if (infoIcon) infoIcon.classList.remove('active');
+        }
+
+        // Close theme dropdown
+        if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+            dropdownMenu.classList.remove('show');
+            setTimeout(() => {
+                dropdownMenu.style.display = 'none';
+                if (dropdownToggle) dropdownToggle.classList.remove("active");
+            }, 200);
+        }
+    }
+
+    // Helper functions
     function toggleHistoryDropdown() {
         const isVisible = historyDropdown.classList.contains('show');
         
@@ -897,10 +923,9 @@ function setupAudioContainerGestures() {
     const MIN_SWIPE_DISTANCE = 30;
     const SWIPE_THRESHOLD = 0.3;
 
-    // Only allow gestures on the toggle handle
     const toggleHandle = document.querySelector('.toggle-handle');
     
-    // Handle touch start on toggle handle
+    // Only allow gestures on the toggle handle
     toggleHandle.addEventListener('touchstart', (e) => {
         if (e.target.closest('.audio-player') || 
             e.target.closest('.dropdown-menu') || 
@@ -926,6 +951,9 @@ function setupAudioContainerGestures() {
         const deltaY = startY - currentY;
         const currentTime = Date.now();
         const timeDiff = currentTime - lastTime;
+        
+        // Only process if touch started on the toggle handle
+        if (!e.target.closest('.toggle-handle') && !isDragging) return;
         
         // Calculate velocity
         if (timeDiff > 0) {
