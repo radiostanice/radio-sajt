@@ -67,14 +67,13 @@ let lastTitle = '';
 
 // Station Functions
 async function changeStation(name, link) {
-	
     // Clear existing metadata immediately
     const audioTextElement = document.getElementById('audiotext');
     if (audioTextElement) {
         audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
         audioTextElement.classList.remove('has-now-playing');
         document.querySelector('.audio-container').classList.remove('has-now-playing');
-		updateAudioContainerHeight();
+        updateAudioContainerHeight();
     }
     
     // Reset metadata state
@@ -92,8 +91,8 @@ async function changeStation(name, link) {
     audio.pause();
     audio.src = link;
     audio.load();
-	
-    // Metadata check setup
+    
+    // Setup metadata checking
     audio.oncanplay = async () => {
         try {
             const playPromise = audio.play();
@@ -102,30 +101,33 @@ async function changeStation(name, link) {
             }
             // Immediate metadata check on play
             checkMetadata(true);
-            // Setup continuous checking
+            // Setup continuous checking with shorter interval
             setupNowPlayingMetadata();
         } catch (e) {
             handlePlayError(e);
         }
     };
 
+    // Also check metadata when the song ends
+    audio.addEventListener('ended', () => {
+        checkMetadata(true);
+    });
+
     // Update UI and storage
     document.title = `Radio | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     
-    const currentStationElement = document.querySelector(`.radio[data-name="${name}"]`);
-    const genre = currentStationElement?.dataset.genre || '';
-    
-    updateRecentlyPlayed(name, link, genre);
+    updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
     updateSelectedStation(name);
-	// Auto-scroll to the selected station
-	const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
-	if (selectedStation) {
-		selectedStation.scrollIntoView({
-			behavior: 'smooth',
-			block: 'center'
-		});
-	}
+    
+    // Auto-scroll to the selected station
+    const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
+    if (selectedStation) {
+        selectedStation.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
     updatePlayPauseButton();
     
     // Check metadata after short delay
@@ -299,6 +301,9 @@ function setupMarqueeAnimation(element, textWidth) {
     
     const initialPauseEnd = (pauseDuration / totalDuration * 100).toFixed(6);
     const scrollEnd = (((pauseDuration + scrollDuration) / totalDuration) * 100).toFixed(6);
+    
+    // Add 5% buffer before the end to fade out earlier
+    const fadeOutStart = (Number(scrollEnd) - 5).toFixed(6);
 
     // Animation definitions
     const animationName = `marquee-${Date.now()}`;
@@ -313,8 +318,8 @@ function setupMarqueeAnimation(element, textWidth) {
         
         @keyframes ${animationName}-left-fade {
             0%, ${(Number(initialPauseEnd) - 0.0001).toFixed(6)}% { opacity: 0; }
-            ${initialPauseEnd}%, ${(Number(scrollEnd) - 0.0001).toFixed(6)}% { opacity: 1; }
-            ${scrollEnd}%, 100% { opacity: 0; }
+            ${initialPauseEnd}%, ${fadeOutStart}% { opacity: 1; }
+            ${(Number(fadeOutStart) + 0.0001).toFixed(6)}%, 100% { opacity: 0; }
         }
     `;
 
@@ -353,15 +358,20 @@ function setupNowPlayingMetadata() {
     // Immediate check with no cooldown on first run
     checkMetadata(true);
     
-    // Set up regular checking
+    // Set up more frequent checking (every 5 seconds instead of 15)
     metadataInterval = setInterval(() => {
         checkMetadata();
-    }, METADATA_CHECK_INTERVAL);
+    }, 5000); // Reduced from 15000 to 5000
     
     // Also check when playback starts
     audio.addEventListener('play', () => {
         checkMetadata(true);
     }, { once: true });
+    
+    // Check when song ends
+    audio.addEventListener('ended', () => {
+        checkMetadata(true);
+    });
 }
 
 function updateSelectedStation(name) {
@@ -387,8 +397,11 @@ function updateSelectedStation(name) {
 
 // Genre Filtering Functions
 function setupGenreFiltering() {
-    // Use event delegation instead of individual listeners
-    document.querySelector('.genre-buttons')?.addEventListener('click', (e) => {
+    const genreButtons = document.querySelector('.genre-buttons');
+    if (!genreButtons) return;
+
+    // Use event delegation for both click and touch events
+    genreButtons.addEventListener('click touchstart', (e) => {
         const button = e.target.closest('.genre-button');
         if (!button) return;
         
@@ -405,7 +418,7 @@ function setupGenreFiltering() {
         currentGenre = button.dataset.genre;
         applyGenreFilter();
         setupExpandableCategories();
-    });
+    }, { passive: false });
 }
 
 function applyGenreFilter() {
@@ -566,28 +579,49 @@ function setupDropdown() {
     const dropdownToggle = document.querySelector(".dropdown-toggle");
     const dropdownMenu = document.querySelector(".dropdown-menu");
 
+    // Handle click and touch events
     dropdownToggle.addEventListener("click", (event) => {
         event.stopPropagation();
-        dropdownToggle.classList.toggle("active");
-        if (dropdownMenu.classList.contains('show')) {
-            dropdownMenu.classList.remove('show');
-        } else {
-            dropdownMenu.style.display = 'flex';
-            // Trigger reflow before adding class for animation
-            void dropdownMenu.offsetWidth;
-            dropdownMenu.classList.add('show');
+        toggleDropdown();
+    });
+    
+    // Add touch event
+    dropdownToggle.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleDropdown();
+    }, { passive: false });
+
+    // Handle document clicks and touches
+    document.addEventListener("click touchstart", (event) => {
+        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+            closeDropdown();
         }
     });
 
-    document.addEventListener("click", (event) => {
-        if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
-            dropdownToggle.classList.remove("active");
-            dropdownMenu.classList.remove('show');
-            setTimeout(() => {
-                dropdownMenu.style.display = 'none';
-            }, 200);
+    function toggleDropdown() {
+        dropdownToggle.classList.toggle("active");
+        if (dropdownMenu.classList.contains('show')) {
+            closeDropdown();
+        } else {
+            openDropdown();
         }
-    });
+    }
+
+    function openDropdown() {
+        dropdownMenu.style.display = 'flex';
+        // Trigger reflow before adding class for animation
+        void dropdownMenu.offsetWidth;
+        dropdownMenu.classList.add('show');
+    }
+
+    function closeDropdown() {
+        dropdownToggle.classList.remove("active");
+        dropdownMenu.classList.remove('show');
+        setTimeout(() => {
+            dropdownMenu.style.display = 'none';
+        }, 200);
+    }
 }
 
 function setupGenreInfoIcon() {
@@ -698,15 +732,74 @@ function setupRecentlyPlayedToggle() {
     
     let isExpanded = false;
 
-    // Handle toggle
+    // Handle toggle - add touch events
     toggleHandle.addEventListener('click', function(e) {
         e.stopPropagation();
         toggleCollapse();
     });
+    
+    // Add touch events for better mobile support
+    toggleHandle.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleCollapse();
+    }, { passive: false });
 
-	// Handle history button
+    // Handle history button - update for touch
     historyBtn.addEventListener('click', function(e) {
         e.stopPropagation();
+        toggleHistoryDropdown();
+    });
+    
+    // Add touch event for history button
+    historyBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleHistoryDropdown();
+    }, { passive: false });
+
+    // Handle info icon - update for touch
+    infoIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleGenreTooltip();
+    });
+    
+    // Add touch event for info icon
+    infoIcon.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleGenreTooltip();
+    }, { passive: false });
+
+    // Update document click handler to also handle touch
+    document.addEventListener('click touchstart', function(e) {
+        // Check if touch is outside both the button and dropdown
+        const isClickInside = historyBtn.contains(e.target) || 
+                             historyDropdown.contains(e.target);
+        
+        if (!isClickInside && historyDropdown.classList.contains('show')) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                historyBtn.classList.remove('active');
+            }, 200);
+        }
+        
+        // Also handle info icon
+        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+            genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
+        }
+    });
+
+    // Helper functions
+    function toggleCollapse() {
+        isExpanded = !isExpanded;
+        audioContainer.classList.toggle('expanded', isExpanded);
+        ScrollbarManager.updateAll();
+    }
+
+    function toggleHistoryDropdown() {
         const isVisible = historyDropdown.classList.contains('show');
         
         // Close other open elements
@@ -715,7 +808,6 @@ function setupRecentlyPlayedToggle() {
             infoIcon.classList.remove('active');
         }
         
-        // Immediately show/hide dropdown
         if (isVisible) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -729,12 +821,12 @@ function setupRecentlyPlayedToggle() {
             historyDropdown.classList.add('show');
             historyBtn.classList.add('active');
         }
-    });
+    }
 
-    // Handle info icon
-    infoIcon.addEventListener('click', function(e) {
-        e.stopPropagation();
-        // Close history dropdown immediately if open
+    function toggleGenreTooltip() {
+        const isVisible = genreTooltip.classList.contains('visible');
+        
+        // Close history dropdown if open
         if (historyDropdown.classList.contains('show')) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -742,63 +834,17 @@ function setupRecentlyPlayedToggle() {
                 historyBtn.classList.remove('active');
             }, 200);
         }
-        // Toggle tooltip
-        infoIcon.classList.toggle('active');
-        genreTooltip.classList.toggle('visible');
-    });
-
-document.addEventListener('click', function(e) {
-    // Check if click is outside both the button and dropdown
-    const isClickInside = historyBtn.contains(e.target) || 
-                         historyDropdown.contains(e.target);
-    
-    if (!isClickInside && historyDropdown.classList.contains('show')) {
-        historyDropdown.classList.remove('show');
-        setTimeout(() => {
-            historyDropdown.style.display = 'none';
-            historyBtn.classList.remove('active');
-        }, 200);
+        
+        if (isVisible) {
+            genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
+        } else {
+            // Trigger reflow before adding class for animation
+            void genreTooltip.offsetWidth;
+            genreTooltip.classList.add('visible');
+            infoIcon.classList.add('active');
+        }
     }
-    
-    // Also handle info icon
-    if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
-        genreTooltip.classList.remove('visible');
-        infoIcon.classList.remove('active');
-    }
-});
-
-    // Helper functions
-    function toggleCollapse() {
-        isExpanded = !isExpanded;
-        audioContainer.classList.toggle('expanded', isExpanded);
-        ScrollbarManager.updateAll();
-    }
-
-function toggleHistoryDropdown() {
-    const isVisible = historyDropdown.classList.contains('show');
-    if (isVisible) {
-        historyDropdown.classList.remove('show');
-        setTimeout(() => {
-            historyDropdown.style.display = 'none';
-        }, 200); // Match this with your CSS transition duration
-    } else {
-        historyDropdown.style.display = 'flex';
-        // Trigger reflow before adding class for animation
-        void historyDropdown.offsetWidth;
-        historyDropdown.classList.add('show');
-    }
-}
-
-function toggleGenreTooltip() {
-    const isVisible = genreTooltip.classList.contains('visible');
-    if (isVisible) {
-        genreTooltip.classList.remove('visible');
-    } else {
-        // Trigger reflow before adding class for animation
-        void genreTooltip.offsetWidth;
-        genreTooltip.classList.add('visible');
-    }
-}
 }
 
 function setupAudioContainerObserver() {
@@ -993,7 +1039,7 @@ function loadRecentlyPlayed() {
     container.style.overflowX = 'hidden';
     
     if (uniqueStations.length === 0) {
-        container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica</div>';
+        container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
         return;
     }
 

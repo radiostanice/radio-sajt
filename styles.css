@@ -1192,7 +1192,6 @@ button {
     width: 100%;
     height: 80px;
     background: #222;
-
     overflow: hidden;
     transition: height 0.3s ease;
     z-index: 110;
@@ -1200,26 +1199,30 @@ button {
     flex-direction: column;
 }
 
-/* Toggle Handle (always visible) */
 .toggle-handle {
     width: 100%;
     height: 16px;
     display: flex;
-	background: #;
     justify-content: center;
     cursor: pointer;
 	border-top: 1px solid #444;
 	border-bottom: 1px solid transparent;
-	transition: border-bottom-color 0.2s ease;
+	transition: border-bottom 0.2s ease;
+	border-radius: 20px 20px 0 0;
+	box-shadow: 20px 0px 0px #0f0f0f, -20px 0px 0px #0f0f0f;
 }
+
 .audio-container.expanded .toggle-handle {
     border-bottom-color: #333;
+	border-left: 1px solid #444;
+	border-right: 1px solid #444;
 }
+
 .toggle-handle::before {
     content: '';
     display: block;
     width: 40px;
-    height: 5px;
+    height: 4px;
 	margin: 5px 0;
     background: #777;
     border-radius: 2px;
@@ -1270,9 +1273,7 @@ button {
 .segmented-button .material-icons {
     font-size: 18px;
     margin-right: 4px;
-    display: -moz-inline-box !important;
-    -moz-box-align: center !important;
-    vertical-align: middle !important;
+
     width: 18px;
     height: 18px;
     line-height: 18px;
@@ -1280,12 +1281,11 @@ button {
 
 .segmented-button-group .segmented-button.active {
     border-color: var(--accent-color);
-	
 	z-index: 1;
 }
 
 .segmented-button-group {
-        display: inline-flex;
+    display: inline-flex;
     align-items: stretch;
     height: 44px;
     background-color: transparent;
@@ -1296,7 +1296,7 @@ button {
 .segmented-button-group .segmented-button {
     margin: 0;
     border-radius: 16px;
-	    height: 100%;
+	height: 100%;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -1329,12 +1329,14 @@ button {
 .audio-container.expanded .toggle-buttons {
     display: flex;
 }
-
+.has-now-playing .history-dropdown,
+.has-now-playing .genre-tooltip.visible {
+    bottom: 215px;
+}
 .history-dropdown {
     position: fixed;
     bottom: 195px;
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
+    right: 50%;
     pointer-events: none;
     width: 90%;
     max-width: 400px;
@@ -1354,7 +1356,7 @@ button {
     opacity: 1;
     visibility: visible;
     display: flex;
-    transform: translateX(-50%) translateY(0);
+    transform: translateX(50%) translateY(0);
 	pointer-events: auto;
 }
 
@@ -1377,6 +1379,12 @@ button {
     margin: 10px 0;
     max-height: 300px;
     scroll-behavior: smooth;
+}
+
+.empty-message {
+	font-size: 18px;
+	margin: 10px;
+	opacity: 0.8;
 }
 
 /* Updated Navigation Button Styles */
@@ -1426,7 +1434,7 @@ button {
 }
 
 .recently-played-title {
-    padding: 10px 0 5px 10px;
+    padding: 15px 5px 5px 15px;
     display: flex;
     align-items: center;
     font-weight: 600;
@@ -1434,26 +1442,20 @@ button {
     border-bottom: 1px solid #444;
 }
 
-.recently-played-title .material-icons {
-    margin-right: 5px;
-	font-size: 24px;
-}
-
 .genre-tooltip {
     position: fixed;
     bottom: 195px;
     left: 50%;
-    transform: translateX(-50%) translateY(10px);
     max-width: 350px;
     background-color: #222;
     color: #ffffff;
-    padding: 10px 20px;
+    padding: 10px 0;
     border-radius: 8px;
     font-size: 16px;
     max-width: 500px;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     border: 2px solid #444;
     cursor: default;
@@ -1469,12 +1471,14 @@ button {
 .genre-tooltip-item {
     display: flex;
     align-items: center;
-    padding: 5px 10px;
-    margin: 5px 0 5px 0;
+    padding: 5px 15px;
+    margin:  7px 10px;
     border: 2px solid #444;
     border-radius: 20px;
     white-space: nowrap;
     background-color: #191919;
+	height: 44px;
+    border-radius: 20px;
 }
 
 .genre-tooltip-item:first-child {
@@ -1486,12 +1490,17 @@ button {
 }
 
 .genre-tooltip-item .material-icons {
-    font-size: 20px;
+    font-size: 18px;
+    margin-right: 4px;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
     color: #ffffff;
     margin-right: 3px;
-    display: inline-flex;
+    display: inline-block;
     background: none;
-    vertical-align: middle;
+	box-sizing: border-box;
+	vertical-align: middle;
 	pointer-events: none;
 }
 
@@ -1503,11 +1512,12 @@ button {
 
 .genre-tooltip strong {
     display: block;
-    padding: 5px 0;
-    font-size: 16px;
+    padding: 5px 10px;
+    font-size: 18px;
 	font-weight: 600;
-	border-bottom: 1px solid #777;
-	margin: -2px -10px 10px -10px;
+	border-bottom: 1px solid #444;
+	margin: -5px 0 10px 0;
+	text-align: left;
 }
 
 /* ============ */
