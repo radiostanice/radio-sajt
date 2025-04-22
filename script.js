@@ -677,19 +677,18 @@ function setupGenreInfoIcon() {
     
 function updateTooltipContent() {
     const audioTextElement = document.getElementById('audiotext');
-    if (!audioTextElement || audioTextElement.textContent === "Izaberite stanicu") {
+    const tooltip = document.querySelector('.genre-tooltip');
+    
+    if (!audioTextElement || !tooltip) return;
+    
+    // Default empty state
+    if (!audioTextElement.textContent || audioTextElement.textContent === "Izaberite stanicu") {
         tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema pronađenih žanrova</div>';
         return;
     }
     
-    const currentStation = document.querySelector('.radio.selected') || 
-                         document.querySelector(`.radio[data-name="${audioTextElement.textContent}"]`);
-    
-    if (!currentStation || !currentStation.dataset.genre) {
-        tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
-        return;
-    }
-    
+	const currentStation = document.querySelector('.radio.selected') || 
+                           document.querySelector(`.radio[data-name="${audioTextElement.textContent}"]`);
     const genres = currentStation.dataset.genre;
     const genreArray = genres.split(',');
     const formattedGenres = genreArray.map(genre => {
@@ -923,108 +922,54 @@ function setupAudioContainerGestures() {
     let startY = 0;
     let startHeight = 0;
     let isDragging = false;
-    let isClick = true;
-    let lastTime = 0;
-    let velocity = 0;
     const MIN_SWIPE_DISTANCE = 30;
-    const SWIPE_THRESHOLD = 0.3;
+    const SWIPE_VELOCITY_THRESHOLD = 0.3;
 
     const toggleHandle = document.querySelector('.toggle-handle');
     
-    // Only allow gestures on the toggle handle
-	toggleHandle.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.audio-player') || 
-            e.target.closest('.dropdown-menu') || 
-            e.target.closest('.genre-tooltip')) {
-            return;
-        }
-        
+    toggleHandle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         startHeight = audioContainer.clientHeight;
         isDragging = true;
-        isClick = true;
-        lastTime = Date.now();
-        velocity = 0;
         audioContainer.style.transition = 'none';
         e.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-
-        const currentY = e.touches[0].clientY;
-        const deltaY = startY - currentY;
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastTime;
         
-		if (deltaY < 0 && !audioContainer.classList.contains('expanded')) {
-            isDragging = false;
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        // Prevent dragging up when collapsed
+        if (deltaY < 0 && !audioContainer.classList.contains('expanded')) {
             return;
         }
-		
-        // Only process if touch started on the toggle handle
-        if (!e.target.closest('.toggle-handle') && !isDragging) return;
         
-        // Calculate velocity
-        if (timeDiff > 0) {
-            velocity = deltaY / timeDiff;
-        }
-        lastTime = currentTime;
-        
-        // If movement is significant, it's not a click
-        if (Math.abs(deltaY) > 5) {
-            isClick = false;
-        }
-        
-        const newHeight = Math.min(Math.max(COLLAPSED_HEIGHT, startHeight + deltaY), 300);
+        const newHeight = Math.max(COLLAPSED_HEIGHT, Math.min(startHeight - deltaY, 300));
         audioContainer.style.height = `${newHeight}px`;
-        ScrollbarManager.updateAll();
         e.preventDefault();
     }, { passive: false });
 
-    // Handle touch end
-	document.addEventListener('touchend', (e) => {
+    document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
-        
-        // If it was a click, toggle the state
-        if (isClick) {
-            audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
-            audioContainer.classList.toggle('expanded');
-            updateAudioContainerHeight();
-            return;
-        }
         
         const currentHeight = audioContainer.clientHeight;
         const threshold = COLLAPSED_HEIGHT + 50;
         
-        // Force transition to end state if stuck in the middle
+        // Apply proper transition
+        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
+        
+        // Determine final state based on current position and velocity
         if (currentHeight > threshold) {
             audioContainer.classList.add('expanded');
         } else {
             audioContainer.classList.remove('expanded');
         }
         
-        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
         updateAudioContainerHeight();
     });
-
-    // Handle toggle handle click
-    toggleHandle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
-        audioContainer.classList.toggle('expanded');
-        updateAudioContainerHeight();
-    });
-    
-    // Add touch event for toggle handle
-    toggleHandle.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        audioContainer.style.transition = 'height 0.3s ease, opacity 0.3s ease';
-        audioContainer.classList.toggle('expanded');
-        updateAudioContainerHeight();
-    }, { passive: false });
 }
 
 function setupRecentlyPlayedNavigation() {
@@ -1438,7 +1383,6 @@ function updateAudioContainerHeight() {
     
     // Calculate new height based on current state
     let newHeight = COLLAPSED_HEIGHT;
-    let newOpacity = 1;
     
     if (audioContainer.classList.contains('has-now-playing')) {
         newHeight = audioContainer.classList.contains('expanded') ? 235 : 170;
@@ -1448,20 +1392,16 @@ function updateAudioContainerHeight() {
     
     // Apply the new height and opacity with transition
     audioContainer.style.height = `${newHeight}px`;
-    audioContainer.style.opacity = newOpacity;
     
     // Handle segmented buttons opacity
-    const segmentedButtons = document.querySelectorAll('.segmented-button');
+    const segmentedButtons = document.querySelector('.segmented-button-group');
+    
     if (audioContainer.classList.contains('expanded')) {
-        segmentedButtons.forEach(btn => {
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-        });
+        segmentedButtons.style.opacity = '1';
+        segmentedButtons.style.pointerEvents = 'auto';
     } else {
-        segmentedButtons.forEach(btn => {
-            btn.style.opacity = '0';
-            btn.style.pointerEvents = 'none';
-        });
+        segmentedButtons.style.opacity = '0';
+        segmentedButtons.style.pointerEvents = 'none';
     }
     
     // Update scrollbar and other dependent elements

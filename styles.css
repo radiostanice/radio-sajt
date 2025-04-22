@@ -1292,6 +1292,14 @@ button {
     background-color: transparent;
     border-radius: 20px;
     margin: 0 8px;
+	    opacity: 0;
+    transition: opacity 10s ease;
+}
+
+
+.audio-container.expanded .segmented-button-group {
+    opacity: 1;
+
 }
 
 .segmented-button-group .segmented-button {
