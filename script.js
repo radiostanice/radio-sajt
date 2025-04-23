@@ -722,19 +722,31 @@ function setupRecentlyPlayedToggle() {
         toggleCollapse();
     });
 
-    // Handle history button - modified for mobile
+    // Modify the history dropdown event listeners
     historyBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         toggleHistoryDropdown();
     });
 
-    // Add touch event for mobile
     historyBtn.addEventListener('touchend', function(e) {
         e.preventDefault();
         e.stopPropagation();
         toggleHistoryDropdown();
     });
+
+    // Add touch event handlers to the dropdown itself
+    historyDropdown.addEventListener('touchstart', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling up
+    }, { passive: true });
+
+    historyDropdown.addEventListener('touchmove', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling up
+    }, { passive: false });
+
+    historyDropdown.addEventListener('touchend', function(e) {
+        e.stopPropagation(); // Prevent event from bubbling up
+    }, { passive: true });
 
     // Handle info icon - modified for mobile
     infoIcon.addEventListener('click', function(e) {
@@ -966,8 +978,8 @@ function setupRecentlyPlayedNavigation() {
         const scrollTop = stations.scrollTop;
         const maxScroll = stations.scrollHeight - stations.clientHeight;
         
-        topButton.style.display = scrollTop <= 10 ? 'none' : 'flex';
-        bottomButton.style.display = scrollTop >= maxScroll - 10 ? 'none' : 'flex';
+        topButton.style.display = scrollTop <= 10 ? 'none' : 'block';
+        bottomButton.style.display = scrollTop >= maxScroll - 10 ? 'none' : 'block';
     }
 
     function smoothScroll(direction) {
@@ -1006,7 +1018,22 @@ function setupRecentlyPlayedNavigation() {
     bottomButton.addEventListener('click', () => smoothScroll('bottom'));
     stations.addEventListener('scroll', updateButtonVisibility);
     window.addEventListener('resize', checkOverflow);
+	
+	    // Add touch event handlers to the stations container
+    stations.addEventListener('touchstart', function(e) {
+        // Only prevent propagation if not on a radio element
+        if (!e.target.closest('.radio')) {
+            e.stopPropagation();
+        }
+    }, { passive: true });
 
+    stations.addEventListener('touchmove', function(e) {
+        // Only prevent propagation if not on a radio element
+        if (!e.target.closest('.radio')) {
+            e.stopPropagation();
+        }
+    }, { passive: false });
+	
 	// Add this to prevent height jumps
     stations.style.minHeight = '0';
     stations.style.maxHeight = '60vh';

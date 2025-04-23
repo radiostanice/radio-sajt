@@ -1352,7 +1352,7 @@ button {
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
-    margin: 10px 0;
+    margin: 5px 0 10px 0;
     max-height: 300px;
     scroll-behavior: smooth;
 }
