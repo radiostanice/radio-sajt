@@ -124,7 +124,6 @@ button {
     color: #000000;
 }
 
-.light-mode #recentlyPlayedContainer,
 .light-mode .audio-container,
 .light-mode .dropdown-menu {
     background-color: #f0f0f0;
@@ -932,7 +931,6 @@ button {
     will-change: transform;
     font-size: 28px;
     opacity: 1;
-    animation: fade 0.2s linear;
 	white-space: nowrap;
     display: inline-block;
     box-sizing: border-box;
@@ -980,42 +978,18 @@ button {
     background: linear-gradient(90deg, rgba(34,34,34,1) 0%, rgba(34,34,34,0) 100%);
 }
 
-.song-title > div {
-    will-change: transform;
-}
 
-@keyframes fade {
-    from { 
-        opacity: 0;
-    }
-    to { 
-        opacity: 1;
-    }
-}
 
 @keyframes marquee {
     0% { transform: translateX(0); }
     100% { transform: translateX(calc(-200% + 200px)); }
 }
 
-/* Animation for fade effects when text is animating */
-@keyframes fadeEdges {
-    0%, 20% {
-        mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
-        -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
-    }
-    80%, 100% {
-        mask-image: linear-gradient(90deg, black 0%, black 100%);
-        -webkit-mask-image: linear-gradient(90deg, black 0%, black 100%);
-    }
-}
-
 .audio-player {
-	    min-width: 270px;
+	min-width: 270px;
     max-width: 350px;
-    width: auto; /* Expands with content */
-    display: inline-flex; /* Better for auto width */
-	
+    width: auto;
+    display: inline-flex;
 	touch-action: manipulation;
     position: relative !important;
     z-index: 1001 !important;
@@ -1274,7 +1248,6 @@ button {
 .segmented-button .material-icons {
     font-size: 18px;
     margin-right: 4px;
-
     width: 18px;
     height: 18px;
     line-height: 18px;
@@ -1292,14 +1265,6 @@ button {
     background-color: transparent;
     border-radius: 20px;
     margin: 0 8px;
-	    opacity: 0;
-    transition: opacity 1s ease;
-}
-
-
-.audio-container.expanded .segmented-button-group {
-    opacity: 1;
-
 }
 
 .segmented-button-group .segmented-button {
@@ -1344,6 +1309,7 @@ button {
     bottom: 215px;
 }
 .history-dropdown {
+	transform: translateX(50%) translateY(0);
     position: fixed;
     bottom: 195px;
     right: 50%;
@@ -1358,8 +1324,8 @@ button {
     visibility: hidden;
     flex-direction: column;
     z-index: 120;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .history-dropdown.show {
@@ -1465,8 +1431,8 @@ button {
     max-width: 500px;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border: 2px solid #444;
     cursor: default;
 }

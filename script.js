@@ -708,15 +708,98 @@ function setupRecentlyPlayedToggle() {
     
     let isExpanded = false;
 
-    // Handle toggle
+    // Handle toggle - modified for better mobile support
     toggleHandle.addEventListener('click', function(e) {
+        e.preventDefault();
         e.stopPropagation();
         toggleCollapse();
     });
 
-	// Handle history button
-    historyBtn.addEventListener('click', function(e) {
+    // Add touch event for mobile
+    toggleHandle.addEventListener('touchend', function(e) {
+        e.preventDefault();
         e.stopPropagation();
+        toggleCollapse();
+    });
+
+    // Handle history button - modified for mobile
+    historyBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleHistoryDropdown();
+    });
+
+    // Add touch event for mobile
+    historyBtn.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleHistoryDropdown();
+    });
+
+    // Handle info icon - modified for mobile
+    infoIcon.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleGenreTooltip();
+    });
+
+    // Add touch event for mobile
+    infoIcon.addEventListener('touchend', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleGenreTooltip();
+    });
+
+    document.addEventListener('click', function(e) {
+        // Check if click is outside both the button and dropdown
+        const isClickInside = historyBtn.contains(e.target) || 
+                             historyDropdown.contains(e.target);
+        
+        if (!isClickInside && historyDropdown.classList.contains('show')) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                historyBtn.classList.remove('active');
+            }, 200);
+        }
+        
+        // Also handle info icon
+        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+            genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
+        }
+    });
+
+    // Add touch event for document to close dropdowns
+    document.addEventListener('touchend', function(e) {
+        // Check if touch is outside both the button and dropdown
+        const isTouchInside = historyBtn.contains(e.target) || 
+                             historyDropdown.contains(e.target);
+        
+        if (!isTouchInside && historyDropdown.classList.contains('show')) {
+            historyDropdown.classList.remove('show');
+            setTimeout(() => {
+                historyDropdown.style.display = 'none';
+                historyBtn.classList.remove('active');
+            }, 200);
+        }
+        
+        // Also handle info icon
+        if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
+            genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
+        }
+    });
+
+    // Helper functions
+    function toggleCollapse() {
+        isExpanded = !isExpanded;
+        audioContainer.classList.toggle('expanded', isExpanded);
+        updateAudioContainerHeight();
+        ScrollbarManager.updateAll();
+    }
+
+    function toggleHistoryDropdown() {
         const isVisible = historyDropdown.classList.contains('show');
         
         // Close other open elements
@@ -725,7 +808,6 @@ function setupRecentlyPlayedToggle() {
             infoIcon.classList.remove('active');
         }
         
-        // Immediately show/hide dropdown
         if (isVisible) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -739,12 +821,12 @@ function setupRecentlyPlayedToggle() {
             historyDropdown.classList.add('show');
             historyBtn.classList.add('active');
         }
-    });
+    }
 
-    // Handle info icon
-    infoIcon.addEventListener('click', function(e) {
-        e.stopPropagation();
-        // Close history dropdown immediately if open
+    function toggleGenreTooltip() {
+        const isVisible = genreTooltip.classList.contains('visible');
+        
+        // Close history dropdown if open
         if (historyDropdown.classList.contains('show')) {
             historyDropdown.classList.remove('show');
             setTimeout(() => {
@@ -752,63 +834,17 @@ function setupRecentlyPlayedToggle() {
                 historyBtn.classList.remove('active');
             }, 200);
         }
-        // Toggle tooltip
-        infoIcon.classList.toggle('active');
-        genreTooltip.classList.toggle('visible');
-    });
-
-document.addEventListener('click', function(e) {
-    // Check if click is outside both the button and dropdown
-    const isClickInside = historyBtn.contains(e.target) || 
-                         historyDropdown.contains(e.target);
-    
-    if (!isClickInside && historyDropdown.classList.contains('show')) {
-        historyDropdown.classList.remove('show');
-        setTimeout(() => {
-            historyDropdown.style.display = 'none';
-            historyBtn.classList.remove('active');
-        }, 200);
+        
+        if (isVisible) {
+            genreTooltip.classList.remove('visible');
+            infoIcon.classList.remove('active');
+        } else {
+            // Force reflow before adding class for animation
+            void genreTooltip.offsetWidth;
+            genreTooltip.classList.add('visible');
+            infoIcon.classList.add('active');
+        }
     }
-    
-    // Also handle info icon
-    if (!infoIcon.contains(e.target) && !genreTooltip.contains(e.target)) {
-        genreTooltip.classList.remove('visible');
-        infoIcon.classList.remove('active');
-    }
-});
-
-    // Helper functions
-    function toggleCollapse() {
-        isExpanded = !isExpanded;
-        audioContainer.classList.toggle('expanded', isExpanded);
-        ScrollbarManager.updateAll();
-    }
-
-function toggleHistoryDropdown() {
-    const isVisible = historyDropdown.classList.contains('show');
-    if (isVisible) {
-        historyDropdown.classList.remove('show');
-        setTimeout(() => {
-            historyDropdown.style.display = 'none';
-        }, 200); // Match this with your CSS transition duration
-    } else {
-        historyDropdown.style.display = 'flex';
-        // Trigger reflow before adding class for animation
-        void historyDropdown.offsetWidth;
-        historyDropdown.classList.add('show');
-    }
-}
-
-function toggleGenreTooltip() {
-    const isVisible = genreTooltip.classList.contains('visible');
-    if (isVisible) {
-        genreTooltip.classList.remove('visible');
-    } else {
-        // Trigger reflow before adding class for animation
-        void genreTooltip.offsetWidth;
-        genreTooltip.classList.add('visible');
-    }
-}
 }
 
 function setupAudioContainerObserver() {
@@ -835,12 +871,18 @@ function setupAudioContainerGestures() {
     let isDragging = false;
 
     audioContainer.addEventListener('touchstart', (e) => {
-        if (e.target.closest('.audio-player')) return;
+        // Don't start drag if touching interactive elements
+        if (e.target.closest('.audio-player') || 
+            e.target.closest('.toggle-handle') ||
+            e.target.closest('.info-icon') ||
+            e.target.closest('#historyBtn')) {
+            return;
+        }
         
         startY = e.touches[0].clientY;
         startHeight = audioContainer.clientHeight;
         isDragging = true;
-        audioContainer.style.transition = 'none'; // Disable during drag
+        audioContainer.style.transition = 'none';
         e.preventDefault();
     }, { passive: false });
 
@@ -861,7 +903,7 @@ function setupAudioContainerGestures() {
         isDragging = false;
         
         const currentHeight = audioContainer.clientHeight;
-        audioContainer.style.transition = ''; // Re-enable transitions
+        audioContainer.style.transition = '';
         
         // Snap to nearest state
         if (currentHeight > COLLAPSED_HEIGHT + 50) {
@@ -870,18 +912,10 @@ function setupAudioContainerGestures() {
             audioContainer.classList.remove('expanded');
         }
         
-        updateAudioContainerHeight(); // Let the centralized function handle the final height
+        updateAudioContainerHeight();
     });
 
-    // Handle toggle handle click
-    const toggleHandle = document.querySelector('.toggle-handle');
-    if (toggleHandle) {
-        toggleHandle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            audioContainer.classList.toggle('expanded');
-            updateAudioContainerHeight();
-        });
-    }
+    // Handle toggle handle click - already handled in setupRecentlyPlayedToggle
 }
 
 function setupRecentlyPlayedNavigation() {
