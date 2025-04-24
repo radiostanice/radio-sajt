@@ -802,7 +802,7 @@ function updateTooltipContent() {
         
         qualitySection = `
             <div class="tooltip-section">
-                <strong>Kvalitet:</strong>
+                <strong class="quality-title">Kvalitet:</strong>
                 <div class="quality-info">
                     ${displayBitrate ? `<span title="Bitrate">${displayBitrate}</span>` : ''}
                     ${format ? `<span title="Format">${format}</span>` : ''}
@@ -1295,7 +1295,7 @@ audio.addEventListener("pause", updatePlayPauseButton);
 
 function updatePlayPauseButton() {
     const audioPlayer = document.querySelector('.audio-player');
-    playPauseBtn.innerHTML = `<span class="material-icons">${audio.paused ? 'play_arrow' : 'pause'}</span>`;
+    playPauseBtn.innerHTML = `<span class="material-icons">${audio.paused ? 'play_arrow' : 'stop'}</span>`;
     
     // Toggle play-mode class based on paused state
     if (audio.paused) {

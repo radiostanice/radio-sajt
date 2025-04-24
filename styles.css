@@ -344,29 +344,7 @@ button {
 .light-mode .recently-played-title {
 	border-bottom-color: #bdbdbd;
 }
-.genre-tooltip .tooltip-section {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    margin-bottom: 8px;
-}
 
-.genre-tooltip .tooltip-section:last-child {
-    margin-bottom: 0;
-}
-
-.quality-info {
-    display: flex;
-    gap: 10px;
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.quality-info span {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
 /* ======== */
 /* HEADER */
 /* ======== */
@@ -1457,8 +1435,8 @@ button {
     max-width: 350px;
     background-color: #222;
     color: #ffffff;
-    padding: 10px 0;
-    border-radius: 8px;
+    padding: 0;
+    border-radius: 10px;
     font-size: 16px;
     max-width: 500px;
     opacity: 0;
@@ -1480,7 +1458,7 @@ button {
     display: flex;
     align-items: center;
     padding: 5px 15px;
-    margin:  7px 10px;
+    margin: 7px 10px;
     border: 2px solid #444;
     border-radius: 20px;
     white-space: nowrap;
@@ -1490,11 +1468,11 @@ button {
 }
 
 .genre-tooltip-item:first-child {
-    margin-top: 0;
+    margin-top: 10px !important;
 }
 
 .genre-tooltip-item:last-child {
-    margin-bottom: 0;
+    margin-bottom: 10px !important;
 }
 
 .genre-tooltip-item .material-icons {
@@ -1520,12 +1498,26 @@ button {
 
 .genre-tooltip strong {
     display: block;
-    padding: 5px 10px;
+    padding: 10px 10px 5px 10px;
     font-size: 18px;
 	font-weight: 600;
 	border-bottom: 1px solid #444;
-	margin: -5px 0 10px 0;
+	margin: 0;
+	margin-bottom: 10px;
 	text-align: left;
+}
+
+.quality-title {
+	border-top: 1px solid #444;
+	border-radius: 10px 10px 0 0;
+}
+
+.quality-info {
+	border: 2px solid #444;
+	border-radius: 20px;
+	margin: 10px;
+	padding: 10px 15px;
+	background-color: #191919;
 }
 
 /* ============ */
