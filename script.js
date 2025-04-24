@@ -67,60 +67,39 @@ let lastTitle = '';
 
 // Station Functions
 async function changeStation(name, link) {
-    // Clear existing metadata immediately
+    // Clear UI immediately and reset state
     const audioTextElement = document.getElementById('audiotext');
     if (audioTextElement) {
         audioTextElement.innerHTML = `<div class="station-name">${name}</div>`;
         audioTextElement.classList.remove('has-now-playing');
         document.querySelector('.audio-container').classList.remove('has-now-playing');
+        lastTitle = ''; // Reset last title immediately
         updateAudioContainerHeight();
     }
-    
-    // Reset metadata state
-    lastTitle = '';
+
+    // Stop any ongoing metadata requests
     if (metadataInterval) {
         clearInterval(metadataInterval);
         metadataInterval = null;
     }
-    
-    // Update current station
+
+    // Store the current station name to prevent race conditions
+    const currentStationName = name;
     currentStation = { name, link };
-    lastTitle = '';
-    
-    // Handle audio playback
+
+    // Reset audio and set new source
     audio.pause();
+    audio.currentTime = 0;
     audio.src = link;
-    audio.load();
-    
-    // Setup metadata checking
-    audio.oncanplay = async () => {
-        try {
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                await playPromise.catch(handlePlayError);
-            }
-            // Immediate metadata check on play
-            checkMetadata(true);
-            // Setup continuous checking with shorter interval
-            setupNowPlayingMetadata();
-        } catch (e) {
-            handlePlayError(e);
-        }
-    };
 
-    // Also check metadata when the song ends
-    audio.addEventListener('ended', () => {
-        checkMetadata(true);
-    });
-
-    // Update UI and storage
+    // Update UI immediately
     document.title = `Radio | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
-    
-    updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
     updateSelectedStation(name);
-    
-    // Auto-scroll to the selected station
+    updatePlayPauseButton();
+    updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
+
+    // Scroll to station
     const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
     if (selectedStation) {
         selectedStation.scrollIntoView({
@@ -128,10 +107,75 @@ async function changeStation(name, link) {
             block: 'center'
         });
     }
-    updatePlayPauseButton();
     
-    // Check metadata after short delay
-    setTimeout(() => checkMetadata(true), 100);
+    updateTooltipContent();
+    
+    // Define play function before setting event handlers
+    const playAudio = async () => {
+        try {
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                await playPromise.catch(handlePlayError);
+            }
+            
+            // Check if we're still on the same station (prevent race conditions)
+            if (currentStation?.name === currentStationName) {
+                // Immediate metadata check with forced update
+                await checkMetadata(true);
+                
+                // Setup continuous checking with shorter intervals
+                setupNowPlayingMetadata();
+            }
+        } catch (e) {
+            handlePlayError(e);
+            // Retry after a short delay
+            setTimeout(playAudio, 1000);
+        }
+    };
+
+    // Set up audio event handlers
+    audio.oncanplay = playAudio;
+    audio.onerror = () => {
+        console.log('Audio error occurred, retrying...');
+        setTimeout(playAudio, 1000);
+    };
+
+    // Remove previous listeners to avoid duplicates
+    audio.removeEventListener('ended', metadataEndHandler);
+    
+    // Add new metadata update handler for song transitions
+    const metadataEndHandler = () => {
+        if (currentStation?.name === currentStationName) {
+            checkMetadata(true);
+        }
+    };
+    audio.addEventListener('ended', metadataEndHandler);
+
+    // Try to play immediately (only after setting up handlers)
+    try {
+        await playAudio();
+    } catch (e) {
+        console.error('Initial play failed:', e);
+    }
+}
+
+function isLikelyStationName(title) {
+    if (!title) return false;
+    
+    // Common patterns that indicate a station name rather than a song
+    const stationPatterns = [
+        /radio\s*/i,
+        /fm\s*\d*/i,
+        /^\d+\s*[kK][hH]z/i,
+        /live\s*stream/i,
+        /webradio/i,
+        /^\w+\s*-\s*\w+$/i, // Pattern like "Artist - Song"
+        /^\d{2}:\d{2}/, // Time pattern
+        /^now playing:/i,
+        /^currently playing:/i
+    ];
+    
+    return stationPatterns.some(pattern => pattern.test(title));
 }
 
 function handlePlayError(e) {
@@ -149,6 +193,30 @@ async function getNowPlaying(station) {
         if (!response.ok) return null;
         
         const data = await response.json();
+        
+        // Update station data attributes with quality info if available
+        if (data.quality) {
+            const stationElement = document.querySelector(`.radio[data-name="${station.name}"]`);
+            if (stationElement) {
+                // Clean up bitrate format
+                let bitrate = data.quality.bitrate || '';
+                
+                // Remove any non-digit characters and 'kbps' if present
+                 bitrate = bitrate.toString()
+                    .replace(/[^\d]/g, '')  // Remove all non-digit characters
+                    .replace(/^0+/, '')     // Remove leading zeros
+                    .slice(0, 3);
+                
+                // Only add kbps suffix if we have actual digits
+                if (bitrate) {
+                    bitrate = `${bitrate}kbps`;
+                }
+                
+                stationElement.dataset.bitrate = bitrate;
+                stationElement.dataset.format = data.quality.format || '';
+            }
+        }
+        
         if (data.success && data.title && !data.isStationName) {
             return cleanMetadata(data.title);
         }
@@ -184,30 +252,45 @@ function fetchWithTimeout(url, timeout) {
 
 function updateNowPlayingUI(title) {
     const audioTextElement = document.getElementById('audiotext');
-    if (!audioTextElement || !title) return;
+    if (!audioTextElement || !currentStation) return;
 
-    // Add has-now-playing class to audio container
     const audioContainer = document.querySelector('.audio-container');
-    audioContainer.classList.add('has-now-playing');
-	updateAudioContainerHeight();
-    
-    // Rest of your existing code...
-    let stationNameElement = audioTextElement.querySelector('.station-name') || 
-                           document.createElement('div');
-    stationNameElement.className = 'station-name';
-    stationNameElement.textContent = currentStation?.name || '';
-    
+    const stationName = currentStation.name;
+
+    // Always update the station name first
+    let stationNameElement = audioTextElement.querySelector('.station-name');
+    if (!stationNameElement) {
+        stationNameElement = document.createElement('div');
+        stationNameElement.className = 'station-name';
+        audioTextElement.appendChild(stationNameElement);
+    }
+    stationNameElement.textContent = stationName;
+
+    // Handle song title
     let songTitleElement = audioTextElement.querySelector('.song-title');
-    if (!songTitleElement) {
-        songTitleElement = document.createElement('div');
-        songTitleElement.className = 'song-title';
-        audioTextElement.prepend(songTitleElement);
+    
+    if (title && !isLikelyStationName(title) && title !== stationName) {
+        // If we have a valid title that's different from the station name, show it
+        if (!songTitleElement) {
+            songTitleElement = document.createElement('div');
+            songTitleElement.className = 'song-title';
+            audioTextElement.insertBefore(songTitleElement, stationNameElement);
+        }
+        songTitleElement.textContent = title;
+        audioTextElement.classList.add('has-now-playing');
+        audioContainer.classList.add('has-now-playing');
+        
+        setTimeout(() => applyMarqueeEffect(songTitleElement), 300);
+    } else {
+        // No valid title - remove song title if it exists
+        if (songTitleElement) {
+            audioTextElement.removeChild(songTitleElement);
+        }
+        audioTextElement.classList.remove('has-now-playing');
+        audioContainer.classList.remove('has-now-playing');
     }
     
-    songTitleElement.textContent = title;
-    audioTextElement.classList.add('has-now-playing');
-    
-    setTimeout(() => applyMarqueeEffect(songTitleElement), 300);
+    updateAudioContainerHeight();
 }
 
 function applyMarqueeEffect(element) {
@@ -332,25 +415,29 @@ function setupMarqueeAnimation(element, textWidth) {
     leftFade.style.animation = `${animationName}-left-fade ${totalDuration}s linear infinite`;
 }
 
- // Define checkMetadata function
-    async function checkMetadata(force = false) {
-        if (!currentStation?.link) return;
+async function checkMetadata(force = false) {
+    if (!currentStation?.link) return;
+    
+    try {
+        const now = Date.now();
+        if (!force && now - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
         
-        try {
-            const now = Date.now();
-            if (!force && now - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
-            
-            lastMetadataCheck = now;
-            const title = await getNowPlaying(currentStation);
-            
-            if (title && title !== lastTitle) {
-                lastTitle = title;
-                updateNowPlayingUI(title);
-            }
-        } catch (e) {
-            console.error('Metadata check failed:', e);
+        lastMetadataCheck = now;
+        const title = await getNowPlaying(currentStation);
+        
+        if (title && title !== lastTitle) {
+            lastTitle = title;
+            updateNowPlayingUI(title);
         }
+
+        // Update tooltip content if dropdown is open
+        if (document.querySelector('.genre-tooltip.visible')) {
+            updateTooltipContent();
+        }
+    } catch (e) {
+        console.error('Metadata check failed:', e);
     }
+}
 
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
@@ -613,7 +700,7 @@ function setupGenreInfoIcon() {
     infoIcon.addEventListener('click', (e) => {
         e.stopPropagation();
         isTooltipVisible = !isTooltipVisible;
-        infoIcon.classList.toggle("active", isTooltipVisible); // Explicitly set based on visibility
+        infoIcon.classList.toggle("active", isTooltipVisible);
         tooltip.classList.toggle('visible', isTooltipVisible);
         updateTooltipContent();
     });
@@ -622,7 +709,7 @@ function setupGenreInfoIcon() {
     document.addEventListener('click', (e) => {
         if (!infoIcon.contains(e.target)) {
             isTooltipVisible = false;
-			infoIcon.classList.remove("active");
+            infoIcon.classList.remove("active");
             tooltip.classList.remove('visible');
         }
     });
@@ -645,32 +732,9 @@ function setupGenreInfoIcon() {
             updateTooltipContent();
         }
     }
-    
-    function updateTooltipContent() {
-        const currentStation = document.querySelector('.radio.selected') || 
-                             document.querySelector(`.radio[data-name="${audioTitle.textContent}"]`);
-        
-        if (!currentStation) {
-            tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
-            return;
-        }
-        
-        const genres = currentStation.dataset.genre;
-		if (!genres) {
-			tooltip.innerHTML = '<strong>Žanrovi:</strong><div class="genre-tooltip-item">Nema informacija o žanru</div>';
-			return;
-    }
-        
-        const genreArray = genres.split(',');
-        const formattedGenres = genreArray.map(genre => {
-        const icon = getGenreIcon(genre.trim());
-			return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
-			}).join('');
-    
-			tooltip.innerHTML = `<strong>Žanrovi:</strong>${formattedGenres}`;
-    }
+}
 
-    function getGenreIcon(genre) {
+function getGenreIcon(genre) {
         const genreIcons = {
             'pop': 'mic_external_on',
             'rock': 'rocket',
@@ -690,11 +754,78 @@ function setupGenreInfoIcon() {
         };
         
         return `<span class="material-icons" style="font-size:16px;vertical-align:middle">${genreIcons[genre] || 'queue_music'}</span>`;
+}
+    
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function updateTooltipContent() {
+    const tooltip = document.querySelector('.genre-tooltip');
+    if (!tooltip) return;
+    
+    const currentStation = document.querySelector('.radio.selected') || 
+                         document.querySelector(`.radio[data-name="${document.getElementById('audiotext').textContent}"]`);
+    
+    if (!currentStation) {
+        tooltip.innerHTML = `
+            <div class="tooltip-section">
+                <strong>Žanrovi:</strong>
+                <div class="genre-tooltip-item">Nema informacija o žanru</div>
+            </div>
+        `;
+        return;
     }
     
-    function capitalizeFirstLetter(string) {
-        return string.charAt(0).toUpperCase() + string.slice(1);
+    // Get genres
+    const genres = currentStation.dataset.genre;
+    let formattedGenres = '<div class="genre-tooltip-item">Nema informacija o žanru</div>';
+    
+    if (genres) {
+        const genreArray = genres.split(',');
+        formattedGenres = genreArray.map(genre => {
+            const icon = getGenreIcon(genre.trim());
+            return `<div class="genre-tooltip-item">${icon} ${capitalizeFirstLetter(genre.trim())}</div>`;
+        }).join('');
     }
+    
+    // Get quality info - only show if we have valid data
+    const bitrate = currentStation.dataset.bitrate;
+    const format = currentStation.dataset.format;
+    
+    let qualitySection = '';
+    if (bitrate && !isUnknownValue(bitrate) && format && !isUnknownValue(format)) {
+        // Ensure bitrate is properly formatted
+        const displayBitrate = bitrate.toLowerCase().endsWith('kbps') ? 
+            bitrate : 
+            (bitrate.match(/\d+/) ? `${bitrate}kbps` : '');
+        
+        qualitySection = `
+            <div class="tooltip-section">
+                <strong>Kvalitet:</strong>
+                <div class="quality-info">
+                    ${displayBitrate ? `<span title="Bitrate">${displayBitrate}</span>` : ''}
+                    ${format ? `<span title="Format">${format}</span>` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    // Render tooltip
+    tooltip.innerHTML = `
+        <div class="tooltip-section">
+            <strong>Žanrovi:</strong>
+            ${formattedGenres}
+        </div>
+        ${qualitySection}
+    `;
+}
+
+// Helper function to check for unknown values
+function isUnknownValue(value) {
+    if (!value) return true;
+    const val = value.toString().toLowerCase().trim();
+    return val === 'undefined' || val === 'undefinedkbps' || val === 'plain' || val === 'html' || val === '';
 }
 
 function setupRecentlyPlayedToggle() {

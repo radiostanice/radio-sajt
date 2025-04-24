@@ -344,7 +344,29 @@ button {
 .light-mode .recently-played-title {
 	border-bottom-color: #bdbdbd;
 }
+.genre-tooltip .tooltip-section {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 8px;
+}
 
+.genre-tooltip .tooltip-section:last-child {
+    margin-bottom: 0;
+}
+
+.quality-info {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.quality-info span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 /* ======== */
 /* HEADER */
 /* ======== */
