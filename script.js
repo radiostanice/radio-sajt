@@ -1,4 +1,7 @@
+let handleDocumentClick, handleDocumentTouch;
 document.addEventListener("DOMContentLoaded", () => {
+    handleDocumentClick = function(e) { /* ... */ };
+    handleDocumentTouch = function(e) { /* ... */ };
     // Initialize core components first
     ScrollbarManager.init();
 	ScrollbarManager.setupAutoHide();
@@ -26,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector('.scroll-list').addEventListener('click', (e) => {
         const radio = e.target.closest('.radio');
         if (radio) changeStation(radio.dataset.name, radio.dataset.link);
-    });
+    }, { passive: true });
     
     // Final update
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -41,6 +44,16 @@ function cleanupResources() {
         .forEach(observer => observer?.disconnect());
     
     clearInterval(metadataInterval);
+    
+    // Clean up any dynamically added styles
+    document.getElementById('marquee-style')?.remove();
+    document.querySelectorAll('[data-dynamic-style]').forEach(el => el.remove());
+    
+    // Remove event listeners
+    document.removeEventListener('click', handleDocumentClick);
+    document.removeEventListener('touchend', handleDocumentTouch);
+    audio.removeEventListener('play', updateInfoIconVisibility);
+    audio.removeEventListener('pause', updateInfoIconVisibility);
 }
 
 // Global Elements and Constants
@@ -74,6 +87,13 @@ async function changeStation(name, link) {
         audioTextElement.classList.remove('has-now-playing');
         document.querySelector('.audio-container').classList.remove('has-now-playing');
         lastTitle = ''; // Reset last title immediately
+        
+        // Clear any existing song title element
+        const songTitleElement = audioTextElement.querySelector('.song-title');
+        if (songTitleElement) {
+            audioTextElement.removeChild(songTitleElement);
+        }
+        
         updateAudioContainerHeight();
     }
 
@@ -139,16 +159,16 @@ async function changeStation(name, link) {
         console.log('Audio error occurred, retrying...');
         setTimeout(playAudio, 1000);
     };
-
-    // Remove previous listeners to avoid duplicates
-    audio.removeEventListener('ended', metadataEndHandler);
-    
+	
     // Add new metadata update handler for song transitions
     const metadataEndHandler = () => {
         if (currentStation?.name === currentStationName) {
             checkMetadata(true);
         }
     };
+	
+	// Remove previous listeners to avoid duplicates
+    audio.removeEventListener('ended', metadataEndHandler);
     audio.addEventListener('ended', metadataEndHandler);
 
     // Try to play immediately (only after setting up handlers)
@@ -442,13 +462,30 @@ async function checkMetadata(force = false) {
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
     
+    // Use requestIdleCallback for non-critical updates
+    const checkMetadataIdle = () => {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => checkMetadata(), { timeout: 1000 });
+        } else {
+            checkMetadata();
+        }
+    };
+    
     // Immediate check with no cooldown on first run
     checkMetadata(true);
     
-    // Set up more frequent checking (every 5 seconds instead of 15)
+    // Set up checking with less frequent intervals when tab is inactive
     metadataInterval = setInterval(() => {
-        checkMetadata();
-    }, 5000); // Reduced from 15000 to 5000
+        if (document.hidden) {
+            // Less frequent checks when tab is in background
+            if (Date.now() - lastMetadataCheck > 30000) {
+                checkMetadataIdle();
+            }
+        } else {
+            // More frequent checks when tab is active
+            checkMetadataIdle();
+        }
+    }, 5000);
     
     // Also check when playback starts
     audio.addEventListener('play', () => {
@@ -690,47 +727,144 @@ function setupDropdown() {
 function setupGenreInfoIcon() {
     const infoIcon = document.querySelector('.info-icon');
     const tooltip = document.querySelector('.genre-tooltip');
-    const audioTitle = document.getElementById('audiotext');
+    const audioTextElement = document.getElementById('audiotext');
 
-    if (!infoIcon || !tooltip || !audioTitle) return;
+    if (!infoIcon || !tooltip || !audioTextElement) return;
 
     let isTooltipVisible = false;
 
     // Toggle tooltip on click
-    infoIcon.addEventListener('click', (e) => {
+    infoIcon.addEventListener('click', function(e) {
+        e.preventDefault();
         e.stopPropagation();
+        
         isTooltipVisible = !isTooltipVisible;
         infoIcon.classList.toggle("active", isTooltipVisible);
         tooltip.classList.toggle('visible', isTooltipVisible);
-        updateTooltipContent();
+        
+        if (isTooltipVisible) {
+            updateTooltipContent();
+            setupTooltipScrollBehavior();
+        }
+    });
+
+    // Prevent closing when clicking inside tooltip
+    tooltip.addEventListener('click', function(e) {
+        e.stopPropagation();
     });
 
     // Hide tooltip when clicking elsewhere
-    document.addEventListener('click', (e) => {
-        if (!infoIcon.contains(e.target)) {
+    document.addEventListener('click', function(e) {
+        if (!infoIcon.contains(e.target) && !tooltip.contains(e.target)) {
             isTooltipVisible = false;
             infoIcon.classList.remove("active");
             tooltip.classList.remove('visible');
         }
     });
 
-    // Update visibility and content when station changes
-    audio.addEventListener('play', updateInfoIconVisibility);
-    audio.addEventListener('pause', updateInfoIconVisibility);
-    
     // Update immediately if there's a station playing
     updateInfoIconVisibility();
     
     function updateInfoIconVisibility() {
-        const hasStation = audio.src && audioTitle.textContent !== "Izaberite stanicu";
+        const hasStation = audio.src && audioTextElement.textContent !== "Izaberite stanicu";
         infoIcon.classList.toggle('visible', hasStation);
         
         if (!hasStation) {
             isTooltipVisible = false;
             tooltip.classList.remove('visible');
-        } else {
-            updateTooltipContent();
+            infoIcon.classList.remove("active");
         }
+    }
+    
+    function setupTooltipScrollBehavior() {
+        const tooltip = document.querySelector('.genre-tooltip');
+        if (!tooltip) return;
+
+        // Enable mouse wheel scrolling
+        tooltip.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            tooltip.scrollTop += e.deltaY;
+        }, { passive: false });
+
+        // Clear existing nav buttons
+        tooltip.querySelectorAll('.tooltip-nav-button').forEach(btn => btn.remove());
+
+        // Create navigation buttons
+        const topButton = document.createElement('button');
+        topButton.className = 'tooltip-nav-button top';
+        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
+        topButton.setAttribute('aria-label', 'Scroll up');
+        topButton.style.position = 'sticky';
+        topButton.style.top = '0';
+        topButton.style.zIndex = '1';
+        
+        const bottomButton = document.createElement('button');
+        bottomButton.className = 'tooltip-nav-button bottom';
+        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+        bottomButton.setAttribute('aria-label', 'Scroll down');
+        bottomButton.style.position = 'sticky';
+        bottomButton.style.bottom = '0';
+        bottomButton.style.zIndex = '1';
+
+        tooltip.insertBefore(topButton, tooltip.firstChild);
+        tooltip.appendChild(bottomButton);
+
+        function checkOverflow() {
+            const hasOverflow = tooltip.scrollHeight > tooltip.clientHeight;
+            topButton.style.display = 'none';
+            bottomButton.style.display = hasOverflow ? 'flex' : 'none';
+            updateButtonVisibility();
+        }
+
+        function updateButtonVisibility() {
+            const scrollTop = tooltip.scrollTop;
+            const maxScroll = tooltip.scrollHeight - tooltip.clientHeight;
+            
+            topButton.style.display = scrollTop <= 10 ? 'none' : 'flex';
+            bottomButton.style.display = scrollTop >= maxScroll - 10 ? 'none' : 'flex';
+        }
+
+        function smoothScroll(direction) {
+            const scrollAmount = tooltip.clientHeight * 0.8;
+            const start = tooltip.scrollTop;
+            const target = direction === 'top' 
+                ? Math.max(0, start - scrollAmount)
+                : Math.min(start + scrollAmount, tooltip.scrollHeight - tooltip.clientHeight);
+            
+            const duration = 200;
+            const startTime = performance.now();
+
+            function animateScroll(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easedProgress = progress < 0.5 
+                    ? 2 * progress * progress 
+                    : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+                
+                tooltip.scrollTop = start + (target - start) * easedProgress;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateScroll);
+                } else {
+                    updateButtonVisibility();
+                }
+            }
+
+            requestAnimationFrame(animateScroll);
+        }
+
+        topButton.addEventListener('click', () => smoothScroll('top'));
+        bottomButton.addEventListener('click', () => smoothScroll('bottom'));
+        tooltip.addEventListener('scroll', updateButtonVisibility);
+        
+        // Initial checks
+        checkOverflow();
+        
+        // Observe content changes
+        const observer = new MutationObserver(checkOverflow);
+        observer.observe(tooltip, { childList: true, subtree: true });
+        tooltip._scrollObserver = observer;
     }
 }
 
@@ -1061,31 +1195,28 @@ function setupAudioContainerGestures() {
     // Handle toggle handle click - already handled in setupRecentlyPlayedToggle
 }
 
-function setupRecentlyPlayedNavigation() {
-    const wrapper = document.querySelector('.recently-played-wrapper');
-    if (!wrapper) return;
-    
-    const stations = wrapper.querySelector('.recently-played-stations');
-    if (!stations) return;
-
+function setupScrollableContainer(container, wrapperClass, buttonClass) {
     // Create navigation buttons if they don't exist
-    let topButton = wrapper.querySelector('.history-nav-button.top');
-    let bottomButton = wrapper.querySelector('.history-nav-button.bottom');
+    let topButton = container.querySelector(`.${buttonClass}.top`);
+    let bottomButton = container.querySelector(`.${buttonClass}.bottom`);
+	
+	const debouncedScroll = debounce(updateButtonVisibility, 50);
+    container.addEventListener('scroll', debouncedScroll);
     
     if (!topButton) {
         topButton = document.createElement('button');
-        topButton.className = 'history-nav-button top';
+        topButton.className = `${buttonClass} top`;
         topButton.innerHTML = '<span class="material-icons">expand_less</span>';
         topButton.setAttribute('aria-label', 'Scroll up');
-        wrapper.insertBefore(topButton, stations);
+        container.insertBefore(topButton, container.firstChild);
     }
     
     if (!bottomButton) {
         bottomButton = document.createElement('button');
-        bottomButton.className = 'history-nav-button bottom';
+        bottomButton.className = `${buttonClass} bottom`;
         bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
         bottomButton.setAttribute('aria-label', 'Scroll down');
-        wrapper.appendChild(bottomButton);
+        container.appendChild(bottomButton);
     }
 
     // Initialize as hidden
@@ -1094,9 +1225,9 @@ function setupRecentlyPlayedNavigation() {
 
     function checkOverflow() {
         // Force reflow before checking
-        void stations.offsetHeight;
+        void container.offsetHeight;
         
-        const hasOverflow = stations.scrollHeight > stations.clientHeight;
+        const hasOverflow = container.scrollHeight > container.clientHeight;
         if (hasOverflow) {
             updateButtonVisibility();
         } else {
@@ -1106,19 +1237,19 @@ function setupRecentlyPlayedNavigation() {
     }
 
     function updateButtonVisibility() {
-        const scrollTop = stations.scrollTop;
-        const maxScroll = stations.scrollHeight - stations.clientHeight;
+        const scrollTop = container.scrollTop;
+        const maxScroll = container.scrollHeight - container.clientHeight;
         
         topButton.style.display = scrollTop <= 10 ? 'none' : 'block';
         bottomButton.style.display = scrollTop >= maxScroll - 10 ? 'none' : 'block';
     }
 
     function smoothScroll(direction) {
-        const scrollAmount = stations.clientHeight * 0.8;
-        const start = stations.scrollTop;
+        const scrollAmount = container.clientHeight * 0.8;
+        const start = container.scrollTop;
         const target = direction === 'top' 
             ? Math.max(0, start - scrollAmount)
-            : Math.min(start + scrollAmount, stations.scrollHeight - stations.clientHeight);
+            : Math.min(start + scrollAmount, container.scrollHeight - container.clientHeight);
         
         const duration = 200;
         const startTime = performance.now();
@@ -1132,7 +1263,7 @@ function setupRecentlyPlayedNavigation() {
                 ? 2 * progress * progress 
                 : 1 - Math.pow(-2 * progress + 2, 2) / 2;
             
-            stations.scrollTop = start + (target - start) * easedProgress;
+            container.scrollTop = start + (target - start) * easedProgress;
             
             if (progress < 1) {
                 requestAnimationFrame(animateScroll);
@@ -1147,34 +1278,47 @@ function setupRecentlyPlayedNavigation() {
     // Event listeners
     topButton.addEventListener('click', () => smoothScroll('top'));
     bottomButton.addEventListener('click', () => smoothScroll('bottom'));
-    stations.addEventListener('scroll', updateButtonVisibility);
-    window.addEventListener('resize', checkOverflow);
-	
-	    // Add touch event handlers to the stations container
+    container.addEventListener('scroll', updateButtonVisibility);
+    
+    // Initial check
+    checkOverflow();
+    
+    return { checkOverflow, updateButtonVisibility };
+}
+
+function setupRecentlyPlayedNavigation() {
+    const wrapper = document.querySelector('.recently-played-wrapper');
+    if (!wrapper) return;
+    
+    const stations = wrapper.querySelector('.recently-played-stations');
+    if (!stations) return;
+
+    // Use the shared function
+    const { checkOverflow } = setupScrollableContainer(stations, 'recently-played-wrapper', 'history-nav-button');
+    
+    // Add touch event handlers
     stations.addEventListener('touchstart', function(e) {
-        // Only prevent propagation if not on a radio element
         if (!e.target.closest('.radio')) {
             e.stopPropagation();
         }
     }, { passive: true });
 
     stations.addEventListener('touchmove', function(e) {
-        // Only prevent propagation if not on a radio element
         if (!e.target.closest('.radio')) {
             e.stopPropagation();
         }
     }, { passive: false });
-	
-	// Add this to prevent height jumps
+    
+    // Set container styles
     stations.style.minHeight = '0';
     stations.style.maxHeight = '60vh';
     stations.style.overflowY = 'auto';
     stations.style.overflowX = 'hidden';
     
-    // Initial check without delay
+    // Initial check
     checkOverflow();
     
-    // Also check when dropdown is shown - remove setTimeout
+    // Also check when dropdown is shown
     document.getElementById('historyBtn').addEventListener('click', checkOverflow);
 }
 
@@ -1534,6 +1678,14 @@ setupResizeObservers() {
     
     this.resizeObservers = [];
     
+    // Debounce the resize handler
+    const debouncedResize = debounce(() => {
+        this.updateTrackPosition();
+    }, 100);
+    
+    // Single observer for all elements
+    const observer = new ResizeObserver(debouncedResize);
+    
     // Elements that could affect the scroll list height
     const elementsToObserve = [
         document.querySelector('.audio-container'),
@@ -1543,13 +1695,11 @@ setupResizeObservers() {
     
     elementsToObserve.forEach(element => {
         if (element) {
-            const observer = new ResizeObserver(() => {
-                this.updateTrackPosition();
-            });
             observer.observe(element);
-            this.resizeObservers.push(observer);
         }
     });
+    
+    this.resizeObservers.push(observer);
 },
   
     setupEvents() {
@@ -1889,36 +2039,37 @@ function setupGenreButtonsNavigation() {
         rightButton.style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
     }
 
-    function smoothScroll(direction) {
-        const scrollAmount = genreButtons.clientWidth * 0.8;
-        const start = genreButtons.scrollLeft;
-        const target = direction === 'left' 
-            ? Math.max(0, start - scrollAmount)
-            : Math.min(start + scrollAmount, genreButtons.scrollWidth - genreButtons.clientWidth);
+function smoothScroll(container, direction) {
+    const scrollAmount = container.clientHeight * 0.8;
+    const start = container.scrollTop;
+    const target = direction === 'top' 
+        ? Math.max(0, start - scrollAmount)
+        : Math.min(start + scrollAmount, container.scrollHeight - container.clientHeight);
+    
+    const duration = 200;
+    const startTime = performance.now();
+
+    function animateScroll(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
         
-        const duration = 200; // milliseconds
-        const startTime = performance.now();
-
-        function animateScroll(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            
-            // Ease in-out function
-            const easedProgress = progress < 0.5 
-                ? 2 * progress * progress 
-                : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-            
-            genreButtons.scrollLeft = start + (target - start) * easedProgress;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animateScroll);
-            } else {
-                updateButtonVisibility();
-            }
+        // Use cubic-bezier for smoother animation
+        const easedProgress = progress < 0.5 
+            ? 4 * progress * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+        
+        container.scrollTop = start + (target - start) * easedProgress;
+        
+        if (progress < 1) {
+            requestAnimationFrame(animateScroll);
+        } else {
+            updateButtonVisibility();
         }
-
-        requestAnimationFrame(animateScroll);
     }
+
+    // Start the animation
+    requestAnimationFrame(animateScroll);
+}
 
     // Event listeners
     leftButton.addEventListener('click', () => smoothScroll('left'));
