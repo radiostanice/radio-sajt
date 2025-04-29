@@ -6,12 +6,13 @@ document.addEventListener("DOMContentLoaded", () => {
     loadPreferences();
     setupAudioContainerObserver();
     setupAudioContainerGestures();
+	dropdownManager.init();
     
     // Initialize all other components
     const initFunctions = [
         setupRecentlyPlayedToggle,
         loadRecentlyPlayed,
-        setupDropdown,
+        
         setupGenreButtonsNavigation,
         setupGenreCategoriesSwipe,
         setupGenreFiltering,
@@ -36,7 +37,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function cleanupResources() {
-    // Remove document listeners
+  // Remove document listeners
+  document.removeEventListener("click", dropdownManager.handleOutsideClick);
+  document.removeEventListener("touchend", dropdownManager.handleOutsideClick);
+  
+  // Clean up dropdown toggle listeners
+  Object.values(dropdownManager.dropdowns || {}).forEach(dropdown => {
+    if (dropdown.toggle) {
+      dropdown.toggle.removeEventListener("click", dropdownManager.toggle);
+      dropdown.toggle.removeEventListener("touchend", dropdownManager.toggle);
+    }
+  });
+  
     document.removeEventListener("click", handleDocumentClick);
     document.removeEventListener("touchend", handleDocumentClick);
     
@@ -97,6 +109,7 @@ const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
 const COLLAPSED_HEIGHT = 150;
 const SCROLLBAR_HIDE_DELAY = 1500;
+const debounceMetadata = debounce((force) => checkMetadata(force), 500);
 let lastVolume = audio.volume || 1;
 let currentGenre = 'all';
 let recentlyPlayedObserver;
@@ -109,6 +122,10 @@ let currentStation = null;
 let metadataInterval = null;
 let lastMetadataCheck = 0;
 let lastTitle = '';
+
+function easeOutQuad(t) {
+    return t * (2 - t);
+}
 
 // Station Functions
 async function changeStation(name, link) {
@@ -497,14 +514,14 @@ function setupNowPlayingMetadata() {
     // Use requestIdleCallback for non-critical updates
     const checkMetadataIdle = () => {
         if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => checkMetadata(), { timeout: 1000 });
+            requestIdleCallback(() => debounceMetadata(), { timeout: 1000 });
         } else {
-            checkMetadata();
+            debounceMetadata();
         }
     };
     
     // Immediate check with no cooldown on first run
-    checkMetadata(true);
+    debounceMetadata(true);
     
     // Set up checking with less frequent intervals when tab is inactive
     metadataInterval = setInterval(() => {
@@ -728,276 +745,254 @@ function safeParseJSON(key, fallback) {
 }
 
 // UI Setup Functions
-function setupDropdown() {
-    const dropdownToggle = document.querySelector(".dropdown-toggle");
-    const dropdownMenu = document.querySelector(".dropdown-menu");
-    const historyBtn = document.getElementById("historyBtn");
-    const historyDropdown = document.getElementById("historyDropdown");
-    const infoIcon = document.querySelector(".info-icon");
-    const genreTooltip = document.querySelector(".genre-tooltip");
+const dropdownManager = {
+  currentOpen: null,
 
-    // Track dropdown states
-    const dropdownStates = {
-        theme: false,
-        history: false,
-        tooltip: false
+  init() {
+    // Initialize dropdown elements
+    this.dropdowns = {
+      theme: {
+        toggle: document.querySelector(".dropdown-toggle"),
+        menu: document.querySelector(".dropdown-menu")
+      },
+      history: {
+        toggle: document.getElementById("historyBtn"),
+        menu: document.getElementById("historyDropdown")
+      },
+      tooltip: {
+        toggle: document.querySelector(".info-icon"),
+        menu: document.querySelector(".genre-tooltip")
+      }
     };
 
-    // Toggle theme dropdown
-    function toggleThemeDropdown(e) {
-        e?.stopPropagation();
-        dropdownStates.theme = !dropdownStates.theme;
-        dropdownToggle.classList.toggle("active", dropdownStates.theme);
-        dropdownMenu.classList.toggle("show", dropdownStates.theme);
-        
-        // Close other dropdowns if opening this one
-        if (dropdownStates.theme) {
-            closeOtherDropdowns('theme');
-        }
-    }
+    // Set up event listeners
+    this.setupEventListeners();
+  },
 
-    // Toggle history dropdown (ONLY ON CLICK)
-    function toggleHistory(e) {
-        e?.stopPropagation();
-        dropdownStates.history = !dropdownStates.history;
-        historyBtn.classList.toggle("active", dropdownStates.history);
-        
-        if (dropdownStates.history) {
-            historyDropdown.style.display = 'flex';
-            // Force reflow before animation
-            void historyDropdown.offsetWidth;
-            historyDropdown.classList.add('show');
-            closeOtherDropdowns('history');
-            
-            // Setup scroll behavior
-            setupRecentlyPlayedNavigation();
-            updateDropdownHeights();
-        } else {
-            historyDropdown.classList.remove('show');
-            setTimeout(() => {
-                historyDropdown.style.display = 'none';
-            }, 300);
-        }
-    }
-
-    // Toggle genre tooltip
-function toggleTooltip(e) {
-    e?.stopPropagation();
-    dropdownStates.tooltip = !dropdownStates.tooltip;
-    infoIcon.classList.toggle("active", dropdownStates.tooltip);
+  setupEventListeners() {
+    // Theme dropdown
+    this.dropdowns.theme.toggle?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggle('theme');
+    });
     
-    if (dropdownStates.tooltip) {
-        genreTooltip.style.display = 'block';
-        updateTooltipContent(); // Ensure content is updated before showing
-        
-        // Force reflow before animation
-        void genreTooltip.offsetWidth;
-        genreTooltip.classList.add('visible');
-        
-        closeOtherDropdowns('tooltip');
-    } else {
-        genreTooltip.classList.remove('visible');
-        setTimeout(() => {
-            if (!dropdownStates.tooltip) {
-                genreTooltip.style.display = 'none';
-            }
-        }, 300);
+    // History dropdown
+    this.dropdowns.history.toggle?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggle('history');
+    });
+    
+    // Info tooltip
+    this.dropdowns.tooltip.toggle?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggle('tooltip');
+    });
+
+    // Touch events for mobile
+    this.dropdowns.theme.toggle?.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      this.toggle('theme');
+    }, { passive: false });
+    
+    this.dropdowns.history.toggle?.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      this.toggle('history');
+    }, { passive: false });
+    
+    this.dropdowns.tooltip.toggle?.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      this.toggle('tooltip');
+    }, { passive: false });
+
+    // Close when clicking outside
+    document.addEventListener("click", (e) => this.handleOutsideClick(e));
+    document.addEventListener("touchend", (e) => this.handleOutsideClick(e), { passive: true });
+  },
+
+  toggle(dropdownId) {
+    // If clicking the currently open dropdown, close it
+    if (this.currentOpen === dropdownId) {
+      this.close(dropdownId);
+      return;
+    }
+
+    // Close any open dropdowns
+    if (this.currentOpen) {
+      this.close(this.currentOpen);
+    }
+
+    // Open the requested dropdown
+    const dropdown = this.dropdowns[dropdownId];
+    if (!dropdown) return;
+
+    // Set display based on dropdown type
+    dropdown.menu.style.display = dropdownId === 'history' ? 'flex' : 'block';
+    
+    // Force reflow before showing
+    void dropdown.menu.offsetWidth;
+    
+    dropdown.menu.classList.add('show');
+    if (dropdownId === 'tooltip') dropdown.menu.classList.add('visible');
+    dropdown.toggle.classList.add('active');
+    
+    this.currentOpen = dropdownId;
+
+    // Special initialization
+    if (dropdownId === 'tooltip') {
+      updateTooltipContent();
+      setUpTooltipScrollButtons();
+    } else if (dropdownId === 'history') {
+      setTimeout(setupRecentlyPlayedNavigation, 100);
+    }
+
+    updateDropdownHeights();
+  },
+
+close(dropdownId) {
+    const dropdown = this.dropdowns[dropdownId];
+    if (!dropdown) return;
+
+    // Clean up scroll listeners if tooltip
+    if (dropdownId === 'tooltip' && dropdown.menu._scrollHandler) {
+        dropdown.menu.removeEventListener('scroll', dropdown.menu._scrollHandler);
+    }
+
+    dropdown.menu.classList.remove('show', 'visible');
+    dropdown.toggle.classList.remove('active');
+    
+    setTimeout(() => {
+      if (!dropdown.menu.classList.contains('show') && 
+          !dropdown.menu.classList.contains('visible')) {
+        dropdown.menu.style.display = 'none';
+      }
+    }, 300);
+    
+    if (this.currentOpen === dropdownId) {
+      this.currentOpen = null;
+    }
+  },
+
+handleOutsideClick(e) {
+    // Check if click was on any dropdown toggle or inside any dropdown content
+    const clickedInsideAnyDropdown = Object.values(this.dropdowns).some(
+        dropdown => dropdown.toggle?.contains(e.target) || dropdown.menu?.contains(e.target)
+    );
+    
+    // Only close if clicking outside ALL dropdowns
+    if (!clickedInsideAnyDropdown && this.currentOpen) {
+        this.close(this.currentOpen);
     }
 }
-
-    // Close all other dropdowns except the current one
-    function closeOtherDropdowns(current) {
-        if (current !== 'theme' && dropdownStates.theme) {
-            dropdownStates.theme = false;
-            dropdownToggle.classList.remove("active");
-            dropdownMenu.classList.remove("show");
-        }
-        
-        if (current !== 'history' && dropdownStates.history) {
-            dropdownStates.history = false;
-            historyBtn.classList.remove("active");
-            historyDropdown.classList.remove("show");
-            
-            setTimeout(() => {
-                historyDropdown.style.display = 'none';
-            }, 300);
-        }
-        
-        if (current !== 'tooltip' && dropdownStates.tooltip) {
-            dropdownStates.tooltip = false;
-            infoIcon.classList.remove("active");
-            genreTooltip.classList.remove("visible");
-            
-            setTimeout(() => {
-                genreTooltip.style.display = 'none';
-            }, 300);
-        }
-    }
-
-    // Close all dropdowns when clicking outside
-    function handleDocumentClick(e) {
-        const clickedDropdown = e.target.closest(".dropdown-menu") || 
-                               e.target.closest(".dropdown-toggle") ||
-                               e.target.closest(".info-icon") || 
-                               e.target.closest(".genre-tooltip");
-        
-        if (!clickedDropdown) {
-            closeOtherDropdowns('none');
-        }
-    }
-
-    // Initialize event listeners (CLICK ONLY - NO HOVER)
-    dropdownToggle?.addEventListener("click", toggleThemeDropdown);
-    historyBtn?.addEventListener("click", toggleHistory);
-    infoIcon?.addEventListener("click", toggleTooltip);
-    
-    // Mobile touch events
-    dropdownToggle?.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        toggleThemeDropdown(e);
-    }, { passive: false });
-    
-    historyBtn?.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        toggleHistory(e);
-    }, { passive: false });
-    
-    infoIcon?.addEventListener("touchend", (e) => {
-        e.preventDefault();
-        toggleTooltip(e);
-    }, { passive: false });
-
-    // Document-level listeners
-    document.addEventListener("click", handleDocumentClick);
-    document.addEventListener("touchend", handleDocumentClick, { passive: true });
-
-    // Prevent tooltip from closing when clicking inside
-    genreTooltip?.addEventListener("click", (e) => e.stopPropagation());
-}
+};
 
 function setUpTooltipScrollButtons() {
     const tooltip = document.querySelector('.genre-tooltip');
     if (!tooltip) return;
 
-    // Check if buttons already exist
-    let topButton = tooltip.querySelector('.tooltip-nav-button.top');
-    let bottomButton = tooltip.querySelector('.tooltip-nav-button.bottom');
-    
-    // Create buttons only if they don't exist
-    if (!topButton) {
-        topButton = document.createElement('button');
-        topButton.className = 'tooltip-nav-button top';
-        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
-        topButton.setAttribute('aria-label', 'Scroll up');
-        tooltip.insertBefore(topButton, tooltip.firstChild);
-    }
-    
-    if (!bottomButton) {
-        bottomButton = document.createElement('button');
-        bottomButton.className = 'tooltip-nav-button bottom';
-        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
-        bottomButton.setAttribute('aria-label', 'Scroll down');
-        tooltip.appendChild(bottomButton);
-    }
+    // Remove existing buttons if any
+    const existingButtons = tooltip.querySelectorAll('.tooltip-nav-button');
+    existingButtons.forEach(btn => btn.remove());
 
-    // Add mutation observer to detect content changes
-    const observer = new MutationObserver(function() {
-        checkOverflow();
-    });
+    // Create new buttons
+    const topButton = document.createElement('button');
+    topButton.className = 'tooltip-nav-button top';
+    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
     
-    // Configure and start observing
-    observer.observe(tooltip, {
-        childList: true,
-        subtree: true,
-        characterData: true
-    });
+    const bottomButton = document.createElement('button');
+    bottomButton.className = 'tooltip-nav-button bottom';
+    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
 
-    // Store observer for cleanup
-    tooltip._mutationObserver = observer;
+    tooltip.insertBefore(topButton, tooltip.firstChild);
+    tooltip.appendChild(bottomButton);
+
+    // Improved wheel handling
+tooltip.addEventListener('wheel', function(e) {
+    if (e.target === tooltip || tooltip.contains(e.target)) {
+        // Calculate scroll amount based on delta and container height
+        const scrollAmount = e.deltaY * (tooltip.clientHeight / 200);
+        tooltip.scrollTop += scrollAmount;
+        
+        // Prevent default only if we're actually scrolling
+        if (Math.abs(scrollAmount) > 0) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        updateButtons();
+    }
+}, { passive: false, capture: true }); // Add capture phase
+
+function updateButtons() {
+    const atTop = tooltip.scrollTop <= 1;
+    const atBottom = tooltip.scrollTop >= 
+        tooltip.scrollHeight - tooltip.clientHeight - 1;
     
-    function checkOverflow() {
-        // Ensure tooltip is rendered before checking
-        tooltip.style.display = 'block';
-        tooltip.style.visibility = 'hidden';
-        void tooltip.offsetWidth; // Force reflow
+    // Force display flex when not at extremes
+    topButton.style.display = atTop ? 'none' : 'flex';
+    bottomButton.style.display = atBottom ? 'none' : 'flex';
+    
+    // Ensure buttons stay visible when content is scrollable
+    if (tooltip.scrollHeight > tooltip.clientHeight) {
+        if (atTop) bottomButton.style.display = 'flex';
+        if (atBottom) topButton.style.display = 'flex';
+    }
+}
+
+function smoothScroll(direction) {
+    if (container._isScrolling) return;
+    container._isScrolling = true;
+    
+    const amount = container.clientHeight * 0.8;
+    const start = container.scrollTop;
+    const target = direction === 'top' 
+        ? Math.max(0, start - amount)
+        : Math.min(start + amount, container.scrollHeight - container.clientHeight);
+    
+    // Standardized duration of 300ms
+    const duration = 300;
+    const startTime = performance.now();
+
+    function animate(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Use easing function for consistent feel
+        const easedProgress = easeOutQuad(progress);
+        container.scrollTop = start + (target - start) * easedProgress;
         
-        // Temporarily hide overflow for accurate measurement
-        tooltip.style.overflow = 'hidden';
-        const hasOverflow = tooltip.scrollHeight > tooltip.clientHeight;
-        tooltip.style.overflow = 'auto';
-        
-        tooltip.style.visibility = 'visible';
-        
-        topButton.style.display = hasOverflow ? 'flex' : 'none';
-        bottomButton.style.display = hasOverflow ? 'flex' : 'none';
-        
-        if (hasOverflow) {
-            updateButtonVisibility();
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        } else {
+            container._isScrolling = false;
+            updateButtons();
         }
     }
-
-    function updateButtonVisibility() {
-        const buffer = 2;
-        const scrollTop = tooltip.scrollTop;
-        const maxScroll = tooltip.scrollHeight - tooltip.clientHeight;
-        
-        topButton.style.display = scrollTop <= buffer ? 'none' : 'flex';
-        bottomButton.style.display = scrollTop >= maxScroll - buffer ? 'none' : 'flex';
-    }
-
-    function smoothScroll(direction) {
-        if (tooltip._isAnimating) return;
-        tooltip._isAnimating = true;
-        
-        const scrollAmount = tooltip.clientHeight * 0.8;
-        const start = tooltip.scrollTop;
-        const target = direction === 'top' 
-            ? Math.max(0, start - scrollAmount)
-            : Math.min(start + scrollAmount, tooltip.scrollHeight - tooltip.clientHeight);
-        
-        const duration = 300;
-        const startTime = performance.now();
-
-        function animateScroll(currentTime) {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const easedProgress = 1 - Math.pow(1 - progress, 2);
-            
-            tooltip.scrollTop = start + (target - start) * easedProgress;
-            
-            if (progress < 1) {
-                requestAnimationFrame(animateScroll);
-            } else {
-                tooltip._isAnimating = false;
-                updateButtonVisibility();
-            }
-        }
-
-        requestAnimationFrame(animateScroll);
-    }
+    
+    requestAnimationFrame(animate);
+}
 
     // Event listeners
-    topButton.onclick = (e) => {
+    topButton.addEventListener('click', (e) => {
         e.stopPropagation();
         smoothScroll('top');
-    };
+    });
     
-    bottomButton.onclick = (e) => {
+    bottomButton.addEventListener('click', (e) => {
         e.stopPropagation();
         smoothScroll('bottom');
-    };
+    });
+
+    let lastScrollTime = 0;
+    const scrollDebounceDelay = 100;
     
-    // Debounced scroll handler
-    const scrollHandler = () => {
-        cancelAnimationFrame(tooltip._scrollRAF);
-        tooltip._scrollRAF = requestAnimationFrame(updateButtonVisibility);
-    };
-    
-    tooltip.addEventListener('scroll', scrollHandler, { passive: true });
-    
-    // Ensure we check overflow initially
-    setTimeout(checkOverflow, 50);
-    
+    tooltip.addEventListener('scroll', () => {
+        const now = Date.now();
+        if (now - lastScrollTime > scrollDebounceDelay) {
+            updateButtons();
+            lastScrollTime = now;
+        }
+    }, { passive: true });
+
+    // Initial check
+    tooltip._updateButtons = updateButtons;
 }
 
 function getGenreIcon(genre) {
@@ -1029,6 +1024,12 @@ function capitalizeFirstLetter(string) {
 function updateTooltipContent() {
     const tooltip = document.querySelector('.genre-tooltip');
     if (!tooltip) return;
+    
+    // Store reference to existing buttons
+    const existingButtons = {
+        top: tooltip.querySelector('.tooltip-nav-button.top'),
+        bottom: tooltip.querySelector('.tooltip-nav-button.bottom')
+    };
     
     // Get current station - try multiple ways
     let currentStation = document.querySelector('.radio.selected');
@@ -1098,20 +1099,26 @@ function updateTooltipContent() {
         `;
     }
     
-    // Render tooltip
-    tooltip.innerHTML = `
+    // Create a container for the new content
+    const contentContainer = document.createElement('div');
+    contentContainer.innerHTML = `
         <div class="tooltip-section">
             <strong>Žanrovi:</strong>
             ${formattedGenres}
         </div>
         ${qualitySection}
     `;
-	
-	setTimeout(() => {
-        if (tooltip._checkOverflow) {
-            tooltip._checkOverflow();
-        }
-    }, 50);
+    
+    // Clear existing content but preserve buttons
+    tooltip.innerHTML = '';
+    
+    // Re-add buttons if they existed
+    if (existingButtons.top) tooltip.appendChild(existingButtons.top);
+    tooltip.appendChild(contentContainer);
+    if (existingButtons.bottom) tooltip.appendChild(existingButtons.bottom);
+    
+    // Reinitialize button functionality
+    setUpTooltipScrollButtons();
 }
 
 // Helper function to check for unknown values
@@ -1268,18 +1275,21 @@ function setupRecentlyPlayedToggle() {
         }
     }
 
-    function showGenreTooltip() {
-        infoIcon.classList.add('active');
-        genreTooltip.style.display = 'block';
-        updateDropdownHeights();
-        void genreTooltip.offsetWidth;
-        genreTooltip.classList.add('visible');
-        setUpTooltipScrollButtons();
-        
-        if (dropdownStates.history) {
-            hideHistoryDropdown();
-        }
+function showGenreTooltip() {
+    infoIcon.classList.add('active');
+    genreTooltip.style.display = 'block';
+
+    genreTooltip.scrollTop = 0;
+    
+    updateDropdownHeights();
+    void genreTooltip.offsetWidth;
+    genreTooltip.classList.add('visible');
+    setUpTooltipScrollButtons();
+    
+    if (dropdownStates.history) {
+        hideHistoryDropdown();
     }
+}
 
     updateDropdownHeights();
 }
@@ -1288,30 +1298,33 @@ function updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
     if (!audioContainer) return;
     
-    // Get current dimensions
-    const viewportHeight = window.innerHeight;
-    const audioContainerHeight = audioContainer.clientHeight;
+    const containerRect = audioContainer.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
     const headerHeight = document.querySelector('.header')?.clientHeight || 0;
     
-    // Calculate max height for dropdowns (viewport - header - audio container - margins)
-    const maxDropdownHeight = Math.max(100, viewportHeight - headerHeight - audioContainerHeight - 30);
-    
-    // Update history dropdown
-    const historyDropdown = document.getElementById('historyDropdown');
-    if (historyDropdown) {
-        historyDropdown.style.maxHeight = `${maxDropdownHeight}px`;
+    // Calculate max height based on available space
+    const maxDropdownHeight = `${Math.max(150, windowHeight - headerHeight - containerRect.bottom - 20)}px`;
 
+    // Apply to all dropdowns
+    if (dropdownManager.dropdowns.history?.menu) {
+        dropdownManager.dropdowns.history.menu.style.maxHeight = maxDropdownHeight;
     }
     
-    // Update genre tooltip
-    const genreTooltip = document.querySelector('.genre-tooltip');
-    if (genreTooltip) {
-        genreTooltip.style.maxHeight = `${maxDropdownHeight}px`;
-    }
-    
-    // Force update of scroll behavior if tooltip is visible
-    if (genreTooltip && genreTooltip.classList.contains('visible')) {
-        setupTooltipScrollBehavior();
+    if (dropdownManager.dropdowns.tooltip?.menu) {
+        // First set max-height to calculate proper scroll height
+        dropdownManager.dropdowns.tooltip.menu.style.maxHeight = 'none';
+        const naturalHeight = dropdownManager.dropdowns.tooltip.menu.scrollHeight;
+        
+        // Then apply constrained height
+        dropdownManager.dropdowns.tooltip.menu.style.maxHeight = 
+            naturalHeight > parseFloat(maxDropdownHeight) ? maxDropdownHeight : `${naturalHeight}px`;
+        
+        // Check overflow after height change
+        requestAnimationFrame(() => {
+            if (dropdownManager.dropdowns.tooltip.menu._updateButtons) {
+                dropdownManager.dropdowns.tooltip.menu._updateButtons();
+            }
+        });
     }
 }
 
@@ -1429,14 +1442,21 @@ function setupScrollableContainer(container, wrapperClass, buttonClass) {
         }
     }
 
-    function updateButtonVisibility() {
-        const scrollTop = container.scrollTop;
-        const maxScroll = container.scrollHeight - container.clientHeight;
-        const buffer = 5; // Add small buffer to account for rounding
-        
-        topButton.style.display = scrollTop <= buffer ? 'none' : 'flex';
-        bottomButton.style.display = scrollTop >= maxScroll - buffer ? 'none' : 'flex';
-    }
+function updateButtonVisibility() {
+    const scrollTop = stations.scrollTop;
+    const maxScroll = stations.scrollHeight - stations.clientHeight;
+    const buffer = 1;
+    
+    // More precise detection
+    const atTop = scrollTop <= buffer;
+    const atBottom = scrollTop >= maxScroll - buffer;
+    
+    topButton.style.display = atTop ? 'none' : 'flex';
+    bottomButton.style.display = atBottom ? 'none' : 'flex';
+    
+    // Force reflow to ensure smooth transitions
+    void stations.offsetWidth;
+}
 
     function smoothScroll(direction) {
         if (container._isAnimating) return;
@@ -1515,33 +1535,71 @@ function setupRecentlyPlayedNavigation() {
     const stations = wrapper.querySelector('.recently-played-stations');
     if (!stations) return;
 
-    // Use the shared function
-    const { checkOverflow } = setupScrollableContainer(stations, 'recently-played-wrapper', 'history-nav-button');
+    // Remove existing buttons if any
+    const existingButtons = wrapper.querySelectorAll('.history-nav-button');
+    existingButtons.forEach(btn => btn.remove());
+
+    // Create new buttons
+    const topButton = document.createElement('button');
+    topButton.className = 'history-nav-button top';
+    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
     
-    // Remove the passive:false option and don't prevent default scrolling
-    stations.addEventListener('touchmove', function(e) {
-        if (!e.target.closest('.radio')) {
-            e.stopPropagation();
+    const bottomButton = document.createElement('button');
+    bottomButton.className = 'history-nav-button bottom';
+    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+
+    wrapper.insertBefore(topButton, stations);
+    wrapper.appendChild(bottomButton);
+
+    function checkButtons() {
+        const atTop = stations.scrollTop <= 1;
+        const atBottom = stations.scrollTop >= 
+            stations.scrollHeight - stations.clientHeight - 1;
+        
+        topButton.style.display = atTop ? 'none' : 'flex';
+        bottomButton.style.display = atBottom ? 'none' : 'flex';
+    }
+
+    function smoothScroll(direction) {
+        if (tooltip._isScrolling) return;
+        tooltip._isScrolling = true;
+        
+        const amount = tooltip.clientHeight * 0.8;
+        const start = tooltip.scrollTop;
+        const target = direction === 'top' 
+            ? Math.max(0, start - amount)
+            : Math.min(start + amount, tooltip.scrollHeight - tooltip.clientHeight);
+        
+        const duration = 300;
+        const startTime = performance.now();
+
+        function animate(time) {
+            const elapsed = time - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            tooltip.scrollTop = start + (target - start) * progress;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                tooltip._isScrolling = false;
+                updateButtons();
+            }
         }
-    }, { passive: true }); // Changed to passive:true
+        
+        requestAnimationFrame(animate);
+    }
+
+    // Event listeners
+    topButton.addEventListener('click', () => smoothScroll('top'));
+    bottomButton.addEventListener('click', () => smoothScroll('bottom'));
     
-    // Remove the wheel event handler that was preventing default behavior
-    stations.removeEventListener('wheel', preventDefaultWheel);
-    
-    // Set container styles
-    stations.style.minHeight = '0';
-    stations.style.maxHeight = '60vh';
-    stations.style.overflowY = 'auto';
-    stations.style.overflowX = 'hidden';
-    
-    // Enable smooth scrolling
-    stations.style.scrollBehavior = 'smooth';
-    
+    stations.addEventListener('scroll', () => {
+        cancelAnimationFrame(stations._scrollTimer);
+        stations._scrollTimer = requestAnimationFrame(checkButtons);
+    }, { passive: true });
+
     // Initial check
-    checkOverflow();
-    
-    // Also check when dropdown is shown
-    document.getElementById('historyBtn').addEventListener('click', checkOverflow);
+    checkButtons();
 }
 
 function loadRecentlyPlayed() {
@@ -1985,7 +2043,7 @@ setupResizeObservers() {
 		e.stopPropagation();
     
 		// Apply wheel scrolling to the scroll list with increased sensitivity
-		const scrollAmount = e.deltaY * 2; // Double the scroll speed
+		const scrollAmount = e.deltaY * 2;
 		this.scrollList.scrollTop += scrollAmount;
     
 		// Update thumb position immediately
@@ -2262,12 +2320,19 @@ function setupGenreButtonsNavigation() {
         updateButtonVisibility();
     }
 
-    function updateButtonVisibility() {
-        const scrollLeft = genreButtons.scrollLeft;
-        const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-        leftButton.style.display = scrollLeft <= 10 ? 'none' : 'flex';
-        rightButton.style.display = scrollLeft >= maxScroll - 10 ? 'none' : 'flex';
-    }
+function updateButtonVisibility() {
+    const scrollLeft = genreButtons.scrollLeft;
+    const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+    const buffer = 1;
+    
+    // More precise detection
+    const atLeft = scrollLeft <= buffer;
+    const atRight = scrollLeft >= maxScroll - buffer;
+    
+    leftButton.style.display = atLeft ? 'none' : 'flex';
+    rightButton.style.display = atRight ? 'none' : 'flex';
+	void genreButtons.offsetWidth;
+}
 
     function smoothScroll(direction) {
         const scrollAmount = genreButtons.clientWidth * 0.8;
