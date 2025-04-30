@@ -571,18 +571,15 @@ button {
     visibility: hidden;
 	flex-direction: column;
     align-items: center;
+	display: none;
 }
 
-.dropdown-menu.active {
+.dropdown-menu.show {
     opacity: 1;
     visibility: visible;
+	display: block;
 }
-.history-nav-overlay {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
+
 .theme-option {
     display: flex;
     align-items: center;
