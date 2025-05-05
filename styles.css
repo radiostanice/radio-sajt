@@ -130,6 +130,8 @@ button {
     border-color: #bdbdbd;
 }
 
+.light-mode .genre-tooltip-item,
+.light-mode .quality-info,
 .light-mode .theme-container .btn,
 .light-mode .radio,
 .light-mode .theme-option {
@@ -203,6 +205,7 @@ button {
 	color: #000000;
 }
 
+.light-mode .tooltip-nav-button,
 .light-mode .history-nav-button,
 .light-mode .genre-nav-button {
     background-color: #f0f0f0;
@@ -259,11 +262,6 @@ button {
     color: #555555 !important;
 }
 
-.light-mode .genre-tooltip-item {
-	border-color: #bdbdbd;
-	background-color: #f9f9f9;
-}
-
 .light-mode .genre-tooltip {
 	color: #000000;
 	background-color: #f0f0f0;
@@ -307,11 +305,13 @@ button {
     background: linear-gradient(90deg, rgba(240,240,240,1) 0%, rgba(240,240,240,0) 100%);
 }
 
-.light-mode .history-nav-button.top {
+.light-mode .history-nav-button.top,
+.light-mode .tooltip-nav-button.top {
 	box-shadow: 0px 30px 12px rgba(240, 240, 240, 1);
 }
 
-.light-mode .history-nav-button.bottom {
+.light-mode .history-nav-button.bottom,
+.light-mode .tooltip-nav-button.bottom {
 	box-shadow: 0px -30px 12px rgba(240, 240, 240, 1);
 }
 
@@ -339,10 +339,11 @@ button {
 	color: #000;
 }
 
+.light-mode .quality-title,
 .light-mode .toggle-buttons,
 .light-mode .genre-tooltip strong,
 .light-mode .recently-played-title {
-	border-bottom-color: #bdbdbd;
+	border-color: #bdbdbd;
 }
 
 /* ======== */
@@ -567,7 +568,11 @@ button {
     border: 2px solid #444444;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
     padding: 10px 7px;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
+	transition: opacity 0.2s linear, visibility 0.2s linear;
+    -moz-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -webkit-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -o-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -ms-transition: opacity 0.2s linear, visibility 0.2s linear;
     visibility: hidden;
 	flex-direction: column;
     align-items: center;
@@ -688,7 +693,11 @@ button {
     pointer-events: auto;
     background-color: transparent;
 	padding: 0 8px;
-	transition: bottom 0.3s ease;
+	transition: bottom 0.2s linear;
+    -moz-transition: bottom 0.2s linear;
+    -webkit-transition: bottom 0.2s linear;
+    -o-transition: bottom 0.2s linear;
+    -ms-transition: bottom 0.2s linear;
 }
 
 .scrollbar-thumb {
@@ -697,11 +706,11 @@ button {
     width: 3px;
     background-color: #888888;
     border-radius: 4px;
-    transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-	-moz-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -webkit-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -o-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
-    -ms-transition: width 0.2s ease, background-color 0.2s linear, opacity 0.2s linear;
+    transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
+	-moz-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
+    -o-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
+    -ms-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
     pointer-events: auto;
 	touch-action: none;
 	opacity: 0;
@@ -865,7 +874,11 @@ button {
     text-align: center;
     z-index: 100;
     border: none;
-	transition: height 0.3s ease, opacity 0.3s ease;
+	transition: height 0.2s linear, opacity 0.2s linear;
+    -moz-transition: height 0.2s linear, opacity 0.2s linear;
+    -webkit-transition: height 0.2s linear, opacity 0.2s linear;
+    -o-transition: height 0.2s linear, opacity 0.2s linear;
+    -ms-transition: height 0.2s linear, opacity 0.2s linear;
     will-change: height, opacity;
 	display: flex;
     flex-direction: column;
@@ -918,7 +931,11 @@ button {
     padding: 0;
     text-align: left;
     z-index: 10000;
-    transition: all 0.3s ease-out;
+    transition: all 0.2s linear;
+    -moz-transition: all 0.2s linear;
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    -ms-transition: all 0.2s linear;
     opacity: 1;
 	height: auto;
 }
@@ -974,7 +991,11 @@ button {
 .has-now-playing .station-name {
     font-size: 18px;
 	opacity: 0.7;
-	transition: opacity 0.4s linear;
+	transition: opacity 0.2s linear;
+    -moz-transition: opacity 0.2s linear;
+    -webkit-transition: opacity 0.2s linear;
+    -o-transition: opacity 0.2s linear;
+    -ms-transition: opacity 0.2s linear;
 	z-index: 3;
 }
 
@@ -1177,7 +1198,11 @@ button {
     width: 100%;
     height: 80px;
     overflow: hidden;
-    transition: height 0.3s ease;
+    transition: height 0.2s linear;
+    -moz-transition: height 0.2s linear;
+    -webkit-transition: height 0.2s linear;
+    -o-transition: height 0.2s linear;
+    -ms-transition: height 0.2s linear;
     z-index: 110;
     display: flex;
     flex-direction: column;
@@ -1191,7 +1216,11 @@ button {
     cursor: pointer;
 	border-top: 1px solid #444;
 	border-bottom: 1px solid transparent;
-	transition: border-bottom 0.2s ease;
+	transition: border-bottom 0.2s linear;
+    -moz-transition: border-bottom 0.2s linear;
+    -webkit-transition: border-bottom 0.2s linear;
+    -o-transition: border-bottom 0.2s linear;
+    -ms-transition: border-bottom 0.2s linear;
 	border-radius: 20px 20px 0 0;
 	box-shadow: 20px 0px 0px #0f0f0f, -20px 0px 0px #0f0f0f;
 	touch-action: manipulation;
@@ -1211,7 +1240,11 @@ button {
 	margin: 5px 0;
     background: #777;
     border-radius: 2px;
-    transition: all 0.2s ease;
+    transition: all 0.2s linear;
+    -moz-transition: all 0.2s linear;
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    -ms-transition: all 0.2s linear;
 }
 
 .toggle-handle:hover::before {
@@ -1229,7 +1262,11 @@ button {
     height: 40px;
     padding: 0 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s linear;
+    -moz-transition: all 0.2s linear;
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    -ms-transition: all 0.2s linear;
     position: relative;
     overflow: hidden;
     color: #fff;
@@ -1247,7 +1284,11 @@ button {
     bottom: 0;
     background-color: var(--accent-color);
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s linear;
+    -moz-transition: opacity 0.2s linear;
+    -webkit-transition: opacity 0.2s linear;
+    -o-transition: opacity 0.2s linear;
+    -ms-transition: opacity 0.2s linear;
 }
 
 .segmented-button:hover::before {
@@ -1335,7 +1376,11 @@ button {
     visibility: hidden;
     flex-direction: column;
     z-index: 120;
-    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
+    -moz-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
+    -webkit-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
+    -o-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
+    -ms-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 	max-height: calc(100vh - 267px) ! important;
 	display: flex;
@@ -1356,21 +1401,7 @@ button {
 }
 
 .recently-played-wrapper {
-    position: relative;
-    border-radius: 8px;
-    background-color: #222;
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.recently-played-stations {
-    display: flex;
-    flex-direction: column;
-    scrollbar-width: none;
-    margin: 5px 0 10px 0;
-    overflow: none;
+    padding: 5px 0;
 }
 
 .empty-message {
@@ -1392,6 +1423,10 @@ button {
     color: #ffffff;
     cursor: pointer;
     transition: opacity 0.2s linear, border-color 0.2s linear;
+    -moz-transition: opacity 0.2s linear, border-color 0.2s linear;
+    -webkit-transition: opacity 0.2s linear, border-color 0.2s linear;
+    -o-transition: opacity 0.2s linear, border-color 0.2s linear;
+    -ms-transition: opacity 0.2s linear, border-color 0.2s linear;
 }
 
 .tooltip-nav-button.top, .history-nav-button.top {
@@ -1455,7 +1490,11 @@ button {
     -ms-overflow-style: none;
 	opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.2s linear, visibility 0.2s linear;
+    -moz-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -webkit-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -o-transition: opacity 0.2s linear, visibility 0.2s linear;
+    -ms-transition: opacity 0.2s linear, visibility 0.2s linear;
 	will-change: transform;
     -webkit-overflow-scrolling: touch;
 	z-index: 1;
@@ -1793,6 +1832,10 @@ button {
     background-color: var(--accent-color);
 	opacity: 0.5;
     transition: background-color 0.2s linear;
+	-moz-transition: background-color 0.2s linear;
+    -webkit-transition: background-color 0.2s linear;
+    -o-transition: background-color 0.2s linear;
+    -ms-transition: background-color 0.2s linear;
     animation: equalizer 0.9s infinite ease-in-out;
     transform-origin: bottom;
 	will-change: transform;

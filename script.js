@@ -668,16 +668,12 @@ function changeColor(color) {
 }
 
 function setupThemeControls() {
-    // Use event delegation for theme options
-    document.querySelector(".theme-options")?.addEventListener("click", (e) => {
-        const option = e.target.closest(".theme-option");
-        if (option) setTheme(option.dataset.theme);
+    document.querySelectorAll(".theme-option").forEach(option => {
+        option.addEventListener("click", () => setTheme(option.dataset.theme));
     });
 
-    // Use event delegation for color pickers
-    document.querySelector(".color-pickers")?.addEventListener("click", (e) => {
-        const picker = e.target.closest(".color-picker");
-        if (picker) changeColor(picker.dataset.color);
+    document.querySelectorAll(".color-picker").forEach(picker => {
+        picker.addEventListener("click", () => changeColor(picker.dataset.color));
     });
 }
 
@@ -686,7 +682,7 @@ function updateRecentlyPlayed(name, link, genre = '', cachedElements = {}) {
     const newRecentlyPlayed = [
         { name, link, genre },
         ...recentlyPlayed.filter(item => item.link !== link)
-    ].slice(0, 7);
+    ].slice(0, 12);
     
     localStorage.setItem('recentlyPlayed', JSON.stringify(newRecentlyPlayed));
     
@@ -1170,7 +1166,7 @@ function setupAudioContainerGestures() {
         if (e.target.closest('.audio-player') || 
             e.target.closest('.toggle-handle') ||
             e.target.closest('.info-icon') ||
-            e.target.closest('#historyBtn')) {
+            e.target.closest('.history-btn')) {
             return;
         }
         
@@ -1453,14 +1449,9 @@ function loadRecentlyPlayed() {
 	container.scrollTop = 0;
 	
     const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
-    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
+    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 12);
 
     container.innerHTML = '';
-    
-    // Change to vertical layout
-    container.style.flexDirection = 'column';
-    container.style.overflowY = 'auto';
-    container.style.overflowX = 'hidden';
     
     if (uniqueStations.length === 0) {
         container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
@@ -1476,7 +1467,7 @@ function loadRecentlyPlayed() {
         radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
         radio.addEventListener('click', () => {
             changeStation(station.name, station.link);
-            document.getElementById('historyDropdown').style.display = 'none';
+            document.getElementById('historyDropdown').scrollTop = 0;
         });
         container.appendChild(radio);
     });
@@ -1531,7 +1522,7 @@ function createExpandButton(stations, category) {
         expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Još stanica";
         
         stations.forEach((station, index) => {
-            if (index >= 8) {
+            if (index >= 10) {
                 station.style.display = newState ? "flex" : "none";
             }
         });
@@ -1706,12 +1697,12 @@ function setupExpandableCategories() {
         }
         
         // Add expand button if needed
-        if (stations.length > 8) {
+        if (stations.length > 10) {
             category.append(createExpandButton(stations, category));
             category.classList.add("no-radius", "has-expand-button");
             
             stations.forEach((station, index) => {
-                station.style.display = index < 8 ? "flex" : "none";
+                station.style.display = index < 10 ? "flex" : "none";
             });
         } else {
             stations.forEach(station => {
