@@ -770,38 +770,47 @@ class DropdownManager {
         document.addEventListener("touchend", this.handleOutsideClick.bind(this), { passive: true });
     }
 
-    toggle(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
+toggle(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown) return;
 
-        if (this.currentOpen === id) {
-            this.close(id);
-            return;
-        }
-
-        if (this.currentOpen) {
-            this.close(this.currentOpen);
-        }
-
-        // Reset state before opening
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.scrollTop = 0;
-        dropdown.menu.classList.add('show');
-        
-        if (id === 'tooltip') {
-            dropdown.menu.classList.add('visible');
-            updateTooltipContent();
-        }
-
-        dropdown.toggle.classList.add('active');
-        
-        if (dropdown.needsScroll) {
-            this.setupDropdownScroll(id);
-        }
-        
-        this.currentOpen = id;
-        this.updateDropdownHeights();
+    // If clicking the same dropdown's toggle, close it
+    if (this.currentOpen === id) {
+        this.close(id);
+        return;
     }
+
+    // Close any other open dropdown
+    if (this.currentOpen) {
+        this.close(this.currentOpen);
+    }
+
+    // Open the new dropdown
+    dropdown.menu.style.display = 'block';
+    dropdown.menu.scrollTop = 0;
+    dropdown.menu.classList.add('show');
+    
+    if (id === 'tooltip') {
+        dropdown.menu.classList.add('visible');
+        updateTooltipContent();
+    }
+    
+    if (id === 'history') {
+        loadRecentlyPlayed();
+        if (currentStation?.name) {
+            updateSelectedStation(currentStation.name);
+        }
+    }
+    
+    dropdown.toggle.classList.add('active');
+    
+    if (dropdown.needsScroll) {
+        this.setupDropdownScroll(id);
+    }
+    
+    this.currentOpen = id;
+    this.updateDropdownHeights();
+}
 
     setupDropdownScroll(id) {
         const dropdown = this.dropdowns[id];
@@ -882,6 +891,12 @@ class DropdownManager {
             cancelAnimationFrame(dropdown.menu._scrollTimer);
             dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
         }, { passive: true });
+		
+		dropdown.menu.addEventListener('touchmove', (e) => {
+			if (e.target === dropdown.menu || dropdown.menu.contains(e.target)) {
+				e.stopPropagation();
+			}
+		}, { passive: false });
 
         checkButtons();
     }
@@ -905,15 +920,19 @@ class DropdownManager {
         }
     }
 
-    handleOutsideClick(e) {
-        const clickedInside = Object.values(this.dropdowns).some(dropdown => {
-            return dropdown.toggle?.contains(e.target) || dropdown.menu?.contains(e.target);
-        });
-        
-        if (!clickedInside && this.currentOpen) {
-            this.close(this.currentOpen);
-        }
+handleOutsideClick(e) {
+    // Check if click was on any dropdown toggle or menu, OR a station in the history dropdown
+    const clickedInside = Object.values(this.dropdowns).some(dropdown => {
+        return dropdown.toggle?.contains(e.target) || 
+               dropdown.menu?.contains(e.target) ||
+               (dropdown.menu && e.target.closest('.history-nav-button')) ||
+               (this.currentOpen === 'history' && e.target.closest('.radio'));
+    });
+    
+    if (!clickedInside && this.currentOpen) {
+        this.close(this.currentOpen);
     }
+}
 
     updateDropdownHeights() {
         const audioContainer = document.querySelector('.audio-container');
@@ -1445,29 +1464,41 @@ function setupRecentlyPlayedNavigation() {
 function loadRecentlyPlayed() {
     const container = document.querySelector('.recently-played-stations');
     if (!container) return;
-	
-	container.scrollTop = 0;
-	
+    
+    container.scrollTop = 0;
+    
     const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
-    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 12);
+    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
 
     container.innerHTML = '';
+    
+    // Change to vertical layout
+    container.style.flexDirection = 'column';
+    container.style.overflowY = 'auto';
+    container.style.overflowX = 'hidden';
     
     if (uniqueStations.length === 0) {
         container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
         return;
     }
 
+    // Get current station name
+    const currentStationName = currentStation?.name || 
+                             safeParseJSON("lastStation", {}).name;
+
     uniqueStations.forEach(station => {
         const radio = document.createElement('div');
         radio.className = 'radio';
+        if (station.name === currentStationName) {
+            radio.classList.add('selected');
+        }
         radio.dataset.name = station.name;
         radio.dataset.link = station.link;
         radio.dataset.genre = station.genre || '';
         radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
         radio.addEventListener('click', () => {
             changeStation(station.name, station.link);
-            document.getElementById('historyDropdown').scrollTop = 0;
+            document.getElementById('historyDropdown').style.display = 'none';
         });
         container.appendChild(radio);
     });
