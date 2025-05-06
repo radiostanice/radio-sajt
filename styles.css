@@ -1534,12 +1534,12 @@ button {
 
 .genre-tooltip-item .material-icons {
     font-size: 18px;
-    margin-right: 4px;
+    margin-right: 3px;
+	margin-left: -2px;
     width: 18px;
     height: 18px;
     line-height: 18px;
     color: #ffffff;
-    margin-right: 3px;
     display: inline-block;
     background: none;
 	box-sizing: border-box;
