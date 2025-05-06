@@ -971,10 +971,10 @@ function getGenreIcon(genre) {
         'dance': 'celebration',
         'metal': 'flash_on',
         'techno': 'speaker',
-        'top': 'trending_up'
+        'top': 'leaderboard'
     };
     
-    return `<span class="material-icons" style="font-size:16px;vertical-align:middle">${genreIcons[genre] || 'queue_music'}</span>`;
+    return `<span class="material-icons" style="font-size:18px;">${genreIcons[genre] || 'queue_music'}</span>`;
 }
 
 function capitalizeFirstLetter(string) {
@@ -1051,7 +1051,8 @@ function updateTooltipContent() {
                 <strong class="quality-title">Kvalitet:</strong>
                 <div class="quality-info">
                     ${displayBitrate ? `<span title="Bitrate">${displayBitrate}</span>` : ''}
-                    ${format ? `<span title="Format">${format}</span>` : ''}
+					<br/>
+                    ${format ? `<div class="format"><span class="material-icons">audiotrack</span><span title="Format">${format}</span></div>` : ''}
                 </div>
             </div>
         `;
@@ -1468,7 +1469,7 @@ function loadRecentlyPlayed() {
     container.scrollTop = 0;
     
     const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
-    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 7);
+    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 12);
 
     container.innerHTML = '';
     
