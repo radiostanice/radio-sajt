@@ -46,7 +46,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // Event delegation for radio stations with passive listener
     cachedElements.scrollList?.addEventListener('click', (e) => {
         const radio = e.target.closest('.radio');
-        if (radio) changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+        if (!radio) return;
+        
+        // Check if the radio is inside the history dropdown
+        const isHistoryItem = radio.closest('.history-dropdown');
+        
+        if (isHistoryItem) {
+            // Prevent the dropdown from closing
+            e.stopPropagation();
+            
+            // Change station
+            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+            
+            // Scroll history dropdown to top
+            const historyDropdown = document.querySelector('.history-dropdown');
+            if (historyDropdown) {
+                historyDropdown.scrollTop = 0;
+            }
+        } else {
+            // Regular station click behavior
+            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+        }
     }, { passive: true });
     
     // Final update with timeout
@@ -745,6 +765,12 @@ class DropdownManager {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
     
+        // Prevent rapid toggling on mobile
+        if (this.lastToggleTime && Date.now() - this.lastToggleTime < 300) {
+            return;
+        }
+        this.lastToggleTime = Date.now();
+    
         // If clicking the same dropdown's toggle, close it
         if (this.currentOpen === id && !dropdown.menu.contains(event.target)) {
             this.close(id);
@@ -818,45 +844,60 @@ setupDropdownScroll(id) {
         bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
     };
 
-    // Improved touch handling
-    let touchStartY = 0;
-    let isDragging = false;
-    
-    dropdown.menu.addEventListener('scroll', () => {
-        cancelAnimationFrame(dropdown.menu._scrollTimer);
-        dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
-    }, { passive: true });
+ // Improved touch handling
+ let touchStartY = 0;
+ let isDragging = false;
+ let initialScrollTop = 0;
+ 
+ dropdown.menu.addEventListener('touchstart', (e) => {
+     if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
+     touchStartY = e.touches[0].clientY;
+     initialScrollTop = dropdown.menu.scrollTop;
+     isDragging = true;
+     dropdown.menu.style.scrollBehavior = 'auto';
+     e.preventDefault(); // Prevent default touch behavior
+ }, { passive: false });
 
-    dropdown.menu.addEventListener('touchstart', (e) => {
-        if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
-        touchStartY = e.touches[0].clientY;
-        isDragging = true;
-        dropdown.menu.style.scrollBehavior = 'auto';
-    }, { passive: true });
+ dropdown.menu.addEventListener('touchmove', (e) => {
+     if (!isDragging) return;
+     const currentY = e.touches[0].clientY;
+     const diff = touchStartY - currentY;
+     dropdown.menu.scrollTop = initialScrollTop + diff;
+     e.preventDefault(); // Prevent default scroll behavior
+ }, { passive: false });
 
-    dropdown.menu.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        const currentY = e.touches[0].clientY;
-        const diff = touchStartY - currentY;
-        dropdown.menu.scrollTop += diff;
-        touchStartY = currentY;
-    }, { passive: false });
+ dropdown.menu.addEventListener('touchend', () => {
+     isDragging = false;
+     dropdown.menu.style.scrollBehavior = 'smooth';
+ }, { passive: true });
 
-    dropdown.menu.addEventListener('touchend', () => {
-        isDragging = false;
-        dropdown.menu.style.scrollBehavior = 'smooth';
-    }, { passive: true });
+ dropdown.menu.addEventListener('scroll', () => {
+    cancelAnimationFrame(dropdown.menu._scrollTimer);
+    dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
+}, { passive: true });
 
-    topButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        smoothScroll('top');
-    });
-    
-    bottomButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        smoothScroll('bottom');
-    });
+topButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    smoothScroll('top');
+});
+topButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    smoothScroll('top');
+}, { passive: false });
+
+bottomButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    smoothScroll('bottom');
+});
+bottomButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    smoothScroll('bottom');
+}, { passive: false });
+
 
         const smoothScroll = (direction) => {
             if (dropdown.menu._isScrolling) return;
@@ -910,18 +951,24 @@ setupDropdownScroll(id) {
         }
     }
 
-    handleOutsideClick(e) {
-        // Check if click was on any dropdown toggle or menu
-        const clickedInside = Object.values(this.dropdowns).some(dropdown => {
-            return dropdown.toggle?.contains(e.target) || 
-                   dropdown.menu?.contains(e.target) ||
-                   (dropdown.menu && e.target.closest('.history-nav-button'));
-        });
-        
-        if (!clickedInside && this.currentOpen) {
-            this.close(this.currentOpen);
-        }
-    }    
+handleOutsideClick(e) {
+    // Get the actual target for touch events
+    const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+    if (!target) return;
+
+    // Check if click was on any dropdown toggle or menu
+    const clickedInside = Object.values(this.dropdowns).some(dropdown => {
+        return dropdown.toggle?.contains(target) || 
+               dropdown.menu?.contains(target) ||
+               target.closest('.history-nav-button') ||
+               target.closest('.tooltip-nav-button') ||
+               target.closest('.history-dropdown .radio');
+    });
+    
+    if (!clickedInside && this.currentOpen) {
+        this.close(this.currentOpen);
+    }
+}
 
     updateDropdownHeights() {
         const audioContainer = document.querySelector('.audio-container');
@@ -1390,9 +1437,9 @@ function loadRecentlyPlayed() {
         radio.dataset.link = station.link;
         radio.dataset.genre = station.genre || '';
         radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
-        radio.addEventListener('click', () => {
+        radio.addEventListener('click', (e) => {
+            e.stopPropagation();
             changeStation(station.name, station.link);
-            document.getElementById('historyDropdown').style.display = 'none';
         });
         container.appendChild(radio);
     });
