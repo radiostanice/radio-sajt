@@ -68,28 +68,13 @@ function handleRadioClick(e) {
         // Scroll history dropdown to top
         const historyDropdown = document.querySelector('.history-dropdown');
         if (historyDropdown) {
-            historyDropdown.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            historyDropdown.scrollTop = 0;
         }
     } else {
-        // Regular station click behavior with smooth scrolling
+        // Regular station click behavior
         changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-        
-        // Scroll to station after a small delay to allow DOM updates
-        setTimeout(() => {
-            const selectedStation = document.querySelector(`.radio.selected`);
-            if (selectedStation) {
-                selectedStation.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            }
-        }, 50);
     }
 }
-
     
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -843,7 +828,7 @@ class DropdownManager {
     setupDropdownScroll(id) {
         const dropdown = this.dropdowns[id];
         if (!dropdown || !dropdown.menu) return;
-
+        // In the setupDropdownScroll method, use will-change for better performance:
         dropdown.menu.style.willChange = 'transform';
 
 const resizeObserver = new ResizeObserver(() => {
