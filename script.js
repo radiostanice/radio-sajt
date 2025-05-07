@@ -42,32 +42,28 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         initFunctions.forEach(fn => fn());
     }
+
+    cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
+    cachedElements.scrollList?.addEventListener('touchend', handleRadioClick, { passive: false });
     
-    // Event delegation for radio stations with passive listener
-    cachedElements.scrollList?.addEventListener('click', (e) => {
+    function handleRadioClick(e) {
         const radio = e.target.closest('.radio');
         if (!radio) return;
         
-        // Check if the radio is inside the history dropdown
-        const isHistoryItem = radio.closest('.history-dropdown');
-        
-        if (isHistoryItem) {
-            // Prevent the dropdown from closing
-            e.stopPropagation();
-            
-            // Change station
-            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-            
-            // Scroll history dropdown to top
-            const historyDropdown = document.querySelector('.history-dropdown');
-            if (historyDropdown) {
-                historyDropdown.scrollTop = 0;
-            }
-        } else {
-            // Regular station click behavior
-            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+        if (e.type === 'touchend') {
+            e.preventDefault();
         }
-    }, { passive: true });
+        
+        // Store the event for later use
+        window.lastRadioClickEvent = e;
+        
+        changeStation(radio.dataset.name, radio.dataset.link, cachedElements, e); // Pass the event explicitly
+        
+        // Prevent dropdown close if from history
+        if (radio.closest('.history-dropdown')) {
+            e.stopPropagation();
+        }
+    }    
     
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -155,7 +151,7 @@ function easeOutQuad(t) {
 }
 
 // Station Functions
-async function changeStation(name, link, cachedElements = {}) {
+async function changeStation(name, link, cachedElements = {}, clickEvent) {  // Renamed parameter to clickEvent for clarity
     // Use cached elements where available
     const audioTextElement = cachedElements.audioText || document.getElementById('audiotext');
     const audioContainer = cachedElements.audioContainer || document.querySelector('.audio-container');
@@ -194,15 +190,42 @@ async function changeStation(name, link, cachedElements = {}) {
     updatePlayPauseButton(cachedElements);
     updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '', cachedElements);
 
-    // Scroll to station
+    // Scroll to station in main list (regardless of where it was clicked)
+// Scroll to station in main list (regardless of where it was clicked)
+requestAnimationFrame(() => {
     const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
     if (selectedStation) {
-        requestAnimationFrame(() => {
-            selectedStation.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+        // Temporarily set scroll behavior to smooth
+        const originalStyle = document.documentElement.style.scrollBehavior;
+        document.documentElement.style.scrollBehavior = 'smooth';
+        
+        selectedStation.scrollIntoView({
+            block: 'center'
         });
+        
+        // Restore original scroll behavior after a short delay
+        setTimeout(() => {
+            document.documentElement.style.scrollBehavior = originalStyle;
+        }, 1000);
+    }
+});
+
+
+    // If the station was clicked from history dropdown, scroll it to top
+    if (clickEvent) {
+        const clickedFromHistory = clickEvent.target.closest('.history-dropdown');
+        if (clickedFromHistory) {
+            const historyDropdown = document.querySelector('.history-dropdown');
+            if (historyDropdown) {
+                // Use requestAnimationFrame to ensure smooth scrolling
+                requestAnimationFrame(() => {
+                    historyDropdown.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+        }
     }
     
     updateTooltipContent();
@@ -752,7 +775,11 @@ class DropdownManager {
             // Use passive listeners where possible
             dropdown.toggle.addEventListener("click", handler);
             dropdown.toggle.addEventListener("touchend", handler, { passive: false });
-            
+            dropdown.toggle.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggle(id);
+            }, { passive: false });
             dropdown.menu.addEventListener('click', (e) => e.stopPropagation());
         });
 
@@ -762,55 +789,75 @@ class DropdownManager {
     }
 
     toggle(id) {
+        // Add early return if already processing
+        if (this._processingToggle) return;
+        this._processingToggle = true;
+        
         const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
-
-        // Prevent rapid toggling
-        if (this.lastToggleTime && Date.now() - this.lastToggleTime < 500) {
+        if (!dropdown) {
+            this._processingToggle = false;
             return;
         }
-        this.lastToggleTime = Date.now();
-
-        // If clicking inside an already open dropdown, don't close it
-        if (this.currentOpen === id && dropdown.menu.contains(event.target)) {
-            return;
-        }
-
-        // If clicking the toggle of an open dropdown, close it
-        if (this.currentOpen === id && dropdown.toggle.contains(event.target)) {
-            this.close(id);
-            return;
-        }
-
-        // Close any other open dropdown
-        if (this.currentOpen) {
-            this.close(this.currentOpen);
-        }
-
-        // Open the new dropdown
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.scrollTop = 0;
-        dropdown.menu.classList.add('show');
-        
-        if (id === 'tooltip') {
-            dropdown.menu.classList.add('visible');
-            updateTooltipContent();
-        }
-        
-        dropdown.toggle.classList.add('active');
-        
-        if (dropdown.needsScroll) {
-            this.setupDropdownScroll(id);
-        }
-        
-        this.currentOpen = id;
-        this.updateDropdownHeights();
+    
+        // Use requestAnimationFrame for smoother animations
+        requestAnimationFrame(() => {
+            // If clicking inside an already open dropdown, don't close it
+            if (this.currentOpen === id && dropdown.menu.contains(event.target)) {
+                this._processingToggle = false;
+                return;
+            }
+    
+            // If clicking the toggle of an open dropdown, close it
+            if (this.currentOpen === id && dropdown.toggle.contains(event.target)) {
+                this.close(id);
+                this._processingToggle = false;
+                return;
+            }
+    
+            // Close any other open dropdown
+            if (this.currentOpen) {
+                this.close(this.currentOpen);
+            }
+    
+            // Open the new dropdown
+            dropdown.menu.style.display = 'block';
+            dropdown.menu.scrollTop = 0;
+            dropdown.menu.classList.add('show');
+            
+            if (id === 'tooltip') {
+                dropdown.menu.classList.add('visible');
+                updateTooltipContent();
+            }
+            
+            dropdown.toggle.classList.add('active');
+            
+            if (dropdown.needsScroll) {
+                this.setupDropdownScroll(id);
+            }
+            
+            this.currentOpen = id;
+            this.updateDropdownHeights();
+            this._processingToggle = false;
+        });
     }
     
     setupDropdownScroll(id) {
         const dropdown = this.dropdowns[id];
         if (!dropdown || !dropdown.menu) return;
-    
+
+        dropdown.menu.style.willChange = 'transform';
+
+const resizeObserver = new ResizeObserver(() => {
+    checkButtons();
+});
+resizeObserver.observe(dropdown.menu);
+
+dropdown.menu._resizeObserver = resizeObserver;
+
+if (dropdown.menu._resizeObserver) {
+    dropdown.menu._resizeObserver.disconnect();
+}
+
         // Remove existing buttons first
         dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
     
@@ -852,8 +899,8 @@ class DropdownManager {
             touchStartY = e.touches[0].clientY;
             initialScrollTop = dropdown.menu.scrollTop;
             isDragging = true;
-            dropdown.menu.style.scrollBehavior = 'auto';
-            e.stopPropagation(); // Prevent event from reaching parent
+            dropdown.menu.style.scrollBehavior = 'auto'; // Only for touch
+            e.stopPropagation();
             e.preventDefault();
         }, { passive: false });
     
@@ -868,8 +915,8 @@ class DropdownManager {
     
         dropdown.menu.addEventListener('touchend', () => {
             isDragging = false;
-            dropdown.menu.style.scrollBehavior = 'smooth';
-            e.stopPropagation(); // Prevent event from reaching parent
+            dropdown.menu.style.scrollBehavior = 'smooth'; // Restore smooth scrolling
+            e.stopPropagation();
         }, { passive: true });
     
         // Regular scroll events
@@ -985,7 +1032,7 @@ handleOutsideClick(e) {
                 dropdown.menu.style.overscrollBehavior = 'contain';
             }
         });
-    }    
+    } 
 }
 
 function getGenreIcon(genre) {

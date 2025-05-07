@@ -1366,7 +1366,7 @@ button {
 .has-now-playing .history-dropdown,
 .has-now-playing .genre-tooltip {
     bottom: 215px;
-	max-height: calc(100vh - 287px) ! important;
+	max-height: calc(100% - 287px) ! important;
 }
 
 .history-dropdown {
@@ -1390,7 +1390,7 @@ button {
     -o-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
     -ms-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	max-height: calc(100vh - 267px) ! important;
+	max-height: calc(100% - 267px) ! important;
 	display: flex;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
@@ -1489,7 +1489,7 @@ button {
     font-size: 16px;
     max-width: 500px;
     border: 2px solid #444;
-	max-height: calc(100vh - 267px) ! important;
+	max-height: calc(100% - 267px) ! important;
 	scrollbar-width: none;
     -ms-overflow-style: none;
 	opacity: 0;
