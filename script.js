@@ -42,32 +42,28 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
         initFunctions.forEach(fn => fn());
     }
+
+// Handle clicks on both main list and history dropdown
+function handleRadioClick(e) {
+    const radio = e.target.closest('.radio');
+    if (!radio) return;
     
-    // Event delegation for radio stations with passive listener
-    cachedElements.scrollList?.addEventListener('click', (e) => {
-        const radio = e.target.closest('.radio');
-        if (!radio) return;
-        
-        // Check if the radio is inside the history dropdown
-        const isHistoryItem = radio.closest('.history-dropdown');
-        
-        if (isHistoryItem) {
-            // Prevent the dropdown from closing
-            e.stopPropagation();
-            
-            // Change station
-            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-            
-            // Scroll history dropdown to top
-            const historyDropdown = document.querySelector('.history-dropdown');
-            if (historyDropdown) {
-                historyDropdown.scrollTop = 0;
-            }
-        } else {
-            // Regular station click behavior
-            changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-        }
-    }, { passive: true });
+    // Change station
+    changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+    
+    // For history items, prevent dropdown from closing
+    if (radio.closest('.history-dropdown')) {
+        e.stopPropagation();
+    }
+}
+
+// Add listeners to both containers
+cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
+cachedElements.historyDropdown?.addEventListener('click', handleRadioClick, { passive: true });
+
+// Add touch listener specifically for Android
+cachedElements.historyDropdown?.addEventListener('touchend', handleRadioClick, { passive: false });
+
     
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -196,15 +192,20 @@ async function changeStation(name, link, cachedElements = {}) {
 
     // Scroll to station
     const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
+    const historyDropdown = document.querySelector('.history-dropdown');
     if (selectedStation) {
         requestAnimationFrame(() => {
             selectedStation.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center'
             });
+            historyDropdown.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         });
     }
-    
+
     updateTooltipContent();
     
     // Define play function
@@ -962,30 +963,39 @@ handleOutsideClick(e) {
     }
 }
 
-    updateDropdownHeights() {
-        const audioContainer = document.querySelector('.audio-container');
-        if (!audioContainer) return;
-        
-        const containerRect = audioContainer.getBoundingClientRect();
-        const windowHeight = window.innerHeight;
-        const headerHeight = document.querySelector('.header')?.clientHeight || 0;
-        const safeAreaBottom = window.visualViewport?.offsetTop || 0;
-        
-        // Calculate max height with safe area consideration
-        const maxDropdownHeight = Math.max(150, 
-            windowHeight - headerHeight - containerRect.bottom - safeAreaBottom);
+updateDropdownHeights() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
     
-        Object.values(this.dropdowns).forEach(dropdown => {
-            if (!dropdown.menu) return;
-            
-            dropdown.menu.style.maxHeight = `${maxDropdownHeight}px`;
-            
-            if (dropdown.needsScroll) {
-                dropdown.menu.style.overflowY = 'auto';
-                dropdown.menu.style.overscrollBehavior = 'contain';
-            }
-        });
-    }    
+    const containerRect = audioContainer.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const headerHeight = document.querySelector('.header')?.clientHeight || 0;
+    const safeAreaBottom = window.visualViewport?.offsetTop || 0;
+    
+    // Calculate max height with safe area consideration
+    const maxDropdownHeight = Math.max(150, windowHeight - headerHeight - containerRect.bottom - safeAreaBottom);
+
+    // Apply to all dropdowns
+    Object.values(this.dropdowns).forEach(dropdown => {
+        if (!dropdown.menu) return;
+        
+        // First calculate natural height without constraints
+        dropdown.menu.style.maxHeight = 'none';
+        const naturalHeight = dropdown.menu.scrollHeight;
+        
+        // Then apply constrained height
+        dropdown.menu.style.maxHeight = 
+            naturalHeight > maxDropdownHeight ? `${maxDropdownHeight}px` : `${naturalHeight}px`;
+        
+        if (dropdown.needsScroll) {
+            dropdown.menu.style.overflowY = naturalHeight > maxDropdownHeight ? 'auto' : 'hidden';
+            dropdown.menu.style.overscrollBehavior = 'contain';
+        }
+        
+        // Force reflow to ensure proper height calculation
+        void dropdown.menu.offsetHeight;
+    });
+}  
 }
 
 function getGenreIcon(genre) {
@@ -1155,40 +1165,6 @@ function setupRecentlyPlayedToggle() {
         e.stopPropagation();
         toggleCollapse();
     }, { passive: false });
-}
-
-function updateDropdownHeights() {
-    const audioContainer = document.querySelector('.audio-container');
-    if (!audioContainer) return;
-    
-    const containerRect = audioContainer.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    const headerHeight = document.querySelector('.header')?.clientHeight || 0;
-    
-    // Calculate max height based on available space
-    const maxDropdownHeight = `${Math.max(150, windowHeight - headerHeight - containerRect.bottom - 20)}px`;
-
-    // Apply to all dropdowns
-    if (dropdownManager.dropdowns.history?.menu) {
-        dropdownManager.dropdowns.history.menu.style.maxHeight = maxDropdownHeight;
-    }
-    
-    if (dropdownManager.dropdowns.tooltip?.menu) {
-        // First set max-height to calculate proper scroll height
-        dropdownManager.dropdowns.tooltip.menu.style.maxHeight = 'none';
-        const naturalHeight = dropdownManager.dropdowns.tooltip.menu.scrollHeight;
-        
-        // Then apply constrained height
-        dropdownManager.dropdowns.tooltip.menu.style.maxHeight = 
-            naturalHeight > parseFloat(maxDropdownHeight) ? maxDropdownHeight : `${naturalHeight}px`;
-        
-        // Check overflow after height change
-        requestAnimationFrame(() => {
-            if (dropdownManager.dropdowns.tooltip.menu._updateButtons) {
-                dropdownManager.dropdowns.tooltip.menu._updateButtons();
-            }
-        });
-    }
 }
 
 function setupAudioContainerObserver() {
@@ -1420,6 +1396,7 @@ function loadRecentlyPlayed() {
         if (station.name === currentStationName) {
             radio.classList.add('selected');
         }
+        
         radio.dataset.name = station.name;
         radio.dataset.link = station.link;
         radio.dataset.genre = station.genre || '';
