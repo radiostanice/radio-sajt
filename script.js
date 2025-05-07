@@ -43,27 +43,53 @@ document.addEventListener("DOMContentLoaded", () => {
         initFunctions.forEach(fn => fn());
     }
 
-    cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
-    cachedElements.scrollList?.addEventListener('touchend', handleRadioClick, { passive: false });
+cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
+cachedElements.scrollList?.addEventListener('touchend', handleRadioClick, { passive: false });
+
+function handleRadioClick(e) {
+    const radio = e.target.closest('.radio');
+    if (!radio) return;
     
-    function handleRadioClick(e) {
-        const radio = e.target.closest('.radio');
-        if (!radio) return;
+    // Prevent default for touch events to avoid double-tap zoom
+    if (e.type === 'touchend') {
+        e.preventDefault();
+    }
+    
+    // Check if the radio is inside the history dropdown
+    const isHistoryItem = radio.closest('.history-dropdown');
+    
+    if (isHistoryItem) {
+        // Prevent the dropdown from closing
+        e.stopPropagation();
         
-        if (e.type === 'touchend') {
-            e.preventDefault();
+        // Change station
+        changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+        
+        // Scroll history dropdown to top
+        const historyDropdown = document.querySelector('.history-dropdown');
+        if (historyDropdown) {
+            historyDropdown.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         }
+    } else {
+        // Regular station click behavior with smooth scrolling
+        changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
         
-        // Store the event for later use
-        window.lastRadioClickEvent = e;
-        
-        changeStation(radio.dataset.name, radio.dataset.link, cachedElements, e); // Pass the event explicitly
-        
-        // Prevent dropdown close if from history
-        if (radio.closest('.history-dropdown')) {
-            e.stopPropagation();
-        }
-    }    
+        // Scroll to station after a small delay to allow DOM updates
+        setTimeout(() => {
+            const selectedStation = document.querySelector(`.radio.selected`);
+            if (selectedStation) {
+                selectedStation.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            }
+        }, 50);
+    }
+}
+
     
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -151,7 +177,7 @@ function easeOutQuad(t) {
 }
 
 // Station Functions
-async function changeStation(name, link, cachedElements = {}, clickEvent) {  // Renamed parameter to clickEvent for clarity
+async function changeStation(name, link, cachedElements = {}) {
     // Use cached elements where available
     const audioTextElement = cachedElements.audioText || document.getElementById('audiotext');
     const audioContainer = cachedElements.audioContainer || document.querySelector('.audio-container');
@@ -190,42 +216,15 @@ async function changeStation(name, link, cachedElements = {}, clickEvent) {  // 
     updatePlayPauseButton(cachedElements);
     updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '', cachedElements);
 
-    // Scroll to station in main list (regardless of where it was clicked)
-// Scroll to station in main list (regardless of where it was clicked)
-requestAnimationFrame(() => {
+    // Scroll to station
     const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
     if (selectedStation) {
-        // Temporarily set scroll behavior to smooth
-        const originalStyle = document.documentElement.style.scrollBehavior;
-        document.documentElement.style.scrollBehavior = 'smooth';
-        
-        selectedStation.scrollIntoView({
-            block: 'center'
+        requestAnimationFrame(() => {
+            selectedStation.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
         });
-        
-        // Restore original scroll behavior after a short delay
-        setTimeout(() => {
-            document.documentElement.style.scrollBehavior = originalStyle;
-        }, 1000);
-    }
-});
-
-
-    // If the station was clicked from history dropdown, scroll it to top
-    if (clickEvent) {
-        const clickedFromHistory = clickEvent.target.closest('.history-dropdown');
-        if (clickedFromHistory) {
-            const historyDropdown = document.querySelector('.history-dropdown');
-            if (historyDropdown) {
-                // Use requestAnimationFrame to ensure smooth scrolling
-                requestAnimationFrame(() => {
-                    historyDropdown.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                });
-            }
-        }
     }
     
     updateTooltipContent();
@@ -899,8 +898,8 @@ if (dropdown.menu._resizeObserver) {
             touchStartY = e.touches[0].clientY;
             initialScrollTop = dropdown.menu.scrollTop;
             isDragging = true;
-            dropdown.menu.style.scrollBehavior = 'auto'; // Only for touch
-            e.stopPropagation();
+            dropdown.menu.style.scrollBehavior = 'auto';
+            e.stopPropagation(); // Prevent event from reaching parent
             e.preventDefault();
         }, { passive: false });
     
@@ -915,8 +914,8 @@ if (dropdown.menu._resizeObserver) {
     
         dropdown.menu.addEventListener('touchend', () => {
             isDragging = false;
-            dropdown.menu.style.scrollBehavior = 'smooth'; // Restore smooth scrolling
-            e.stopPropagation();
+            dropdown.menu.style.scrollBehavior = 'smooth';
+            e.stopPropagation(); // Prevent event from reaching parent
         }, { passive: true });
     
         // Regular scroll events
