@@ -771,43 +771,47 @@ class DropdownManager {
         }
         this.lastToggleTime = Date.now();
     
-        // If clicking the same dropdown's toggle, close it
-        if (this.currentOpen === id && !dropdown.menu.contains(event.target)) {
-            this.close(id);
+        // If clicking the same dropdown's toggle and menu is already open
+        if (this.currentOpen === id) {
+            // Only close if clicking the toggle, not the menu content
+            if (dropdown.toggle.contains(event.target) && !dropdown.menu.contains(event.target)) {
+                this.close(id);
+            }
             return;
         }
-
-    // Close any other open dropdown
-    if (this.currentOpen) {
-        this.close(this.currentOpen);
-    }
-
-    // Open the new dropdown
-    dropdown.menu.style.display = 'block';
-    dropdown.menu.scrollTop = 0;
-    dropdown.menu.classList.add('show');
     
-    if (id === 'tooltip') {
-        dropdown.menu.classList.add('visible');
-        updateTooltipContent();
-    }
-    
-    if (id === 'history') {
-        loadRecentlyPlayed();
-        if (currentStation?.name) {
-            updateSelectedStation(currentStation.name);
+        // Close any other open dropdown
+        if (this.currentOpen) {
+            this.close(this.currentOpen);
         }
+    
+        // Open the new dropdown
+        dropdown.menu.style.display = 'block';
+        dropdown.menu.scrollTop = 0;
+        dropdown.menu.classList.add('show');
+        
+        if (id === 'tooltip') {
+            dropdown.menu.classList.add('visible');
+            updateTooltipContent();
+        }
+        
+        if (id === 'history') {
+            loadRecentlyPlayed();
+            if (currentStation?.name) {
+                updateSelectedStation(currentStation.name);
+            }
+        }
+        
+        dropdown.toggle.classList.add('active');
+        
+        if (dropdown.needsScroll) {
+            this.setupDropdownScroll(id);
+        }
+        
+        this.currentOpen = id;
+        this.updateDropdownHeights();
     }
     
-    dropdown.toggle.classList.add('active');
-    
-    if (dropdown.needsScroll) {
-        this.setupDropdownScroll(id);
-    }
-    
-    this.currentOpen = id;
-    this.updateDropdownHeights();
-}
 
 setupDropdownScroll(id) {
     const dropdown = this.dropdowns[id];
@@ -844,27 +848,28 @@ setupDropdownScroll(id) {
         bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
     };
 
- // Improved touch handling
  let touchStartY = 0;
  let isDragging = false;
  let initialScrollTop = 0;
  
  dropdown.menu.addEventListener('touchstart', (e) => {
-     if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
-     touchStartY = e.touches[0].clientY;
-     initialScrollTop = dropdown.menu.scrollTop;
-     isDragging = true;
-     dropdown.menu.style.scrollBehavior = 'auto';
-     e.preventDefault(); // Prevent default touch behavior
- }, { passive: false });
+    if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
+    touchStartY = e.touches[0].clientY;
+    initialScrollTop = dropdown.menu.scrollTop;
+    isDragging = true;
+    dropdown.menu.style.scrollBehavior = 'auto';
+    e.stopPropagation();
+    e.preventDefault();
+}, { passive: false });
 
- dropdown.menu.addEventListener('touchmove', (e) => {
-     if (!isDragging) return;
-     const currentY = e.touches[0].clientY;
-     const diff = touchStartY - currentY;
-     dropdown.menu.scrollTop = initialScrollTop + diff;
-     e.preventDefault(); // Prevent default scroll behavior
- }, { passive: false });
+dropdown.menu.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    const currentY = e.touches[0].clientY;
+    const diff = touchStartY - currentY;
+    dropdown.menu.scrollTop = initialScrollTop + diff;
+    e.stopPropagation();
+    e.preventDefault();
+}, { passive: false });
 
  dropdown.menu.addEventListener('touchend', () => {
      isDragging = false;
@@ -897,7 +902,6 @@ bottomButton.addEventListener('touchend', (e) => {
     e.stopPropagation();
     smoothScroll('bottom');
 }, { passive: false });
-
 
         const smoothScroll = (direction) => {
             if (dropdown.menu._isScrolling) return;
@@ -1223,11 +1227,8 @@ function setupAudioContainerGestures() {
     let isDragging = false;
 
     audioContainer.addEventListener('touchstart', (e) => {
-        // Don't start drag if touching interactive elements
-        if (e.target.closest('.audio-player') || 
-            e.target.closest('.toggle-handle') ||
-            e.target.closest('.info-icon') ||
-            e.target.closest('.history-btn')) {
+        // Only start drag if touching the toggle handle
+        if (!e.target.closest('.toggle-handle')) {
             return;
         }
         
@@ -1266,8 +1267,6 @@ function setupAudioContainerGestures() {
         
         updateAudioContainerHeight();
     });
-
-    // Handle toggle handle click - already handled in setupRecentlyPlayedToggle
 }
 
 function setupScrollableContainer(container, wrapperClass, buttonClass) {
