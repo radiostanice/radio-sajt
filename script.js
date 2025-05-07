@@ -764,27 +764,29 @@ class DropdownManager {
     toggle(id) {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
-    
-        // Prevent rapid toggling on mobile
-        if (this.lastToggleTime && Date.now() - this.lastToggleTime < 300) {
+
+        // Prevent rapid toggling
+        if (this.lastToggleTime && Date.now() - this.lastToggleTime < 500) {
             return;
         }
         this.lastToggleTime = Date.now();
-    
-        // If clicking the same dropdown's toggle and menu is already open
-        if (this.currentOpen === id) {
-            // Only close if clicking the toggle, not the menu content
-            if (dropdown.toggle.contains(event.target) && !dropdown.menu.contains(event.target)) {
-                this.close(id);
-            }
+
+        // If clicking inside an already open dropdown, don't close it
+        if (this.currentOpen === id && dropdown.menu.contains(event.target)) {
             return;
         }
-    
+
+        // If clicking the toggle of an open dropdown, close it
+        if (this.currentOpen === id && dropdown.toggle.contains(event.target)) {
+            this.close(id);
+            return;
+        }
+
         // Close any other open dropdown
         if (this.currentOpen) {
             this.close(this.currentOpen);
         }
-    
+
         // Open the new dropdown
         dropdown.menu.style.display = 'block';
         dropdown.menu.scrollTop = 0;
@@ -793,13 +795,6 @@ class DropdownManager {
         if (id === 'tooltip') {
             dropdown.menu.classList.add('visible');
             updateTooltipContent();
-        }
-        
-        if (id === 'history') {
-            loadRecentlyPlayed();
-            if (currentStation?.name) {
-                updateSelectedStation(currentStation.name);
-            }
         }
         
         dropdown.toggle.classList.add('active');
@@ -812,97 +807,90 @@ class DropdownManager {
         this.updateDropdownHeights();
     }
     
-
-setupDropdownScroll(id) {
-    const dropdown = this.dropdowns[id];
-    if (!dropdown || !dropdown.menu) return;
-
-    // Remove existing buttons first
-    dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
-
-    // Create navigation buttons
-    const topButton = document.createElement('button');
-    topButton.className = `${dropdown.navButtonClass} top`;
-    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
+    setupDropdownScroll(id) {
+        const dropdown = this.dropdowns[id];
+        if (!dropdown || !dropdown.menu) return;
     
-    const bottomButton = document.createElement('button');
-    bottomButton.className = `${dropdown.navButtonClass} bottom`;
-    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
-
-    // Add buttons to the dropdown
-    dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
-    dropdown.menu.appendChild(bottomButton);
-
-    const checkButtons = () => {
-        const scrollTop = dropdown.menu.scrollTop;
-        const buffer = 1;
-        const maxScroll = dropdown.menu.scrollHeight - dropdown.menu.clientHeight;
+        // Remove existing buttons first
+        dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
+    
+        // Create navigation buttons
+        const topButton = document.createElement('button');
+        topButton.className = `${dropdown.navButtonClass} top`;
+        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
         
-        const atTop = scrollTop <= buffer;
-        const atBottom = scrollTop >= maxScroll - buffer;
+        const bottomButton = document.createElement('button');
+        bottomButton.className = `${dropdown.navButtonClass} bottom`;
+        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+    
+        // Add buttons to the dropdown
+        dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
+        dropdown.menu.appendChild(bottomButton);
+    
+        const checkButtons = () => {
+            const scrollTop = dropdown.menu.scrollTop;
+            const buffer = 1;
+            const maxScroll = dropdown.menu.scrollHeight - dropdown.menu.clientHeight;
+            
+            const atTop = scrollTop <= buffer;
+            const atBottom = scrollTop >= maxScroll - buffer;
+            
+            topButton.style.opacity = atTop ? '0' : '1';
+            topButton.style.pointerEvents = atTop ? 'none' : 'auto';
+            
+            bottomButton.style.opacity = atBottom ? '0' : '1';
+            bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
+        };
+    
+        // Improved touch handling with better isolation
+        let touchStartY = 0;
+        let isDragging = false;
+        let initialScrollTop = 0;
         
-        topButton.style.opacity = atTop ? '0' : '1';
-        topButton.style.pointerEvents = atTop ? 'none' : 'auto';
-        
-        bottomButton.style.opacity = atBottom ? '0' : '1';
-        bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
-    };
-
- let touchStartY = 0;
- let isDragging = false;
- let initialScrollTop = 0;
- 
- dropdown.menu.addEventListener('touchstart', (e) => {
-    if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
-    touchStartY = e.touches[0].clientY;
-    initialScrollTop = dropdown.menu.scrollTop;
-    isDragging = true;
-    dropdown.menu.style.scrollBehavior = 'auto';
-    e.stopPropagation();
-    e.preventDefault();
-}, { passive: false });
-
-dropdown.menu.addEventListener('touchmove', (e) => {
-    if (!isDragging) return;
-    const currentY = e.touches[0].clientY;
-    const diff = touchStartY - currentY;
-    dropdown.menu.scrollTop = initialScrollTop + diff;
-    e.stopPropagation();
-    e.preventDefault();
-}, { passive: false });
-
- dropdown.menu.addEventListener('touchend', () => {
-     isDragging = false;
-     dropdown.menu.style.scrollBehavior = 'smooth';
- }, { passive: true });
-
- dropdown.menu.addEventListener('scroll', () => {
-    cancelAnimationFrame(dropdown.menu._scrollTimer);
-    dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
-}, { passive: true });
-
-topButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    smoothScroll('top');
-});
-topButton.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    smoothScroll('top');
-}, { passive: false });
-
-bottomButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    smoothScroll('bottom');
-});
-bottomButton.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    smoothScroll('bottom');
-}, { passive: false });
-
+        dropdown.menu.addEventListener('touchstart', (e) => {
+            if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
+            touchStartY = e.touches[0].clientY;
+            initialScrollTop = dropdown.menu.scrollTop;
+            isDragging = true;
+            dropdown.menu.style.scrollBehavior = 'auto';
+            e.stopPropagation(); // Prevent event from reaching parent
+            e.preventDefault();
+        }, { passive: false });
+    
+        dropdown.menu.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            const currentY = e.touches[0].clientY;
+            const diff = touchStartY - currentY;
+            dropdown.menu.scrollTop = initialScrollTop + diff;
+            e.stopPropagation(); // Prevent event from reaching parent
+            e.preventDefault();
+        }, { passive: false });
+    
+        dropdown.menu.addEventListener('touchend', () => {
+            isDragging = false;
+            dropdown.menu.style.scrollBehavior = 'smooth';
+            e.stopPropagation(); // Prevent event from reaching parent
+        }, { passive: true });
+    
+        // Regular scroll events
+        dropdown.menu.addEventListener('scroll', () => {
+            cancelAnimationFrame(dropdown.menu._scrollTimer);
+            dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
+        }, { passive: true });
+    
+        // Button event handlers
+        topButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            smoothScroll('top');
+        });
+    
+        bottomButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            smoothScroll('bottom');
+        });
+    
         const smoothScroll = (direction) => {
             if (dropdown.menu._isScrolling) return;
             dropdown.menu._isScrolling = true;
@@ -915,7 +903,7 @@ bottomButton.addEventListener('touchend', (e) => {
             
             const duration = 300;
             const startTime = performance.now();
-
+    
             const animate = (time) => {
                 const elapsed = time - startTime;
                 const progress = Math.min(elapsed / duration, 1);
@@ -932,9 +920,9 @@ bottomButton.addEventListener('touchend', (e) => {
             
             requestAnimationFrame(animate);
         };
-
+    
         checkButtons();
-}
+    }    
 
     close(id) {
         const dropdown = this.dropdowns[id];

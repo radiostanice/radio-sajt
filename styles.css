@@ -889,6 +889,7 @@ button {
 	display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    touch-action: pan-y;
 }
 
 .audio-container.has-now-playing {
@@ -1391,9 +1392,10 @@ button {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 	max-height: calc(100vh - 267px) ! important;
 	display: flex;
-    overscroll-behavior: contain;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
+    touch-action: pan-y;
+    overscroll-behavior: contain;
 }
 
 .tooltip-content::-webkit-scrollbar {
@@ -1502,6 +1504,7 @@ button {
 	z-index: 1;
 	overflow-y: auto;
     overscroll-behavior: contain;
+    touch-action: pan-y;
 }
 
 .genre-tooltip.visible {
