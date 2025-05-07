@@ -56,11 +56,14 @@ body {
     padding: 0;
     background-color: #222;
     color: #ffffff;
-    overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
 	overscroll-behavior-y: contain;
+    height: 100%;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
 }
 
 * {
@@ -1576,7 +1579,6 @@ button {
 	padding: 5px 10px 3px 10px;
 	background-color: #191919;
 	vertical-align: middle;
-	display: block;
 }
 
 .quality-info .material-icons {

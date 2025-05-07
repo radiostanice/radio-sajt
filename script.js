@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
         volumeSlider: document.getElementById('volumeSlider'),
         stationSearch: document.getElementById("stationSearch"),
         clearSearch: document.getElementById("clearSearch"),
-        recentlyPlayedContainer: document.getElementById("recentlyPlayedContainer")
+        historyDropdown: document.querySelector('.history-dropdown')
     };
 
     // Initialize core components
@@ -571,7 +571,7 @@ function applyGenreFilter(cachedElements = {}) {
         const noResultsElement = document.querySelector('.no-results');
         let hasVisibleStations = false;
         
-        document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
+        document.querySelectorAll('.radio:not(.history-dropdown .radio)').forEach(station => {
             const stationGenres = station.dataset.genre?.split(',') || [];
             const shouldShow = currentGenre === 'all' || stationGenres.includes(currentGenre);
             station.style.display = shouldShow ? 'flex' : 'none';
@@ -590,7 +590,7 @@ function applyGenreFilter(cachedElements = {}) {
 }
 
 function updateCategoryVisibility() {
-    document.querySelectorAll(".category-container:not(#recentlyPlayedContainer)").forEach(category => {
+    document.querySelectorAll(".category-container").forEach(category => {
         const categoryTitle = category.previousElementSibling;
         if (!categoryTitle?.classList.contains("category")) return;
 
@@ -600,19 +600,6 @@ function updateCategoryVisibility() {
         category.style.display = hasVisibleStation ? "flex" : "none";
         categoryTitle.style.display = hasVisibleStation ? "flex" : "none";
     });
-
-    // Always show recently played section
-    const recentlyPlayedContainer = document.getElementById("recentlyPlayedContainer");
-    const recentlyPlayedTitle = document.querySelector("#recentlyPlayedTitle");
-    
-    if (recentlyPlayedContainer && recentlyPlayedTitle) {
-        recentlyPlayedContainer.style.display = "flex";
-        recentlyPlayedTitle.style.display = "flex";
-        
-        recentlyPlayedContainer.querySelectorAll(".radio").forEach(station => {
-            station.style.display = "flex";
-        });
-    }
 }
 
 // Theme Functions
@@ -686,24 +673,8 @@ function updateRecentlyPlayed(name, link, genre = '', cachedElements = {}) {
     
     localStorage.setItem('recentlyPlayed', JSON.stringify(newRecentlyPlayed));
     
-    const container = cachedElements.recentlyPlayedContainer || document.getElementById("recentlyPlayedContainer");
-    const wasExpanded = container && container.style.maxHeight !== '0px';
-    
     loadRecentlyPlayed(cachedElements);
-    
-    if (wasExpanded) {
-        setTimeout(() => {
-            if (container) {
-                const containerHeight = container.scrollHeight;
-                container.style.maxHeight = `${containerHeight}px`;
-                
-                const scrollList = cachedElements.scrollList || document.querySelector('.scroll-list');
-                if (scrollList) {
-                    scrollList.style.bottom = `${COLLAPSED_HEIGHT + containerHeight + 35}px`;
-                }
-            }
-        }, 10);
-    }
+
 }
 
 function safeParseJSON(key, fallback) {
@@ -770,15 +741,15 @@ class DropdownManager {
         document.addEventListener("touchend", this.handleOutsideClick.bind(this), { passive: true });
     }
 
-toggle(id) {
-    const dropdown = this.dropdowns[id];
-    if (!dropdown) return;
-
-    // If clicking the same dropdown's toggle, close it
-    if (this.currentOpen === id) {
-        this.close(id);
-        return;
-    }
+    toggle(id) {
+        const dropdown = this.dropdowns[id];
+        if (!dropdown) return;
+    
+        // If clicking the same dropdown's toggle, close it
+        if (this.currentOpen === id && !dropdown.menu.contains(event.target)) {
+            this.close(id);
+            return;
+        }
 
     // Close any other open dropdown
     if (this.currentOpen) {
@@ -812,40 +783,80 @@ toggle(id) {
     this.updateDropdownHeights();
 }
 
-    setupDropdownScroll(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown || !dropdown.menu) return;
+setupDropdownScroll(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown || !dropdown.menu) return;
 
-        // Remove existing buttons first
-        dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
+    // Remove existing buttons first
+    dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
 
-        // Create navigation buttons
-        const topButton = document.createElement('button');
-        topButton.className = `${dropdown.navButtonClass} top`;
-        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
+    // Create navigation buttons
+    const topButton = document.createElement('button');
+    topButton.className = `${dropdown.navButtonClass} top`;
+    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
+    
+    const bottomButton = document.createElement('button');
+    bottomButton.className = `${dropdown.navButtonClass} bottom`;
+    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+
+    // Add buttons to the dropdown
+    dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
+    dropdown.menu.appendChild(bottomButton);
+
+    const checkButtons = () => {
+        const scrollTop = dropdown.menu.scrollTop;
+        const buffer = 1;
+        const maxScroll = dropdown.menu.scrollHeight - dropdown.menu.clientHeight;
         
-        const bottomButton = document.createElement('button');
-        bottomButton.className = `${dropdown.navButtonClass} bottom`;
-        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+        const atTop = scrollTop <= buffer;
+        const atBottom = scrollTop >= maxScroll - buffer;
+        
+        topButton.style.opacity = atTop ? '0' : '1';
+        topButton.style.pointerEvents = atTop ? 'none' : 'auto';
+        
+        bottomButton.style.opacity = atBottom ? '0' : '1';
+        bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
+    };
 
-        // Add buttons to the dropdown
-        dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
-        dropdown.menu.appendChild(bottomButton);
+    // Improved touch handling
+    let touchStartY = 0;
+    let isDragging = false;
+    
+    dropdown.menu.addEventListener('scroll', () => {
+        cancelAnimationFrame(dropdown.menu._scrollTimer);
+        dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
+    }, { passive: true });
 
-        const checkButtons = () => {
-            const scrollTop = dropdown.menu.scrollTop;
-            const buffer = 1;
-            const maxScroll = dropdown.menu.scrollHeight - dropdown.menu.clientHeight;
-            
-            const atTop = scrollTop <= buffer;
-            const atBottom = scrollTop >= maxScroll - buffer;
-            
-            topButton.style.opacity = atTop ? '0' : '1';
-            topButton.style.pointerEvents = atTop ? 'none' : 'auto';
-            
-            bottomButton.style.opacity = atBottom ? '0' : '1';
-            bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
-        };
+    dropdown.menu.addEventListener('touchstart', (e) => {
+        if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
+        touchStartY = e.touches[0].clientY;
+        isDragging = true;
+        dropdown.menu.style.scrollBehavior = 'auto';
+    }, { passive: true });
+
+    dropdown.menu.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const currentY = e.touches[0].clientY;
+        const diff = touchStartY - currentY;
+        dropdown.menu.scrollTop += diff;
+        touchStartY = currentY;
+    }, { passive: false });
+
+    dropdown.menu.addEventListener('touchend', () => {
+        isDragging = false;
+        dropdown.menu.style.scrollBehavior = 'smooth';
+    }, { passive: true });
+
+    topButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        smoothScroll('top');
+    });
+    
+    bottomButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        smoothScroll('bottom');
+    });
 
         const smoothScroll = (direction) => {
             if (dropdown.menu._isScrolling) return;
@@ -877,29 +888,8 @@ toggle(id) {
             requestAnimationFrame(animate);
         };
 
-        topButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            smoothScroll('top');
-        });
-        
-        bottomButton.addEventListener('click', (e) => {
-            e.stopPropagation();
-            smoothScroll('bottom');
-        });
-
-        dropdown.menu.addEventListener('scroll', () => {
-            cancelAnimationFrame(dropdown.menu._scrollTimer);
-            dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
-        }, { passive: true });
-		
-		dropdown.menu.addEventListener('touchmove', (e) => {
-			if (e.target === dropdown.menu || dropdown.menu.contains(e.target)) {
-				e.stopPropagation();
-			}
-		}, { passive: false });
-
         checkButtons();
-    }
+}
 
     close(id) {
         const dropdown = this.dropdowns[id];
@@ -920,19 +910,18 @@ toggle(id) {
         }
     }
 
-handleOutsideClick(e) {
-    // Check if click was on any dropdown toggle or menu, OR a station in the history dropdown
-    const clickedInside = Object.values(this.dropdowns).some(dropdown => {
-        return dropdown.toggle?.contains(e.target) || 
-               dropdown.menu?.contains(e.target) ||
-               (dropdown.menu && e.target.closest('.history-nav-button')) ||
-               (this.currentOpen === 'history' && e.target.closest('.radio'));
-    });
-    
-    if (!clickedInside && this.currentOpen) {
-        this.close(this.currentOpen);
-    }
-}
+    handleOutsideClick(e) {
+        // Check if click was on any dropdown toggle or menu
+        const clickedInside = Object.values(this.dropdowns).some(dropdown => {
+            return dropdown.toggle?.contains(e.target) || 
+                   dropdown.menu?.contains(e.target) ||
+                   (dropdown.menu && e.target.closest('.history-nav-button'));
+        });
+        
+        if (!clickedInside && this.currentOpen) {
+            this.close(this.currentOpen);
+        }
+    }    
 
     updateDropdownHeights() {
         const audioContainer = document.querySelector('.audio-container');
@@ -941,8 +930,12 @@ handleOutsideClick(e) {
         const containerRect = audioContainer.getBoundingClientRect();
         const windowHeight = window.innerHeight;
         const headerHeight = document.querySelector('.header')?.clientHeight || 0;
-        const maxDropdownHeight = Math.max(150, windowHeight - headerHeight - containerRect.bottom);
-
+        const safeAreaBottom = window.visualViewport?.offsetTop || 0;
+        
+        // Calculate max height with safe area consideration
+        const maxDropdownHeight = Math.max(150, 
+            windowHeight - headerHeight - containerRect.bottom - safeAreaBottom);
+    
         Object.values(this.dropdowns).forEach(dropdown => {
             if (!dropdown.menu) return;
             
@@ -950,9 +943,10 @@ handleOutsideClick(e) {
             
             if (dropdown.needsScroll) {
                 dropdown.menu.style.overflowY = 'auto';
+                dropdown.menu.style.overscrollBehavior = 'contain';
             }
         });
-    }
+    }    
 }
 
 function getGenreIcon(genre) {
@@ -1361,107 +1355,6 @@ function updateButtonVisibility() {
     return { checkOverflow, updateButtonVisibility };
 }
 
-function setupRecentlyPlayedNavigation() {
-  const wrapper = document.querySelector('.recently-played-wrapper');
-  if (!wrapper) return;
-  
-  const stations = wrapper.querySelector('.recently-played-stations');
-  if (!stations) return;
-
-  // Remove existing buttons
-  wrapper.querySelectorAll('.history-nav-button').forEach(btn => btn.remove());
-
-  // Create navigation buttons
-  const topButton = document.createElement('button');
-  topButton.className = 'history-nav-button top';
-  topButton.innerHTML = '<span class="material-icons">expand_less</span>';
-  
-  const bottomButton = document.createElement('button');
-  bottomButton.className = 'history-nav-button bottom';
-  bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
-
-  wrapper.insertBefore(topButton, stations);
-  wrapper.appendChild(bottomButton);
-
-  // Check button visibility
-  const checkButtons = () => {
-    const atTop = stations.scrollTop <= 1;
-    const atBottom = stations.scrollTop >= 
-      stations.scrollHeight - stations.clientHeight - 1;
-    
-    topButton.style.display = atTop ? 'none' : 'flex';
-    bottomButton.style.display = atBottom ? 'none' : 'flex';
-  };
-
-  // Smooth scroll function
-  const smoothScroll = (direction) => {
-    if (stations._isScrolling) return;
-    stations._isScrolling = true;
-    
-    const amount = stations.clientHeight * 0.8;
-    const start = stations.scrollTop;
-    const target = direction === 'top' 
-      ? Math.max(0, start - amount)
-      : Math.min(start + amount, stations.scrollHeight - stations.clientHeight);
-    
-    const duration = 300;
-    const startTime = performance.now();
-
-    const animate = (time) => {
-      const elapsed = time - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easeOutQuad(progress);
-      stations.scrollTop = start + (target - start) * easedProgress;
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        stations._isScrolling = false;
-        checkButtons();
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  };
-
-  // Event listeners
-  topButton.addEventListener('click', () => smoothScroll('top'));
-  bottomButton.addEventListener('click', () => smoothScroll('bottom'));
-  
-  // Touch handling for Android
-  let startY = 0;
-  let isDragging = false;
-  
-  stations.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY;
-    isDragging = true;
-    stations.style.scrollBehavior = 'auto';
-  }, { passive: true });
-
-  stations.addEventListener('touchmove', (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const currentY = e.touches[0].clientY;
-    const diff = startY - currentY;
-    stations.scrollTop += diff;
-    startY = currentY;
-  }, { passive: false });
-
-  stations.addEventListener('touchend', () => {
-    isDragging = false;
-    stations.style.scrollBehavior = 'smooth';
-  }, { passive: true });
-
-  // Scroll handler
-  stations.addEventListener('scroll', () => {
-    cancelAnimationFrame(stations._scrollTimer);
-    stations._scrollTimer = requestAnimationFrame(checkButtons);
-  }, { passive: true });
-
-  // Initial check
-  checkButtons();
-}
-
 function loadRecentlyPlayed() {
     const container = document.querySelector('.recently-played-stations');
     if (!container) return;
@@ -1503,9 +1396,6 @@ function loadRecentlyPlayed() {
         });
         container.appendChild(radio);
     });
-
-    // Setup navigation after stations are loaded
-    setTimeout(setupRecentlyPlayedNavigation, 100);
 }
 
 function createExpandButton(stations, category) {
@@ -1657,14 +1547,14 @@ function filterStations() {
 
     let hasVisibleStations = false;
     
-    document.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)').forEach(station => {
+    document.querySelectorAll('.radio:not(.history-dropdown .radio)').forEach(station => {
         const matches = station.dataset.name.toLowerCase().includes(query);
         station.style.display = matches ? 'flex' : 'none';
         if (matches) hasVisibleStations = true;
     });
 
-    document.querySelectorAll('.category-container:not(#recentlyPlayedContainer)').forEach(category => {
-        const hasVisible = [...category.querySelectorAll('.radio:not(#recentlyPlayedContainer .radio)')]
+    document.querySelectorAll('.category-container').forEach(category => {
+        const hasVisible = [...category.querySelectorAll('.radio:not(.history-dropdown .radio)')]
             .some(station => station.style.display !== 'none');
         
         category.style.display = hasVisible ? 'flex' : 'none';
@@ -1706,7 +1596,7 @@ function setupExpandableCategories() {
     if (document.getElementById("stationSearch").value.trim() !== "") return;
     
     // Process each category
-    document.querySelectorAll(".category-container:not(#recentlyPlayedContainer)").forEach(category => {
+    document.querySelectorAll(".category-container").forEach(category => {
         category.classList.remove("no-radius", "has-expand-button");
         
         const stations = [...category.querySelectorAll(".radio")]
@@ -1843,7 +1733,6 @@ const ScrollbarManager = {
         
         [
             document.querySelector('.audio-container'),
-            document.getElementById('recentlyPlayedContainer'),
             document.body
         ].filter(Boolean).forEach(el => observer.observe(el));
         
@@ -2035,15 +1924,6 @@ const ScrollbarManager = {
         const audioContainerHeight = parseFloat(getComputedStyle(audioContainer).height);
         const viewportHeight = window.innerHeight;
         const scrollListTop = this.scrollList.getBoundingClientRect().top;
-        
-        // Calculate recently played height
-        let recentlyPlayedHeight = 0;
-        const recentlyPlayedContainer = document.getElementById('recentlyPlayedContainer');
-        if (recentlyPlayedContainer && 
-            recentlyPlayedContainer.style.maxHeight !== '0px' && 
-            recentlyPlayedContainer.style.display !== 'none') {
-            recentlyPlayedHeight = recentlyPlayedContainer.scrollHeight;
-        }
         
         // Set dimensions
         const availableHeight = viewportHeight - scrollListTop - audioContainerHeight;
