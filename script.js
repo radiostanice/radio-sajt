@@ -103,17 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
         capture: true,  // Important - handles the event before others
         passive: false 
     });
-    
-    // This is a failsafe - checks dropdown state after station selection
-    function checkDropdownAfterInteraction() {
-        requestAnimationFrame(() => {
-            const dropdown = document.querySelector('.history-dropdown');
-            if (dropdown && !dropdown.classList.contains('show')) {
-                dropdown.classList.add('show');
-                dropdown.style.display = 'block';
-            }
-        });
-    }
 
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick);
@@ -204,6 +193,16 @@ function easeOutQuad(t) {
     return t * (2 - t);
 }
 
+    function checkDropdownAfterInteraction() {
+        requestAnimationFrame(() => {
+            const dropdown = document.querySelector('.history-dropdown');
+            if (dropdown && !dropdown.classList.contains('show')) {
+                dropdown.classList.add('show');
+                dropdown.style.display = 'block';
+            }
+        });
+    }
+    
 // Station Functions
 async function changeStation(name, link, cachedElements = {}) {
     // Use cached elements where available
