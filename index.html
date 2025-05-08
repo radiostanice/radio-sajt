@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" href="logo/radio.svg" type="image/svg+xml">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -10,36 +10,15 @@
 </head>
 <body>
     <div class="header">
+        <div class="logo">
+            <span class="material-icons">radio</span>
+            <h1>Radio Stanice</h1>
+        </div>
         <div class="search-container">
             <span id="Search" class="material-icons search-icon">search</span>
             <input type="text" id="stationSearch" placeholder="Pretražite...">
             <span id="clearSearch" class="material-icons close">close</span>
         </div>
-        <div class="theme-container">
-            <div class="dropdown">
-                <button class="btn dropdown-toggle">
-                    <span class="material-icons theme-icon">dark_mode</span>Tema
-                </button>
-                <div class="dropdown-menu">
-                    <div class="theme-options-container">
-                        <div class="theme-option" data-theme="dark">
-                            <span class="material-icons dark_mode">dark_mode</span>
-                            <span class="theme-text">Tamna</span>
-                        </div>
-                        <div class="theme-option" data-theme="light">
-                            <span class="material-icons light_mode">light_mode</span>
-                            <span class="theme-text">Svetla</span>
-                        </div>
-                    </div>
-                    <div class="color-picker-container">
-						<div class="color-picker" style="background: #65B1F4;" data-color="blue"></div>
-                        <div class="color-picker" style="background: #85B962;" data-color="green"></div>
-                        <div class="color-picker" style="background: #E8C349;" data-color="yellow"></div>
-                        <div class="color-picker" style="background: #DA7178;" data-color="red"></div>
-                    </div>
-               </div>
-            </div>
-       </div>
     </div>
 <div class="scroll-list">
 
@@ -329,17 +308,43 @@
 <div id="recentlyPlayedToggle" class="recently-played-toggle">
     <div class="toggle-handle"></div>
     <div class="toggle-buttons">
-    <div class="segmented-button-group">
-        <button id="historyBtn" class="segmented-button history-btn">
-            <span class="material-icons">history</span>
-            <span>Istorija</span>
-        </button>
-        <button class="segmented-button info-icon">
-            <span class="material-icons">info</span>
-            <span>Info</span>
-			<div class="genre-tooltip"></div>
-        </button>
-    </div>
+        <div class="segmented-button-group">
+            <button id="historyBtn" class="segmented-button history-btn">
+                <span class="material-icons">history</span>
+                <span>Istorija</span>
+            </button>
+            <button class="segmented-button info-icon">
+                <span class="material-icons">info</span>
+                <span>Info</span>
+            </button>
+            <button class="segmented-button theme-toggle">
+                <span class="material-icons theme-icon">dark_mode</span>
+                <span>Tema</span>
+            </button>
+        </div>
+
+        <div class="genre-tooltip"></div>
+
+        <div class="dropdown">
+            <div class="dropdown-menu">
+                <div class="theme-options-container">
+                    <div class="theme-option" data-theme="dark">
+                        <span class="material-icons dark_mode">dark_mode</span>
+                        <span class="theme-text">Tamna</span>
+                    </div>
+                    <div class="theme-option" data-theme="light">
+                        <span class="material-icons light_mode">light_mode</span>
+                        <span class="theme-text">Svetla</span>
+                    </div>
+                </div>
+                <div class="color-picker-container">
+                    <div class="color-picker" style="background: #65B1F4;" data-color="blue"></div>
+                    <div class="color-picker" style="background: #85B962;" data-color="green"></div>
+                    <div class="color-picker" style="background: #E8C349;" data-color="yellow"></div>
+                    <div class="color-picker" style="background: #DA7178;" data-color="red"></div>
+                </div>
+            </div>
+        </div>
 </div>
     
     <!-- History Dropdown Container -->

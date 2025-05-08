@@ -43,8 +43,18 @@ document.addEventListener("DOMContentLoaded", () => {
         initFunctions.forEach(fn => fn());
     }
 
-// Handle clicks on both main list and history dropdown
 function handleRadioClick(e) {
+    // Check if this is a touch event and if there was significant movement
+    if (e.type === 'touchend') {
+        const touch = e.changedTouches[0];
+        const startTouch = e.target._touchStart;
+        
+        if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
+                          Math.abs(touch.clientY - startTouch.y) > 10)) {
+            return; // It was a scroll, not a click
+        }
+    }
+    
     const radio = e.target.closest('.radio');
     if (!radio) return;
     
@@ -54,8 +64,21 @@ function handleRadioClick(e) {
     // For history items, prevent dropdown from closing
     if (radio.closest('.history-dropdown')) {
         e.stopPropagation();
+        
+        // Ensure the equalizer is added to the history dropdown station
+        updateSelectedStation(radio.dataset.name);
     }
 }
+
+// Add touch start listeners to track initial position
+cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio) {
+        const touch = e.touches[0];
+        radio._touchStart = { x: touch.clientX, y: touch.clientY };
+    }
+}, { passive: true });
+
 
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
@@ -546,13 +569,19 @@ function updateSelectedStation(name) {
                 equalizer.className = "equalizer animate";
                 equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
                 const radioText = radio.querySelector(".radio-text");
-                                if (radioText) radio.insertBefore(equalizer, radioText);
+                if (radioText) {
+                    radio.insertBefore(equalizer, radioText);
+                } else {
+                    // Fallback if radio-text doesn't exist
+                    radio.appendChild(equalizer);
+                }
             }
         } else if (existingEqualizer) {
             radio.removeChild(existingEqualizer);
         }
     });
 }
+
 
 // Genre Filtering Functions
 function setupGenreFiltering(cachedElements = {}) {
@@ -676,12 +705,31 @@ function changeColor(color) {
 }
 
 function setupThemeControls() {
-    document.querySelectorAll(".theme-option").forEach(option => {
-        option.addEventListener("click", () => setTheme(option.dataset.theme));
+    const colorPickers = document.querySelectorAll('.color-picker');
+    const themeOptions = document.querySelectorAll('.theme-option');
+    
+    // Color picker handlers
+    colorPickers.forEach(picker => {
+        const handlePicker = (e) => {
+            e.stopPropagation(); // Prevent event from bubbling up
+            const color = picker.dataset.color;
+            if (color) changeColor(color);
+        };
+        
+        picker.addEventListener('click', handlePicker);
+        picker.addEventListener('touchend', handlePicker, { passive: false });
     });
-
-    document.querySelectorAll(".color-picker").forEach(picker => {
-        picker.addEventListener("click", () => changeColor(picker.dataset.color));
+    
+    // Theme option handlers - removed the dropdown closing logic
+    themeOptions.forEach(option => {
+        const handleOption = (e) => {
+            e.stopPropagation(); // Prevent event from bubbling up
+            const mode = option.dataset.theme;
+            if (mode) setTheme(mode);
+        };
+        
+        option.addEventListener('click', handleOption);
+        option.addEventListener('touchend', handleOption, { passive: false });
     });
 }
 
@@ -712,7 +760,7 @@ class DropdownManager {
         this.currentOpen = null;
         this.dropdowns = {
             theme: {
-                toggle: document.querySelector(".dropdown-toggle"),
+                toggle: document.querySelector(".theme-toggle"),
                 menu: document.querySelector(".dropdown-menu"),
                 needsScroll: false
             },
@@ -745,88 +793,103 @@ class DropdownManager {
             if (!dropdown.toggle || !dropdown.menu) return;
             
             const handler = (e) => {
-                e.preventDefault();
+                // Prevent default only for touch events
+                if (e.type === 'touchend') {
+                    e.preventDefault();
+                }
                 e.stopPropagation();
-                this.toggle(id);
+                this.toggle(id, e);
             };
             
-            // Use passive listeners where possible
-            dropdown.toggle.addEventListener("click", handler);
-            dropdown.toggle.addEventListener("touchend", handler, { passive: false });
+            // Use pointer events for better cross-device support
+            dropdown.toggle.addEventListener("pointerdown", handler);
             
-            dropdown.menu.addEventListener('click', (e) => e.stopPropagation());
+            // Don't stop propagation for menu content clicks
+            dropdown.menu.addEventListener('click', (e) => {
+                if (!e.target.closest('.history-nav-button') && 
+                    !e.target.closest('.tooltip-nav-button')) {
+                    e.stopPropagation();
+                }
+            });
         });
-
-        // Use passive listeners for document events
-        document.addEventListener("click", this.handleOutsideClick.bind(this));
-        document.addEventListener("touchend", this.handleOutsideClick.bind(this), { passive: true });
+    
+        const handleOutside = (e) => {
+            // Handle both mouse and touch events
+            const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+            if (!target) return;
+            
+            // Check if click was inside any dropdown
+            let clickedInside = false;
+            for (const dropdown of Object.values(this.dropdowns)) {
+                if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
+                    !target.closest(`.${dropdown.navButtonClass}`)) {
+                    clickedInside = true;
+                    break;
+                }
+            }
+            
+            if (!clickedInside && this.currentOpen) {
+                this.close(this.currentOpen);
+            }
+        };
+        
+        document.addEventListener("click", handleOutside);
+        document.addEventListener("touchend", handleOutside, { passive: true });
     }
 
-    toggle(id) {
+    toggle(id, event) {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
-
-        // Prevent rapid toggling
-        if (this.lastToggleTime && Date.now() - this.lastToggleTime < 500) {
+    
+        // Prevent rapid toggling with better debouncing
+        const now = Date.now();
+        if (this.lastToggleTime && now - this.lastToggleTime < 200) {
             return;
         }
-        this.lastToggleTime = Date.now();
-
-        // If clicking inside an already open dropdown, don't close it
-        if (this.currentOpen === id && dropdown.menu.contains(event.target)) {
+        this.lastToggleTime = now;
+    
+        // Check if we're clicking on theme options or color pickers
+        if (event.target.closest('.theme-option') || event.target.closest('.color-picker')) {
             return;
         }
-
-        // If clicking the toggle of an open dropdown, close it
-        if (this.currentOpen === id && dropdown.toggle.contains(event.target)) {
+    
+        // If this dropdown is already open, close it
+        if (this.currentOpen === id) {
             this.close(id);
             return;
         }
-
-        // Close any other open dropdown
+    
+        // Close any other open dropdown first
         if (this.currentOpen) {
             this.close(this.currentOpen);
         }
-
-        // Open the new dropdown
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.scrollTop = 0;
-        dropdown.menu.classList.add('show');
-        
-        if (id === 'tooltip') {
-            dropdown.menu.classList.add('visible');
-            updateTooltipContent();
-        }
-        
-        dropdown.toggle.classList.add('active');
-        
-        if (dropdown.needsScroll) {
-            this.setupDropdownScroll(id);
-        }
-        
-        this.currentOpen = id;
-        this.updateDropdownHeights();
+    
+        // Then open the new one
+        requestAnimationFrame(() => {
+            this.open(id);
+        });
     }
     
-    setupDropdownScroll(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown || !dropdown.menu) return;
     
-        // Remove existing buttons first
-        dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
+setupDropdownScroll(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown || !dropdown.menu) return;
+
+    // Remove existing buttons first
+    dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
+
+    // Create navigation buttons
+    const topButton = document.createElement('button');
+    topButton.className = `${dropdown.navButtonClass} top`;
+    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
     
-        // Create navigation buttons
-        const topButton = document.createElement('button');
-        topButton.className = `${dropdown.navButtonClass} top`;
-        topButton.innerHTML = '<span class="material-icons">expand_less</span>';
-        
-        const bottomButton = document.createElement('button');
-        bottomButton.className = `${dropdown.navButtonClass} bottom`;
-        bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
-    
-        // Add buttons to the dropdown
-        dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
-        dropdown.menu.appendChild(bottomButton);
+    const bottomButton = document.createElement('button');
+    bottomButton.className = `${dropdown.navButtonClass} bottom`;
+    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+
+    // Add buttons to the dropdown
+    dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
+    dropdown.menu.appendChild(bottomButton);
     
         const checkButtons = () => {
             const scrollTop = dropdown.menu.scrollTop;
@@ -879,18 +942,23 @@ class DropdownManager {
             dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
         }, { passive: true });
     
-        // Button event handlers
-        topButton.addEventListener('click', (e) => {
+        const handleTopButton = (e) => {
             e.preventDefault();
             e.stopPropagation();
             smoothScroll('top');
-        });
+        };
     
-        bottomButton.addEventListener('click', (e) => {
+        const handleBottomButton = (e) => {
             e.preventDefault();
             e.stopPropagation();
             smoothScroll('bottom');
-        });
+        };
+    
+        topButton.addEventListener('click', handleTopButton);
+        topButton.addEventListener('touchend', handleTopButton, { passive: false });
+        
+        bottomButton.addEventListener('click', handleBottomButton);
+        bottomButton.addEventListener('touchend', handleBottomButton, { passive: false });
     
         const smoothScroll = (direction) => {
             if (dropdown.menu._isScrolling) return;
@@ -925,13 +993,46 @@ class DropdownManager {
         checkButtons();
     }    
 
+    open(id) {
+        const dropdown = this.dropdowns[id];
+        if (!dropdown) return;
+    
+        // First make it visible before adding show class
+        dropdown.menu.style.display = 'block';
+        dropdown.menu.style.opacity = '0';
+        dropdown.menu.scrollTop = 0;
+        
+        // Force reflow before adding classes
+        void dropdown.menu.offsetHeight;
+        
+        dropdown.menu.classList.add('show');
+        dropdown.menu.style.opacity = '1';
+        
+        if (id === 'tooltip') {
+            dropdown.menu.classList.add('visible');
+            updateTooltipContent();
+        }
+        
+        dropdown.toggle.classList.add('active');
+        
+        if (dropdown.needsScroll) {
+            this.setupDropdownScroll(id);
+        }
+        
+        this.currentOpen = id;
+        this.updateDropdownHeights();
+    }
+    
     close(id) {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
-
+    
+        // Start transition
+        dropdown.menu.style.opacity = '0';
         dropdown.menu.classList.remove('show', 'visible');
         dropdown.toggle.classList.remove('active');
         
+        // Remove after transition completes
         setTimeout(() => {
             if (!dropdown.menu.classList.contains('show') && 
                 !dropdown.menu.classList.contains('visible')) {
@@ -943,25 +1044,36 @@ class DropdownManager {
             this.currentOpen = null;
         }
     }
-
-handleOutsideClick(e) {
-    // Get the actual target for touch events
-    const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
-    if (!target) return;
-
-    // Check if click was on any dropdown toggle or menu
-    const clickedInside = Object.values(this.dropdowns).some(dropdown => {
-        return dropdown.toggle?.contains(target) || 
-               dropdown.menu?.contains(target) ||
-               target.closest('.history-nav-button') ||
-               target.closest('.tooltip-nav-button') ||
-               target.closest('.history-dropdown .radio');
-    });
     
-    if (!clickedInside && this.currentOpen) {
-        this.close(this.currentOpen);
-    }
-}
+    handleOutsideClick(e) {
+        const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+        if (!target) return;
+    
+        // Check if click was on any dropdown toggle or inside a dropdown
+        let clickedInside = false;
+        
+        for (const [id, dropdown] of Object.entries(this.dropdowns)) {
+            // Skip if clicking on theme options or color pickers
+            if (target.closest('.theme-option') || target.closest('.color-picker')) {
+                return;
+            }
+            
+            if (dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) {
+                clickedInside = true;
+                
+                // Special case for nav buttons
+                if (target.closest(`.${dropdown.navButtonClass}`)) {
+                    return; // Let the nav button handle its own click
+                }
+                
+                break;
+            }
+        }
+        
+        if (!clickedInside && this.currentOpen) {
+            this.close(this.currentOpen);
+        }
+    }    
 
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
@@ -1121,7 +1233,7 @@ function updateTooltipContent() {
     
     // Reinitialize button functionality if dropdown is open
     if (dropdownManager.currentOpen === 'tooltip') {
-        dropdownManager.setupTooltipScroll();
+        dropdownManager.setupDropdownScroll('tooltip');
     }
 }
 
@@ -1400,13 +1512,28 @@ function loadRecentlyPlayed() {
         radio.dataset.name = station.name;
         radio.dataset.link = station.link;
         radio.dataset.genre = station.genre || '';
-        radio.innerHTML = `<div class="radio-text">${station.name}</div>`;
+        
+        // Create the same structure as in the main list
+        const radioText = document.createElement('div');
+        radioText.className = 'radio-text';
+        radioText.textContent = station.name;
+        
+        radio.appendChild(radioText);
+        
         radio.addEventListener('click', (e) => {
             e.stopPropagation();
             changeStation(station.name, station.link);
         });
         container.appendChild(radio);
     });
+    
+    // If the current station is in history, ensure it has the equalizer
+    if (currentStationName) {
+        const historyStation = container.querySelector(`.radio[data-name="${currentStationName}"]`);
+        if (historyStation && historyStation.classList.contains('selected')) {
+            updateSelectedStation(currentStationName);
+        }
+    }
 }
 
 function createExpandButton(stations, category) {
@@ -1431,7 +1558,7 @@ function createExpandButton(stations, category) {
     text.textContent = "Još stanica";
     Object.assign(text.style, {
         fontSize: '0px',
-        transition: 'font-size 0.15s ease-in-out'
+        transition: 'font-size 0.15s linear'
     });
 
     content.append(icon, text);
@@ -1450,20 +1577,26 @@ function createExpandButton(stations, category) {
         const expanded = expandButton.dataset.expanded === "true";
         const newState = !expanded;
         
+        // Update button state
         expandButton.dataset.expanded = newState.toString();
         expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
         expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Još stanica";
         
+        // Show/hide stations
         stations.forEach((station, index) => {
             if (index >= 10) {
                 station.style.display = newState ? "flex" : "none";
             }
         });
         
-        // Update scrollbar after expanding/collapsing
+        // Calculate new height with transition
+        const newHeight = calculateContainerHeight(category);
+        category.style.height = `${newHeight}px`;
+        
+        // Update scrollbar after transition completes
         setTimeout(() => {
             ScrollbarManager.updateAll();
-        }, 10);
+        }, 300); // Match this with your CSS transition duration
     });
 
     return expandButton;
