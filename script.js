@@ -65,8 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
         
         if (radio.closest('.history-dropdown')) {
-            e.stopPropagation(); // Prevent event from bubbling to document
-            dropdownManager.close('history'); // Close the dropdown after selection
+            e.stopPropagation(); // This alone prevents the dropdown from closing
         }
     }    
     
