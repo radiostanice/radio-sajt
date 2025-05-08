@@ -1379,11 +1379,6 @@ button {
     pointer-events: auto;
 }
 
-.history-dropdown:not(.show),
-.genre-tooltip:not(.visible) {
-    pointer-events: none;
-}
-
 .genre-tooltip-item {
     display: flex;
     align-items: center;

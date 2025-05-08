@@ -43,65 +43,71 @@ document.addEventListener("DOMContentLoaded", () => {
         initFunctions.forEach(fn => fn());
     }
 
-    function handleRadioClick(e) {
-        if (e.type === 'touchend') {
-            e.preventDefault();
-            
-            const radio = e.target.closest('.radio');
-            if (!radio || radio._touchMoved) return;
-        }
-        
-        const radio = e.target.closest('.radio');
-        if (!radio) return;
-        
-        changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-    }
-    
-    function handleMobileRadioTap(e) {
-
-        if (e.target.closest('.history-nav-button')) {
-            return;
-        }
-    
-        const radio = e.target.closest('.radio');
-        if (!radio || radio._touchMoved) return;
-        
+function handleRadioClick(e) {
+    // Always prevent default for touch events first
+    if (e.type === 'touchend') {
         e.preventDefault();
-        e.stopPropagation();
-        
-        handleRadioClick(e);
-        
-        requestAnimationFrame(() => {
-            const dropdown = document.querySelector('.history-dropdown');
-            if (dropdown && !dropdown.classList.contains('show')) {
-                dropdown.classList.add('show');
-                dropdown.style.display = 'block';
-            }
-        });
     }
+    
+    const radio = e.target.closest('.radio');
+    if (!radio) return;
+    
+    // Check for movement (only for touch events)
+    if (e.type === 'touchend' && radio._touchMoved) {
+        return;
+    }
+    
+    changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+    
+    // For both click and touchend in history dropdown, stop propagation
+    if (radio.closest('.history-dropdown')) {
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // Add this to ensure other handlers don't run
+        
+        // If this was a touch event, prevent the click that would follow
+        if (e.type === 'touchend') {
+            radio.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }, { once: true });
+        }
+    }
+}
+  
 
-    cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
-        const radio = e.target.closest('.radio');
-        if (radio) {
-            const touch = e.touches[0];
-            radio._touchStart = { x: touch.clientX, y: touch.clientY };
-            radio._touchMoved = false;
+// Update touch event listeners
+cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio) {
+        const touch = e.touches[0];
+        radio._touchStart = { x: touch.clientX, y: touch.clientY };
+        radio._touchMoved = false;
+    }
+}, { passive: true });
+
+cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio && radio._touchStart) {
+        const touch = e.touches[0];
+        const moveX = Math.abs(touch.clientX - radio._touchStart.x);
+        const moveY = Math.abs(touch.clientY - radio._touchStart.y);
+        
+        // If significant movement detected, mark as moved
+        if (moveX > 5 || moveY > 5) {
+            radio._touchMoved = true;
         }
-    }, { passive: true });
-    
-    cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
-        const radio = e.target.closest('.radio');
-        if (radio && radio._touchStart) {
-            const touch = e.touches[0];
-            radio._touchMoved = Math.abs(touch.clientX - radio._touchStart.x) > 5 || 
-                               Math.abs(touch.clientY - radio._touchStart.y) > 5;
-        }
-    }, { passive: true });
-    
-    // Replace the original touchend handler with our special one
-    cachedElements.historyDropdown?.addEventListener('touchend', handleMobileRadioTap, { 
-        passive: false 
-    });
+    }
+}, { passive: true });
+
+// Modified touchend listener to match click behavior
+cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
+    const radio = e.target.closest('.radio');
+    if (radio && !radio._touchMoved) {
+        handleRadioClick(e);
+    }
+}, { passive: false });
+
 
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick);
@@ -192,44 +198,6 @@ function easeOutQuad(t) {
     return t * (2 - t);
 }
 
-    function checkDropdownAfterInteraction() {
-        requestAnimationFrame(() => {
-            const dropdown = document.querySelector('.history-dropdown');
-            if (dropdown && !dropdown.classList.contains('show')) {
-                dropdown.classList.add('show');
-                dropdown.style.display = 'block';
-            }
-        });
-    }
-
-    function setupNavigationButtonHandlers() {
-        document.querySelectorAll('.history-dropdown .history-nav-button').forEach(button => {
-            button.addEventListener('touchstart', (e) => {
-                button._touchStart = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY
-                };
-                button._touchMoved = false;
-            }, { passive: true });
-    
-            button.addEventListener('touchmove', (e) => {
-                if (button._touchStart) {
-                    const touch = e.touches[0];
-                    button._touchMoved = Math.abs(touch.clientX - button._touchStart.x) > 5 || 
-                                       Math.abs(touch.clientY - button._touchStart.y) > 5;
-                }
-            }, { passive: true });
-    
-            button.addEventListener('touchend', (e) => {
-                if (!button._touchMoved) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    button.click(); // Trigger the original click handler
-                }
-            }, { passive: false });
-        });
-    }
-    
 // Station Functions
 async function changeStation(name, link, cachedElements = {}) {
     // Use cached elements where available
@@ -329,7 +297,6 @@ async function changeStation(name, link, cachedElements = {}) {
     } catch (e) {
         console.error('Initial play failed:', e);
     }
-    checkDropdownAfterInteraction();
 }
 
 function isLikelyStationName(title) {
