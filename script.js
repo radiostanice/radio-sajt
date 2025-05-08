@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleRadioClick(e) {
-        // Always prevent default for touch events first
+        // Always prevent default for touch events
         if (e.type === 'touchend') {
             e.preventDefault();
         }
@@ -59,29 +59,31 @@ document.addEventListener("DOMContentLoaded", () => {
         
         changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
         
-        // For both click and touchend in history dropdown, stop propagation
+        // Special handling for history dropdown items
         if (radio.closest('.history-dropdown')) {
             e.stopPropagation();
+            e.stopImmediatePropagation();
             
-            // On mobile, we need extra handling
+            // On mobile, prevent the subsequent click event
             if (e.type === 'touchend') {
-                // Prevent the mouse events that follow
-                const clickHandler = (e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
+                const clickHandler = (clickEvent) => {
+                    clickEvent.stopPropagation();
+                    clickEvent.stopImmediatePropagation();
+                    clickEvent.preventDefault();
                     radio.removeEventListener('click', clickHandler);
                 };
                 radio.addEventListener('click', clickHandler, { once: true });
-                
-                // Keep dropdown open on mobile
-                if (dropdownManager.currentOpen === 'history') {
-                    dropdownManager.refreshDropdown('history');
-                }
+            }
+            
+            // Explicitly keep the dropdown open
+            if (window.dropdownManager?.currentOpen === 'history') {
+                requestAnimationFrame(() => {
+                    dropdownManager.keepOpen('history');
+                });
             }
         }
-    }    
+    }
 
-// Update touch event listeners
 cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
     const radio = e.target.closest('.radio');
     if (radio) {
@@ -108,13 +110,15 @@ cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
 cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
     const radio = e.target.closest('.radio');
     if (radio && !radio._touchMoved) {
-        // Prevent default and handle the click
         e.preventDefault();
+        e.stopPropagation();
+        
+        // Use our custom click handler
         handleRadioClick(e);
         
-        // Ensure menu stays open
+        // Explicitly keep dropdown open
         if (dropdownManager.currentOpen === 'history') {
-            dropdownManager.refreshDropdown('history');
+            dropdownManager.keepOpen('history');
         }
     }
 }, { passive: false });
@@ -861,6 +865,22 @@ class DropdownManager {
         document.addEventListener("touchend", handleOutside, { passive: true });
     }
 
+    keepOpen(id) {
+        if (this.currentOpen !== id) return;
+        
+        const dropdown = this.dropdowns[id];
+        if (!dropdown || !dropdown.menu) return;
+        
+        // Force the dropdown to stay open
+        dropdown.menu.style.display = 'block';
+        dropdown.menu.classList.add('show');
+        dropdown.menu.style.opacity = '1';
+        dropdown.toggle.classList.add('active');
+        
+        // Refresh the dropdown position
+        this.updateDropdownHeights();
+    }
+
     toggle(id, event) {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
@@ -1083,7 +1103,7 @@ setupDropdownScroll(id) {
     }
     
     handleOutsideClick(e) {
-        const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+        const target = e.target || (e.touches && e.touches[0]?.target);
         if (!target) return;
         
         // Don't close if clicking on a radio in history dropdown
@@ -1094,16 +1114,28 @@ setupDropdownScroll(id) {
         // Don't close if clicking inside any dropdown toggle or menu
         let clickedInside = false;
         for (const [id, dropdown] of Object.entries(this.dropdowns)) {
-            if (dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) {
+            if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
+                !target.closest(`.${dropdown.navButtonClass}`)) {
                 clickedInside = true;
                 break;
             }
         }
         
         if (!clickedInside && this.currentOpen) {
+            // For touch events - check if this was a tap (not scroll)
+            if (e.type === 'touchend') {
+                const touch = e.changedTouches[0];
+                const startTouch = target._touchStart;
+                
+                if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
+                                  Math.abs(touch.clientY - startTouch.y) > 10)) {
+                    return; // Skip if this was a scroll gesture
+                }
+            }
+            
             this.close(this.currentOpen);
         }
-    }
+    }    
     
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
