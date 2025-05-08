@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleRadioClick(e) {
-        // For touch events, prevent default and check movement
         if (e.type === 'touchend') {
             e.preventDefault();
             
@@ -56,30 +55,31 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!radio) return;
         
         changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-        
-        // No event.stopPropagation() here - we'll handle this differently
     }
     
-    // Special mobile-only handler that prevents closing
     function handleMobileRadioTap(e) {
-        e.preventDefault();
-        e.stopImmediatePropagation();  // This is key - stops ALL other handlers
-        
+
+        if (e.target.closest('.history-nav-button')) {
+            return;
+        }
+    
         const radio = e.target.closest('.radio');
         if (!radio || radio._touchMoved) return;
         
-        // Call the original click handler
+        e.preventDefault();
+        e.stopPropagation();
+        
         handleRadioClick(e);
         
-        // Force keep dropdown open (mobile browsers sometimes trigger closes anyway)
-        const dropdown = document.querySelector('.history-dropdown');
-        if (dropdown) {
-            dropdown.classList.add('show');
-            dropdown.style.display = 'block';
-        }
+        requestAnimationFrame(() => {
+            const dropdown = document.querySelector('.history-dropdown');
+            if (dropdown && !dropdown.classList.contains('show')) {
+                dropdown.classList.add('show');
+                dropdown.style.display = 'block';
+            }
+        });
     }
-    
-    // Updated touch event setup
+
     cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
         const radio = e.target.closest('.radio');
         if (radio) {
@@ -100,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Replace the original touchend handler with our special one
     cachedElements.historyDropdown?.addEventListener('touchend', handleMobileRadioTap, { 
-        capture: true,  // Important - handles the event before others
         passive: false 
     });
 
@@ -200,6 +199,34 @@ function easeOutQuad(t) {
                 dropdown.classList.add('show');
                 dropdown.style.display = 'block';
             }
+        });
+    }
+
+    function setupNavigationButtonHandlers() {
+        document.querySelectorAll('.history-dropdown .history-nav-button').forEach(button => {
+            button.addEventListener('touchstart', (e) => {
+                button._touchStart = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+                button._touchMoved = false;
+            }, { passive: true });
+    
+            button.addEventListener('touchmove', (e) => {
+                if (button._touchStart) {
+                    const touch = e.touches[0];
+                    button._touchMoved = Math.abs(touch.clientX - button._touchStart.x) > 5 || 
+                                       Math.abs(touch.clientY - button._touchStart.y) > 5;
+                }
+            }, { passive: true });
+    
+            button.addEventListener('touchend', (e) => {
+                if (!button._touchMoved) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    button.click(); // Trigger the original click handler
+                }
+            }, { passive: false });
         });
     }
     

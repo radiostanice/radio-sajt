@@ -1370,11 +1370,13 @@ button {
 	overflow-y: auto;
     overscroll-behavior: contain;
     touch-action: pan-y;
+    pointer-events: none;
 }
 
 .genre-tooltip.visible {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .history-dropdown:not(.show),
