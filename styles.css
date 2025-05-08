@@ -382,7 +382,6 @@ button {
     flex-shrink: 0;
     flex-grow: 0;
     font-weight: bold;
-    
 }
 
 /* ============ */
@@ -393,15 +392,23 @@ button {
     position: relative;
     align-items: center;
     background-color: #121212;
-    border-radius: 10px;
+    border-radius: 15px; /* More rounded when collapsed */
     border: 2px solid #444444;
-    padding: 5px 5px;
-    flex-grow: 1;
-    justify-content: flex-end;
+    padding: 5px;
     height: 44px;
+    width: 44px; /* Start collapsed */
+    min-width: 44px; /* Minimum width */
     max-width: 250px;
-    min-width: 116px;
     margin-right: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.search-container.active {
+    width: 250px; /* Expanded width */
+    border-radius: 10px;
+    cursor: auto;
 }
 
 .search-container input {
@@ -414,18 +421,24 @@ button {
     color: #ffffff;
     border: none;
     height: 30px;
-    padding: 0px 30px;
+    padding: 0 30px;
     width: 100%;
     font-size: 16px;
     border-radius: 5px;
     outline: none;
     box-sizing: border-box;
+    opacity: 0;
 	transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
     -moz-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
     -webkit-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
     -o-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
     -ms-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
 }
+
+.search-container.active input {
+    opacity: 1;
+}
+
 
 .search-container input::placeholder {
     color: #cccccc !important;
@@ -468,17 +481,17 @@ button {
     top: 50%;
     transform: translateY(-50%);
     font-size: 22px;
-    will-change: transform;
-    cursor: text;
     pointer-events: none;
+    transition: left 0.3s ease;
+}
+
+.search-container.active #Search {
+    left: 10px;
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 #clearSearch {
-	transition: color 0.2s linear;
-	-moz-transition: color 0.2s linear;
-    -webkit-transition: color 0.2s linear;
-    -o-transition: color 0.2s linear;
-    -ms-transition: color 0.2s linear;
     position: absolute;
     right: 10px;
     top: 50%;
@@ -486,7 +499,12 @@ button {
     font-size: 22px;
     display: none;
     cursor: pointer;
-    will-change: transform;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.search-container.active #clearSearch {
+    opacity: 1;
 }
 
 #clearSearch:hover {

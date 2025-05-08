@@ -107,7 +107,6 @@ cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
     }
 }, { passive: true });
 
-// In the DOMContentLoaded event listener
 cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
     const radio = e.target.closest('.radio');
     if (radio && !radio._touchMoved) {
