@@ -107,21 +107,28 @@ cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
     }
 }, { passive: true });
 
+// In the DOMContentLoaded event listener
 cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
     const radio = e.target.closest('.radio');
     if (radio && !radio._touchMoved) {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         
-        // Use our custom click handler
         handleRadioClick(e);
         
-        // Explicitly keep dropdown open
+        // Ensure proper dropdown state
         if (dropdownManager.currentOpen === 'history') {
             dropdownManager.keepOpen('history');
         }
     }
-}, { passive: false });
+}, { passive: false, capture: true });
+
+// Add capture phase to info icon events
+document.querySelector(".info-icon")?.addEventListener('touchend', function(e) {
+    e.stopImmediatePropagation();
+    dropdownManager.toggle('tooltip', e);
+}, { passive: false, capture: true });
 
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick);
@@ -533,6 +540,7 @@ function setupMarqueeAnimation(element, textWidth) {
     leftFade.style.animation = `${animationName}-left-fade ${totalDuration}s linear infinite`;
 }
 
+// In checkMetadata() function
 async function checkMetadata(force = false, cachedElements = {}) {
     if (!currentStation?.link) return;
     
@@ -540,52 +548,51 @@ async function checkMetadata(force = false, cachedElements = {}) {
         const now = Date.now();
         if (!force && now - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
         
+        // Skip if tooltip is not visible
+        const tooltip = document.querySelector('.genre-tooltip');
+        if (!force && tooltip && !tooltip.classList.contains('visible')) {
+            return;
+        }
+        
         lastMetadataCheck = now;
         const title = await getNowPlaying(currentStation);
         
         if (title && title !== lastTitle) {
             lastTitle = title;
             updateNowPlayingUI(title, cachedElements);
-        }
-
-        if (document.querySelector('.genre-tooltip.visible')) {
-            updateTooltipContent();
+            
+            // Only update tooltip if it's visible
+            if (tooltip && tooltip.classList.contains('visible')) {
+                updateTooltipContent();
+            }
         }
     } catch (e) {
         console.error('Metadata check failed:', e);
     }
 }
 
+
+// Add this new function
+function shouldUpdateTooltip() {
+    const tooltip = document.querySelector('.genre-tooltip');
+    return tooltip && tooltip.classList.contains('visible') && 
+           document.visibilityState === 'visible';
+}
+
+// Modify setupNowPlayingMetadata()
 function setupNowPlayingMetadata() {
     if (metadataInterval) clearInterval(metadataInterval);
     
-    const checkMetadataIdle = () => {
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => debounceMetadata(), { timeout: 1000 });
-        } else {
-            debounceMetadata();
-        }
-    };
-    
-    debounceMetadata(true);
-    
     metadataInterval = setInterval(() => {
-        if (document.hidden) {
-            if (Date.now() - lastMetadataCheck > 30000) {
-                checkMetadataIdle();
-            }
-        } else {
-            checkMetadataIdle();
+        // Only check if tooltip is visible and page is visible
+        if (shouldUpdateTooltip() || 
+            (Date.now() - lastMetadataCheck > 30000)) {
+            debounceMetadata();
         }
     }, 5000);
     
-    audio.addEventListener('play', () => {
-        checkMetadata(true);
-    }, { once: true });
-    
-    audio.addEventListener('ended', () => {
-        checkMetadata(true);
-    });
+    // Initial check
+    debounceMetadata(true);
 }
 
 function updateSelectedStation(name) {
@@ -785,6 +792,7 @@ function safeParseJSON(key, fallback) {
 // UI Setup Functions
 class DropdownManager {
     constructor(cachedElements = {}) {
+        this.isOperating = false;
         this.currentOpen = null;
         this.dropdowns = {
             theme: {
@@ -881,37 +889,55 @@ class DropdownManager {
         this.updateDropdownHeights();
     }
 
-    toggle(id, event) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
-    
-        // Prevent rapid toggling with better debouncing
-        const now = Date.now();
-        if (this.lastToggleTime && now - this.lastToggleTime < 200) {
-            return;
-        }
-        this.lastToggleTime = now;
-    
-        // Check if we're clicking on theme options or color pickers
-        if (event.target.closest('.theme-option') || event.target.closest('.color-picker')) {
-            return;
-        }
-    
-        // If this dropdown is already open, close it
-        if (this.currentOpen === id) {
-            this.close(id);
-            return;
-        }
-    
-        // Close any other open dropdown first
-        if (this.currentOpen) {
+   
+    async toggle(id, event) {
+        if (this.isOperating) return;
+        this.isOperating = true;
+        
+        try {
+            const dropdown = this.dropdowns[id];
+    if (!dropdown) return;
+
+    // Add better debouncing with timestamp check
+    const now = performance.now();
+    if (this.lastToggleTime && now - this.lastToggleTime < 300) {
+        return;
+    }
+    this.lastToggleTime = now;
+
+    // Prevent toggle if clicking on theme options or color pickers
+    if (event.target.closest('.theme-option') || 
+        event.target.closest('.color-picker') ||
+        event.target.closest('.tooltip-nav-button')) {
+        return;
+    }
+
+    // If clicking the same dropdown toggle
+    if (this.currentOpen === id) {
+        this.close(id);
+        return;
+    }
+
+    // Close any other dropdown first
+    if (this.currentOpen) {
+        // For touch events, add a small delay between closing and opening
+        const isTouch = event.type === 'touchend';
+        
+        if (isTouch) {
             this.close(this.currentOpen);
-        }
-    
-        // Then open the new one
-        requestAnimationFrame(() => {
+            setTimeout(() => this.open(id), 50);
+        } else {
+            this.close(this.currentOpen);
             this.open(id);
-        });
+        }
+    } else {
+        this.open(id);
+    }
+        } finally {
+            setTimeout(() => {
+                this.isOperating = false;
+            }, 50);
+        }
     }
 
     refreshDropdown(id) {
@@ -1050,35 +1076,37 @@ setupDropdownScroll(id) {
         checkButtons();
     }    
 
-    open(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
+// In DropdownManager class
+open(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown) return;
+
+    // First make it visible before adding show class
+    dropdown.menu.style.display = 'block';
+    dropdown.menu.style.opacity = '0';
+    dropdown.menu.scrollTop = 0;
     
-        // First make it visible before adding show class
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.style.opacity = '0';
-        dropdown.menu.scrollTop = 0;
-        
-        // Force reflow before adding classes
-        void dropdown.menu.offsetHeight;
-        
-        dropdown.menu.classList.add('show');
-        dropdown.menu.style.opacity = '1';
-        
-        if (id === 'tooltip') {
-            dropdown.menu.classList.add('visible');
-            updateTooltipContent();
-        }
-        
-        dropdown.toggle.classList.add('active');
-        
-        if (dropdown.needsScroll) {
-            this.setupDropdownScroll(id);
-        }
-        
-        this.currentOpen = id;
-        this.updateDropdownHeights();
+    // Force reflow before adding classes
+    void dropdown.menu.offsetHeight;
+    
+    dropdown.menu.classList.add('show');
+    dropdown.menu.style.opacity = '1';
+    
+    if (id === 'tooltip') {
+        dropdown.menu.classList.add('visible');
+        updateTooltipContent();
     }
+    
+    dropdown.toggle.classList.add('active');
+    
+    if (dropdown.needsScroll) {
+        this.setupDropdownScroll(id);
+    }
+    
+    this.currentOpen = id;
+    this.updateDropdownHeights();
+}
+
     
     close(id) {
         const dropdown = this.dropdowns[id];
@@ -1102,74 +1130,67 @@ setupDropdownScroll(id) {
         }
     }
     
-    handleOutsideClick(e) {
-        const target = e.target || (e.touches && e.touches[0]?.target);
-        if (!target) return;
-        
-        // Don't close if clicking on a radio in history dropdown
-        if (target.closest('.history-dropdown .radio')) {
-            return;
+// In DropdownManager class
+handleOutsideClick(e) {
+    const target = e.target || (e.touches && e.touches[0]?.target);
+    if (!target || !this.currentOpen) return;
+
+    // Check if clicking inside any dropdown
+    let clickedInside = false;
+    for (const [id, dropdown] of Object.entries(this.dropdowns)) {
+        if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
+            !target.closest(`.${dropdown.navButtonClass}`)) {
+            clickedInside = true;
+            break;
         }
-        
-        // Don't close if clicking inside any dropdown toggle or menu
-        let clickedInside = false;
-        for (const [id, dropdown] of Object.entries(this.dropdowns)) {
-            if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
-                !target.closest(`.${dropdown.navButtonClass}`)) {
-                clickedInside = true;
-                break;
-            }
-        }
-        
-        if (!clickedInside && this.currentOpen) {
-            // For touch events - check if this was a tap (not scroll)
-            if (e.type === 'touchend') {
-                const touch = e.changedTouches[0];
-                const startTouch = target._touchStart;
-                
-                if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
-                                  Math.abs(touch.clientY - startTouch.y) > 10)) {
-                    return; // Skip if this was a scroll gesture
-                }
-            }
-            
+    }
+    
+    if (!clickedInside) {
+        // For tooltip dropdown, add a small delay to allow metadata updates
+        if (this.currentOpen === 'tooltip') {
+            setTimeout(() => {
+                this.close(this.currentOpen);
+            }, 100);
+        } else {
             this.close(this.currentOpen);
         }
-    }    
+    }
+}
+   
     
+// In DropdownManager class
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
     if (!audioContainer) return;
-    
+
+    // First get all measurements
     const containerRect = audioContainer.getBoundingClientRect();
     const windowHeight = window.innerHeight;
-    const headerHeight = document.querySelector('.header')?.clientHeight || 0;
     const safeAreaBottom = window.visualViewport?.offsetTop || 0;
     
-    // Calculate max height with safe area consideration
-    const maxDropdownHeight = Math.max(150, windowHeight - headerHeight - containerRect.bottom - safeAreaBottom);
+    // Calculate max height with adjustments
+    const maxDropdownHeight = Math.max(
+        150, 
+        windowHeight - containerRect.bottom - safeAreaBottom - 10
+    );
 
-    // Apply to all dropdowns
     Object.values(this.dropdowns).forEach(dropdown => {
         if (!dropdown.menu) return;
-        
-        // First calculate natural height without constraints
+
+        // Calculate without constraints first
         dropdown.menu.style.maxHeight = 'none';
         const naturalHeight = dropdown.menu.scrollHeight;
         
-        // Then apply constrained height
-        dropdown.menu.style.maxHeight = 
-            naturalHeight > maxDropdownHeight ? `${maxDropdownHeight}px` : `${naturalHeight}px`;
+        // Apply constraints
+        const constrainedHeight = Math.min(naturalHeight, maxDropdownHeight);
+        dropdown.menu.style.maxHeight = `${constrainedHeight}px`;
+        dropdown.menu.style.overflowY = naturalHeight > constrainedHeight ? 'auto' : 'hidden';
         
-        if (dropdown.needsScroll) {
-            dropdown.menu.style.overflowY = naturalHeight > maxDropdownHeight ? 'auto' : 'hidden';
-            dropdown.menu.style.overscrollBehavior = 'contain';
-        }
-        
-        // Force reflow to ensure proper height calculation
+        // Force synchronous layout/reflow
         void dropdown.menu.offsetHeight;
     });
-}  
+}
+
 }
 
 function getGenreIcon(genre) {
@@ -1200,7 +1221,13 @@ function capitalizeFirstLetter(string) {
 
 function updateTooltipContent() {
     const tooltip = document.querySelector('.genre-tooltip');
-    if (!tooltip) return;
+    if (!tooltip || !tooltip.classList.contains('visible')) return;
+    
+    // Add a loading state to prevent visual jumps
+    tooltip.classList.add('updating');
+    
+    // Store scroll position
+    const scrollTop = tooltip.scrollTop;
     
     // Store reference to existing buttons
     const existingButtons = {
@@ -1297,6 +1324,11 @@ function updateTooltipContent() {
     if (dropdownManager.currentOpen === 'tooltip') {
         dropdownManager.setupDropdownScroll('tooltip');
     }
+
+    requestAnimationFrame(() => {
+        tooltip.scrollTop = scrollTop;
+        tooltip.classList.remove('updating');
+    });
 }
 
 // Helper function to check for unknown values
