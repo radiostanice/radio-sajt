@@ -44,32 +44,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function handleRadioClick(e) {
-        // For touch events, check if it was a significant movement
+        // Prevent default for touch events
         if (e.type === 'touchend') {
-            const touch = e.changedTouches[0];
-            const startTouch = e.target._touchStart;
-            
-            // If movement was more than 10px in any direction, consider it a scroll/pan
-            if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
-                              Math.abs(touch.clientY - startTouch.y) > 10)) {
-                return;
-            }
-            
-            // Prevent default to avoid double-tap zoom issues
             e.preventDefault();
         }
         
         const radio = e.target.closest('.radio');
         if (!radio) return;
         
+        // Check for movement (only for touch events)
+        if (e.type === 'touchend' && radio._touchMoved) {
+            return;
+        }
+        
         changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
         
         if (radio.closest('.history-dropdown')) {
-            e.stopPropagation(); // This alone prevents the dropdown from closing
+            e.stopPropagation(); // Prevent event from bubbling
         }
     }    
-    
-// Update touch event listeners for the dropdown
+
+// Update touch event listeners
 cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
     const radio = e.target.closest('.radio');
     if (radio) {
@@ -93,18 +88,18 @@ cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
     }
 }, { passive: true });
 
+// Modified touchend listener to match click behavior
+cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
+    const radio = e.target.closest('.radio');
+    if (radio && !radio._touchMoved) {
+        handleRadioClick(e);
+    }
+}, { passive: false });
+
+
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick);
 cachedElements.historyDropdown?.addEventListener('click', handleRadioClick);
-
-// More precise touch listener for history dropdown
-cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
-    const radio = e.target.closest('.radio');
-    if (radio && radio._touchMoved) {
-        return; // Skip if this was a scroll gesture
-    }
-    handleRadioClick(e);
-}, { passive: false });
    
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
@@ -1057,40 +1052,31 @@ setupDropdownScroll(id) {
         const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
         if (!target) return;
     
-        // Check if click was inside any dropdown toggle or menu
+        // Skip if clicking inside any dropdown toggle or menu
         let clickedInside = false;
-        
         for (const [id, dropdown] of Object.entries(this.dropdowns)) {
-            // Skip if clicking on menu content that shouldn't close the dropdown
-            if (dropdown.menu?.contains(target) && 
-                !target.closest(`.${dropdown.navButtonClass}`)) {
-                clickedInside = true;
-                break;
-            }
-            
-            // Check if clicking the dropdown toggle
-            if (dropdown.toggle?.contains(target)) {
+            if (dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) {
                 clickedInside = true;
                 break;
             }
         }
-        
+    
         // Only close if clicking outside AND not during a scroll/pan gesture
         if (!clickedInside && this.currentOpen) {
-            // For touch events, check if this was a scroll gesture
+            // For touch events - check if this was a tap (not scroll)
             if (e.type === 'touchend') {
                 const touch = e.changedTouches[0];
                 const startTouch = target._touchStart;
                 
                 if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
                                   Math.abs(touch.clientY - startTouch.y) > 10)) {
-                    return; // This was a scroll gesture, don't close
+                    return; // Skip if this was a scroll gesture
                 }
             }
             
             this.close(this.currentOpen);
         }
-    }
+    }    
 
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
