@@ -43,42 +43,54 @@ document.addEventListener("DOMContentLoaded", () => {
         initFunctions.forEach(fn => fn());
     }
 
-function handleRadioClick(e) {
-    // Check if this is a touch event and if there was significant movement
-    if (e.type === 'touchend') {
-        const touch = e.changedTouches[0];
-        const startTouch = e.target._touchStart;
+    function handleRadioClick(e) {
+        // For touch events, check if it was a significant movement
+        if (e.type === 'touchend') {
+            const touch = e.changedTouches[0];
+            const startTouch = e.target._touchStart;
+            
+            // If movement was more than 10px in any direction, consider it a scroll/pan
+            if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
+                              Math.abs(touch.clientY - startTouch.y) > 10)) {
+                return;
+            }
+            
+            // Prevent default to avoid double-tap zoom issues
+            e.preventDefault();
+        }
         
-        if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
-                          Math.abs(touch.clientY - startTouch.y) > 10)) {
-            return; // It was a scroll, not a click
+        const radio = e.target.closest('.radio');
+        if (!radio) return;
+        
+        changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+        
+        if (radio.closest('.history-dropdown')) {
+            e.stopPropagation(); // Prevent event from bubbling to document
         }
     }
     
-    const radio = e.target.closest('.radio');
-    if (!radio) return;
+    // Update touch event listeners for the dropdown
+    cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
+        const radio = e.target.closest('.radio');
+        if (radio) {
+            const touch = e.touches[0];
+            radio._touchStart = { x: touch.clientX, y: touch.clientY };
+        }
+    }, { passive: true });
     
-    // Change station
-    changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-    
-    // For history items, prevent dropdown from closing
-    if (radio.closest('.history-dropdown')) {
-        e.stopPropagation();
-        
-        // Ensure the equalizer is added to the history dropdown station
-        updateSelectedStation(radio.dataset.name);
-    }
-}
-
-// Add touch start listeners to track initial position
-cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
-    const radio = e.target.closest('.radio');
-    if (radio) {
-        const touch = e.touches[0];
-        radio._touchStart = { x: touch.clientX, y: touch.clientY };
-    }
-}, { passive: true });
-
+    cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
+        const radio = e.target.closest('.radio');
+        if (radio && radio._touchStart) {
+            const touch = e.touches[0];
+            const moveX = Math.abs(touch.clientX - radio._touchStart.x);
+            const moveY = Math.abs(touch.clientY - radio._touchStart.y);
+            
+            // If significant movement detected, cancel the tap
+            if (moveX > 10 || moveY > 10) {
+                radio._touchStart = null; // Cancel potential tap
+            }
+        }
+    }, { passive: true });
 
 // Add listeners to both containers
 cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
@@ -335,17 +347,15 @@ async function getNowPlaying(station) {
     }
 }
 
-// Enhanced metadata cleaning
 function cleanMetadata(title) {
     if (!title) return null;
     
     return title
-        .replace(/<\/?[^>]+(>|$)/g, '') // Remove HTML tags
-        .replace(/(https?:\/\/[^\s]+)/g, '') // Remove URLs
-        .trim() // Trim whitespace
-        .replace(/^\s+|\s+$/g, '') // Trim again
-        .replace(/\|.*$/, '') // Remove everything after pipe
-        .replace(/\b(?:Radio Paradise|RP)\b/i, ''); // Remove specific strings
+        .replace(/<\/?[^>]+(>|$)/g, '')
+        .replace(/(https?:\/\/[^\s]+)/g, '')
+        .replace(/^\s+|\s+$/g, '')
+        .replace(/\|.*$/, '')
+        .replace(/\b(?:Radio Paradise|RP)\b/i, '');
 }
 
 // Helper function with timeout
@@ -364,7 +374,6 @@ function updateNowPlayingUI(title, cachedElements = {}) {
     const audioContainer = cachedElements.audioContainer || document.querySelector('.audio-container');
     const stationName = currentStation.name;
 
-    // Update station name
     let stationNameElement = audioTextElement.querySelector('.station-name');
     if (!stationNameElement) {
         stationNameElement = document.createElement('div');
@@ -373,7 +382,6 @@ function updateNowPlayingUI(title, cachedElements = {}) {
     }
     stationNameElement.textContent = stationName;
 
-    // Handle song title
     let songTitleElement = audioTextElement.querySelector('.song-title');
     
     if (title && !isLikelyStationName(title) && title !== stationName) {
@@ -385,7 +393,6 @@ function updateNowPlayingUI(title, cachedElements = {}) {
         songTitleElement.textContent = title;
         audioTextElement.classList.add('has-now-playing');
         audioContainer.classList.add('has-now-playing');
-        
         requestAnimationFrame(() => applyMarqueeEffect(songTitleElement));
     } else if (songTitleElement) {
         audioTextElement.removeChild(songTitleElement);
@@ -559,29 +566,23 @@ function updateSelectedStation(name) {
     radios.forEach(radio => {
         const isSelected = radio.dataset.name === name;
         radio.classList.toggle("selected", isSelected);
-        const existingEqualizer = radio.querySelector(".equalizer");
         
         if (isSelected) {
+            const existingEqualizer = radio.querySelector(".equalizer");
             if (existingEqualizer) {
                 existingEqualizer.className = "equalizer animate";
             } else {
                 const equalizer = document.createElement("div");
                 equalizer.className = "equalizer animate";
                 equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
-                const radioText = radio.querySelector(".radio-text");
-                if (radioText) {
-                    radio.insertBefore(equalizer, radioText);
-                } else {
-                    // Fallback if radio-text doesn't exist
-                    radio.appendChild(equalizer);
-                }
+                radio.insertBefore(equalizer, radio.querySelector(".radio-text") || null);
             }
-        } else if (existingEqualizer) {
-            radio.removeChild(existingEqualizer);
+        } else {
+            const equalizer = radio.querySelector(".equalizer");
+            if (equalizer) radio.removeChild(equalizer);
         }
     });
 }
-
 
 // Genre Filtering Functions
 function setupGenreFiltering(cachedElements = {}) {
@@ -1046,34 +1047,34 @@ setupDropdownScroll(id) {
     }
     
     handleOutsideClick(e) {
+        // Get the actual target (works for both mouse and touch events)
         const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
         if (!target) return;
     
-        // Check if click was on any dropdown toggle or inside a dropdown
+        // Check if click was inside any dropdown toggle or menu
         let clickedInside = false;
         
         for (const [id, dropdown] of Object.entries(this.dropdowns)) {
-            // Skip if clicking on theme options or color pickers
-            if (target.closest('.theme-option') || target.closest('.color-picker')) {
-                return;
+            // Skip if clicking on menu content that shouldn't close the dropdown
+            if (dropdown.menu?.contains(target) && 
+                !target.closest(`.${dropdown.navButtonClass}`)) {
+                clickedInside = true;
+                break;
             }
             
-            if (dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) {
+            // Check if clicking the dropdown toggle
+            if (dropdown.toggle?.contains(target)) {
                 clickedInside = true;
-                
-                // Special case for nav buttons
-                if (target.closest(`.${dropdown.navButtonClass}`)) {
-                    return; // Let the nav button handle its own click
-                }
-                
                 break;
             }
         }
         
-        if (!clickedInside && this.currentOpen) {
+        // Only close if clicking outside AND not during a scroll/pan gesture
+        if (!clickedInside && this.currentOpen && 
+            !(e.type === 'touchend' && target._touchStart)) {
             this.close(this.currentOpen);
         }
-    }    
+    } 
 
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
@@ -1684,9 +1685,7 @@ function filterStations() {
 
     if (searching) {
         document.querySelectorAll('.expand-button').forEach(btn => btn.remove());
-        document.querySelectorAll('.category-container').forEach(cat => {
-            cat.classList.remove("no-radius", "has-expand-button");
-        });
+        document.querySelectorAll('.category-container').forEach(cat => cat.classList.remove("no-radius", "has-expand-button"));
     }
 
     let hasVisibleStations = false;
@@ -1703,33 +1702,23 @@ function filterStations() {
         
         category.style.display = hasVisible ? 'flex' : 'none';
         const title = category.previousElementSibling;
-        if (title?.classList.contains("category")) {
-            title.style.display = hasVisible ? 'flex' : 'none';
-        }
-        
+        if (title?.classList.contains("category")) title.style.display = hasVisible ? 'flex' : 'none';
         if (hasVisible) hasVisibleStations = true;
     });
     
-    // Show/hide no results message
     if (noResultsElement) {
         noResultsElement.style.display = (searching && !hasVisibleStations) ? 'flex' : 'none';
     }
     
-    // When search is cleared by backspacing, reapply genre filter and setup expand buttons
     if (!searching) {
         currentGenre = 'all';
         document.querySelector('.genre-button[data-genre="all"]')?.classList.add('active');
-        document.querySelectorAll('.genre-button:not([data-genre="all"])').forEach(btn => {
-            btn.classList.remove('active');
-        });
+        document.querySelectorAll('.genre-button:not([data-genre="all"])').forEach(btn => btn.classList.remove('active'));
         applyGenreFilter();
         setupExpandableCategories();
     }
     
-    // Update scrollbar after filtering
-    setTimeout(() => {
-        ScrollbarManager.updateAll();
-    }, 10);
+    setTimeout(() => ScrollbarManager.updateAll(), 10);
 }
 
 function setupExpandableCategories() {
