@@ -66,40 +66,47 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (radio.closest('.history-dropdown')) {
             e.stopPropagation(); // Prevent event from bubbling to document
+            dropdownManager.close('history'); // Close the dropdown after selection
+        }
+    }    
+    
+// Update touch event listeners for the dropdown
+cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio) {
+        const touch = e.touches[0];
+        radio._touchStart = { x: touch.clientX, y: touch.clientY };
+        radio._touchMoved = false;
+    }
+}, { passive: true });
+
+cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio && radio._touchStart) {
+        const touch = e.touches[0];
+        const moveX = Math.abs(touch.clientX - radio._touchStart.x);
+        const moveY = Math.abs(touch.clientY - radio._touchStart.y);
+        
+        // If significant movement detected, mark as moved
+        if (moveX > 5 || moveY > 5) {
+            radio._touchMoved = true;
         }
     }
-    
-    // Update touch event listeners for the dropdown
-    cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
-        const radio = e.target.closest('.radio');
-        if (radio) {
-            const touch = e.touches[0];
-            radio._touchStart = { x: touch.clientX, y: touch.clientY };
-        }
-    }, { passive: true });
-    
-    cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
-        const radio = e.target.closest('.radio');
-        if (radio && radio._touchStart) {
-            const touch = e.touches[0];
-            const moveX = Math.abs(touch.clientX - radio._touchStart.x);
-            const moveY = Math.abs(touch.clientY - radio._touchStart.y);
-            
-            // If significant movement detected, cancel the tap
-            if (moveX > 10 || moveY > 10) {
-                radio._touchStart = null; // Cancel potential tap
-            }
-        }
-    }, { passive: true });
+}, { passive: true });
 
 // Add listeners to both containers
-cachedElements.scrollList?.addEventListener('click', handleRadioClick, { passive: true });
-cachedElements.historyDropdown?.addEventListener('click', handleRadioClick, { passive: true });
+cachedElements.scrollList?.addEventListener('click', handleRadioClick);
+cachedElements.historyDropdown?.addEventListener('click', handleRadioClick);
 
-// Add touch listener specifically for Android
-cachedElements.historyDropdown?.addEventListener('touchend', handleRadioClick, { passive: false });
-
-    
+// More precise touch listener for history dropdown
+cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
+    const radio = e.target.closest('.radio');
+    if (radio && radio._touchMoved) {
+        return; // Skip if this was a scroll gesture
+    }
+    handleRadioClick(e);
+}, { passive: false });
+   
     // Final update with timeout
     setTimeout(() => ScrollbarManager.updateAll(), 500);
     
@@ -1070,11 +1077,21 @@ setupDropdownScroll(id) {
         }
         
         // Only close if clicking outside AND not during a scroll/pan gesture
-        if (!clickedInside && this.currentOpen && 
-            !(e.type === 'touchend' && target._touchStart)) {
+        if (!clickedInside && this.currentOpen) {
+            // For touch events, check if this was a scroll gesture
+            if (e.type === 'touchend') {
+                const touch = e.changedTouches[0];
+                const startTouch = target._touchStart;
+                
+                if (startTouch && (Math.abs(touch.clientX - startTouch.x) > 10 || 
+                                  Math.abs(touch.clientY - startTouch.y) > 10)) {
+                    return; // This was a scroll gesture, don't close
+                }
+            }
+            
             this.close(this.currentOpen);
         }
-    } 
+    }
 
 updateDropdownHeights() {
     const audioContainer = document.querySelector('.audio-container');
