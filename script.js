@@ -1239,10 +1239,7 @@ updateDropdownHeights() {
     const safeAreaBottom = window.visualViewport?.offsetTop || 0;
     
     // Calculate max height with adjustments
-    const maxDropdownHeight = Math.max(
-        150, 
-        windowHeight - containerRect.bottom - safeAreaBottom - 10
-    );
+    const maxDropdownHeight = Math.max(windowHeight - containerRect.bottom - safeAreaBottom - 10);
 
     Object.values(this.dropdowns).forEach(dropdown => {
         if (!dropdown.menu) return;
@@ -1719,7 +1716,7 @@ function createExpandButton(stations, category) {
 
     const text = document.createElement("span");
     text.className = "expand-text";
-    text.textContent = "Još stanica";
+    text.textContent = "Više";
     Object.assign(text.style, {
         fontSize: '0px',
         transition: 'font-size 0.15s linear'
@@ -1744,7 +1741,7 @@ function createExpandButton(stations, category) {
         // Update button state
         expandButton.dataset.expanded = newState.toString();
         expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
-        expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Još stanica";
+        expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
         
         // Show/hide stations
         stations.forEach((station, index) => {
@@ -1752,10 +1749,6 @@ function createExpandButton(stations, category) {
                 station.style.display = newState ? "flex" : "none";
             }
         });
-        
-        // Calculate new height with transition
-        const newHeight = calculateContainerHeight(category);
-        category.style.height = `${newHeight}px`;
         
         // Update scrollbar after transition completes
         setTimeout(() => {
@@ -1784,15 +1777,18 @@ audio.addEventListener("pause", updatePlayPauseButton);
 
 function updatePlayPauseButton() {
     const audioPlayer = document.querySelector('.audio-player');
+    const audioControls = document.querySelector('.audio-controls');
     playPauseBtn.innerHTML = `<span class="material-icons">${audio.paused ? 'play_arrow' : 'stop'}</span>`;
     
     // Toggle play-mode class based on paused state
     if (audio.paused) {
         playPauseBtn.classList.add('play-mode');
         audioPlayer.classList.add('play-mode');
+        audioControls.classList.add('play-mode');
     } else {
         playPauseBtn.classList.remove('play-mode');
         audioPlayer.classList.remove('play-mode');
+        audioControls.classList.remove('play-mode');
         // Check metadata when playback starts
         checkMetadata(true);
         setupNowPlayingMetadata();
@@ -1854,7 +1850,26 @@ function filterStations() {
     let hasVisibleStations = false;
     
     document.querySelectorAll('.radio:not(.history-dropdown .radio)').forEach(station => {
-        const matches = station.dataset.name.toLowerCase().includes(query);
+        const stationName = station.dataset.name.toLowerCase();
+        
+        // Create a normalized version of the station name for comparison
+        let normalizedStationName = stationName;
+        
+        // Handle special character mappings
+        if (query.includes('s')) {
+            normalizedStationName = normalizedStationName
+                .replace(/š/g, 's')
+                .replace(/ś/g, 's');
+        }
+        
+        if (query.includes('c')) {
+            normalizedStationName = normalizedStationName
+                .replace(/č/g, 'c')
+                .replace(/ć/g, 'c');
+        }
+        
+        // Check if the normalized station name includes the query
+        const matches = normalizedStationName.includes(query);
         station.style.display = matches ? 'flex' : 'none';
         if (matches) hasVisibleStations = true;
     });

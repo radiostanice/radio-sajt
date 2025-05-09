@@ -96,14 +96,6 @@ button {
     --accent-color: var(--accent-light); 
 }
 
-.dark-mode .search-container input:focus {
-    background-color: #383838;
-}
-
-.dark-mode .audio-player {
-    background-color: #121212 !important;
-}
-
 .dark-mode .volume-icon,
 .light-mode .material-icons,
 .dark-mode #playPauseBtn .material-icons {
@@ -325,7 +317,8 @@ button {
 	border-color: #bdbdbd;
 	color: #000;
 }
-
+.light-mode .theme-title,
+.light-mode .color-title,
 .light-mode .quality-title,
 .light-mode .toggle-buttons,
 .light-mode .genre-tooltip strong,
@@ -390,11 +383,11 @@ button {
     height: 44px;
     width: 44px;
     margin-right: 15px;
-    transition: width 0.2s ease, border-radius 0.2s linear;
-    -moz-transition: width 0.2s ease, border-radius 0.2s linear;
-    -webkit-transition: width 0.2s ease, border-radius 0.2s linear;
-    -o-transition: width 0.2s ease, border-radius 0.2s linear;
-    -ms-transition: width 0.2s ease, border-radius 0.2s linear;
+    transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
+    -moz-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
+    -webkit-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
+    -o-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
+    -ms-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
     overflow: hidden;
     cursor: pointer;
 }
@@ -432,6 +425,10 @@ button {
 .search-container.active input {
     opacity: 1;
     display: flex;
+}
+
+.search-container input:focus {
+    background-color: #353535;
 }
 
 .search-container input::placeholder {
@@ -918,9 +915,8 @@ button {
 	flex-grow: 1;
 	flex-shrink: 1;
     border: 3px solid var(--accent-color);
-    border-radius: 40px;
-    border-top-left-radius: 30px;
-    border-bottom-left-radius: 30px;
+    border-radius: 25px;
+    background-color: #121212;
     padding: 5px;
     align-items: center;
     justify-content: space-between;
@@ -935,8 +931,7 @@ button {
 
 /* When play icon is shown (paused state) */
 .audio-player.play-mode {
-    border-top-left-radius: 40px;
-    border-bottom-left-radius: 40px;
+    border-radius: 40px;
 }
 
 .play-pause {
@@ -963,7 +958,7 @@ button {
     -o-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
     -ms-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
 }
-
+.audio-controls.play-mode,
 #playPauseBtn.play-mode {
     border-radius: 50px;
 }
@@ -982,14 +977,14 @@ button {
     align-items: center;
     justify-content: center;
     background-color: var(--accent-color);
-    border-radius: 50px;
+    border-radius: 18px;
     height: 50px;
-    width: 130px;
-    transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -o-transition: box-shadow 0.2s linear, filter 0.2s linear;
-    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear;
+    width: 125px;
+    transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -o-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
 }
 
 .audio-controls:hover {
@@ -1245,10 +1240,7 @@ button {
     display: flex;
 }
 
-.has-now-playing .dropdown-menu {
-    bottom: 215px;
-}
-
+.has-now-playing .dropdown-menu,
 .has-now-playing .history-dropdown,
 .has-now-playing .genre-tooltip {
     bottom: 215px;
@@ -1276,7 +1268,6 @@ button {
     -o-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
     -ms-transition: opacity 0.2s linear, visibility 0.2s linear, transform 0.2s linear;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-	max-height: calc(100% - 267px) ! important;
 	display: flex;
 	scrollbar-width: none;
 	scroll-behavior: smooth;
@@ -1410,7 +1401,6 @@ button {
     white-space: nowrap;
     background-color: #191919;
 	height: 44px;
-    border-radius: 20px;
 }
 
 .genre-tooltip-item:first-child {
@@ -1515,33 +1505,52 @@ button {
 }
 
 .dropdown-menu {
-    display: flex;
     position: fixed;
     bottom: 195px;
 	left: 50%;
     transform: translateX(-50%) translateY(0) translateZ(0);
     background-color: #222222;
     border-radius: 8px;
-    z-index: 1005450;
     white-space: nowrap;
     border: 2px solid #444444;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-    padding: 10px 7px;
 	transition: opacity 0.2s linear, visibility 0.2s linear;
     -moz-transition: opacity 0.2s linear, visibility 0.2s linear;
     -webkit-transition: opacity 0.2s linear, visibility 0.2s linear;
     -o-transition: opacity 0.2s linear, visibility 0.2s linear;
     -ms-transition: opacity 0.2s linear, visibility 0.2s linear;
-    display: block;
     visibility: hidden;
     opacity: 0;
-	flex-direction: column;
     align-items: center;
+    max-height: calc(100% - 267px) ! important;
 }
 
 .dropdown-menu.show {
     opacity: 1;
     visibility: visible;
+}
+
+.theme-title {
+    padding: 10px 5px 5px 10px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+	font-size: 18px;
+    border-bottom: 1px solid #444;
+    margin-bottom: 10px;
+}
+
+.color-title {
+    padding: 10px 5px 5px 10px;
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+	font-size: 18px;
+    border-bottom: 1px solid #444;
+    border-top: 1px solid #444;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    margin-top: 10px;
 }
 
 .theme-option {
@@ -1554,7 +1563,6 @@ button {
     cursor: pointer;
     border-radius: 8px;
     border: 2px solid #444;
-	margin: 0 3px;
     background-color: #121212;
     font-size: 16px;
 	transition: border-color 0.2s linear, box-shadow 0.2s linear;
@@ -1562,6 +1570,10 @@ button {
     -webkit-transition: border-color 0.2s linear, box-shadow 0.2s linear;
     -o-transition: border-color 0.2s linear, box-shadow 0.2s linear;
     -ms-transition: border-color 0.2s linear, box-shadow 0.2s linear;
+}
+
+.theme-option:not(:first-child) {
+    margin-left: 5px;
 }
 
 .theme-option:hover {
@@ -1600,12 +1612,13 @@ button {
 .theme-options-container {
     display: flex;
     justify-content: center;
+    padding: 0 10px;
 }
 
 .color-picker-container {
     display: flex;
     justify-content: center;
-    margin-top: 12px;
+    padding: 10px 0;
 }
 
 /* ============ */
