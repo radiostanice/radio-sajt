@@ -202,11 +202,11 @@ button {
 }
 
 .light-mode .genre-nav-button.left {
-    box-shadow: 25px 0px 10px rgba(240, 240, 240, 1);
+    box-shadow: 20px 0px 10px rgba(240, 240, 240, 1);
 }
 
 .light-mode .genre-nav-button.right {
-    box-shadow: -25px 0px 10px rgba(240, 240, 240, 1);
+    box-shadow: -20px 0px 10px rgba(240, 240, 240, 1);
 }
 
 .light-mode .expand-button[data-expanded="false"] {
@@ -286,12 +286,12 @@ button {
 
 .light-mode .history-nav-button.top,
 .light-mode .tooltip-nav-button.top {
-	box-shadow: 0px 30px 12px rgba(240, 240, 240, 1);
+	box-shadow: 0px 25px 12px rgba(240, 240, 240, 1);
 }
 
 .light-mode .history-nav-button.bottom,
 .light-mode .tooltip-nav-button.bottom {
-	box-shadow: 0px -30px 12px rgba(240, 240, 240, 1);
+	box-shadow: 0px -25px 12px rgba(240, 240, 240, 1);
 }
 
 .light-mode .toggle-handle {	
@@ -702,7 +702,7 @@ button {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 40px;
+    width: 35px;
     height: 100%;
     background-color: #222;
     border: none;
@@ -724,13 +724,13 @@ button {
 .genre-nav-button.left {
     left: 0px;
     border-left: 2px solid transparent;
-    box-shadow: 25px 0px 10px rgba(34, 34, 34, 1);
+    box-shadow: 20px 0px 10px rgba(34, 34, 34, 1);
 }
 
 .genre-nav-button.right {
     right: 0px;
     border-right: 2px solid transparent;
-    box-shadow: -25px 0px 10px rgba(34, 34, 34, 1);
+    box-shadow: -20px 0px 10px rgba(34, 34, 34, 1);
 }
 
 .genre-nav-button.left:hover {
@@ -994,7 +994,7 @@ button {
 
 .volume-icon {
     margin-right: 4px;
-    font-size: 30px;
+    font-size: 36px;
     cursor: pointer;
     color: #000000;
 }
@@ -1146,7 +1146,6 @@ button {
     height: 40px;
     padding: 0 16px;
     cursor: pointer;
-
     position: relative;
     overflow: hidden;
     color: #fff;
@@ -1254,7 +1253,8 @@ button {
     right: 50%;
     pointer-events: none;
     width: 90%;
-    max-width: 400px;
+    max-width: 300px;
+    max-height: calc(100% - 267px) ! important;
     background: #222;
     border: 2px solid #444;
     border-radius: 8px;
@@ -1296,7 +1296,7 @@ button {
     position: sticky;
     z-index: 2;
     width: 100%;
-    height: 40px;
+    height: 35px;
     background-color: #222;
     display: flex;
     align-items: center;
@@ -1314,15 +1314,15 @@ button {
 .tooltip-nav-button.top, .history-nav-button.top {
     top: 0;
     border-top: 2px solid transparent;
-	box-shadow: 0px 30px 12px rgba(34, 34, 34, 1);
-	margin-bottom: -40px;
+	box-shadow: 0px 25px 12px rgba(34, 34, 34, 1);
+	margin-bottom: -35px;
 }
 
 .tooltip-nav-button.bottom, .history-nav-button.bottom {
     bottom: 0;
     border-bottom: 2px solid transparent;
-	box-shadow: 0px -30px 12px rgba(34, 34, 34, 1);
-	margin-top: -40px;
+	box-shadow: 0px -25px 12px rgba(34, 34, 34, 1);
+	margin-top: -35px;
 }
 
 .tooltip-nav-button:hover, .history-nav-button:hover {
@@ -1364,7 +1364,8 @@ button {
     padding: 0;
     border-radius: 10px;
     font-size: 16px;
-    max-width: 500px;
+    max-width: 300px;
+    width: 180px;
     border: 2px solid #444;
 	max-height: calc(100% - 267px) ! important;
 	scrollbar-width: none;
