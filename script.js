@@ -1,4 +1,75 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Search container functionality
+    const searchContainer = document.querySelector('.search-container');
+    const searchInput = document.getElementById("stationSearch");
+    const searchIcon = document.getElementById("Search");
+    const clearSearch = document.getElementById("clearSearch");
+    
+    if (searchContainer && searchInput && searchIcon && clearSearch) {
+        // Toggle search container expansion
+        const toggleSearch = (expand) => {
+            if (expand) {
+                // First set the width to trigger transition
+                searchContainer.style.width = '250px';
+                searchContainer.style.borderRadius = '10px';
+                // Then add the active class after a small delay
+                setTimeout(() => {
+                    searchContainer.classList.add('active');
+                    searchInput.focus();
+                }, 170);
+            } else {
+                // Only collapse if input is empty
+                if (!searchInput.value) {
+                    // First remove the active class
+                    searchContainer.classList.remove('active');
+                    // Then reset width and borderRadius to trigger transition
+                    searchContainer.style.width = '44px';
+                    searchContainer.style.borderRadius = '15px';
+                    searchInput.blur();
+                }
+            }
+        };
+        
+        // Handle click anywhere on search container
+        searchContainer.addEventListener('click', (e) => {
+            if (!searchContainer.classList.contains('active')) {
+                toggleSearch(true);
+            }
+            e.stopPropagation();
+        });
+        
+        // Handle click on clear search
+        clearSearch.addEventListener('click', (e) => {
+            searchInput.value = '';
+            clearSearch.style.display = 'none';
+            filterStations();
+            toggleSearch(false); // Collapse after clearing
+            e.stopPropagation();
+        });
+        
+        // Handle input changes
+        searchInput.addEventListener('input', () => {
+            clearSearch.style.display = searchInput.value ? 'block' : 'none';
+        });
+        
+        // Close search when clicking outside (only if input is empty)
+        document.addEventListener('click', (e) => {
+            if (!searchContainer.contains(e.target) && 
+                searchContainer.classList.contains('active') &&
+                !searchInput.value) {
+                toggleSearch(false);
+            }
+        });
+        
+        // Mobile touch support
+        searchContainer.addEventListener('touchend', (e) => {
+            if (!searchContainer.classList.contains('active')) {
+                toggleSearch(true);
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+
     // Cache frequently used elements
     const cachedElements = {
         scrollList: document.querySelector('.scroll-list'),
@@ -2118,18 +2189,20 @@ const ScrollbarManager = {
         
         const trackRect = this.scrollbarTrack.getBoundingClientRect();
         const thumbHeight = this.scrollbarThumb.clientHeight;
-        const clickPosition = e.clientY - trackRect.top - (thumbHeight / 2);
-        const trackHeight = trackRect.height;
-        const thumbPosition = Math.max(0, Math.min(clickPosition, trackHeight - thumbHeight));
         
-        const scrollPercentage = thumbPosition / (trackHeight - thumbHeight);
+        // Calculate based on full track width
+        const clickPosition = e.clientY - trackRect.top;
+        const trackHeight = trackRect.height;
+        
+        // Map click position to scroll position
+        const scrollPercentage = clickPosition / trackHeight;
         const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
         
         this.scrollList.scrollTo({
-            top: Math.min(scrollPercentage * maxScroll, maxScroll),
+            top: scrollPercentage * maxScroll,
             behavior: 'smooth'
         });
-    },
+    },    
   
     scrollBy(amount) {
         const currentScroll = this.scrollList.scrollTop;

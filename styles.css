@@ -96,14 +96,6 @@ button {
     --accent-color: var(--accent-light); 
 }
 
-.dark-mode .search-container input {
-    background-color: transparent;
-}
-
-.dark-mode .search-container input:hover {
-    background-color: transparent;
-}
-
 .dark-mode .search-container input:focus {
     background-color: #383838;
 }
@@ -392,27 +384,29 @@ button {
     position: relative;
     align-items: center;
     background-color: #121212;
-    border-radius: 15px; /* More rounded when collapsed */
+    border-radius: 15px;
     border: 2px solid #444444;
     padding: 5px;
     height: 44px;
-    width: 44px; /* Start collapsed */
-    min-width: 44px; /* Minimum width */
-    max-width: 250px;
+    width: 44px;
     margin-right: 15px;
-    transition: all 0.3s ease;
+    transition: width 0.2s ease, border-radius 0.2s linear;
+    -moz-transition: width 0.2s ease, border-radius 0.2s linear;
+    -webkit-transition: width 0.2s ease, border-radius 0.2s linear;
+    -o-transition: width 0.2s ease, border-radius 0.2s linear;
+    -ms-transition: width 0.2s ease, border-radius 0.2s linear;
     overflow: hidden;
     cursor: pointer;
 }
 
 .search-container.active {
-    width: 250px; /* Expanded width */
+    width: 250px;
     border-radius: 10px;
     cursor: auto;
 }
 
 .search-container input {
-    display: flex;
+    display: none;
     align-items: center;
     vertical-align: middle;
     flex-grow: 1;
@@ -437,8 +431,8 @@ button {
 
 .search-container.active input {
     opacity: 1;
+    display: flex;
 }
-
 
 .search-container input::placeholder {
     color: #cccccc !important;
@@ -481,14 +475,13 @@ button {
     top: 50%;
     transform: translateY(-50%);
     font-size: 22px;
-    pointer-events: none;
+    pointer-events: auto;
     transition: left 0.3s ease;
 }
 
 .search-container.active #Search {
     left: 10px;
-    pointer-events: auto;
-    cursor: pointer;
+    pointer-events: none;
 }
 
 #clearSearch {
@@ -572,11 +565,12 @@ button {
     right: 0;
     top: 65.5px;
     bottom: 150px;
-    width: 12px;
+    width: 16px; /* Wider track for click area */
+    padding: 0 6px; /* Padding to center the thumb visually */
+    cursor: pointer;
     z-index: 100;
     pointer-events: auto;
     background-color: transparent;
-	padding: 0 8px;
 	transition: bottom 0.2s linear;
     -moz-transition: bottom 0.2s linear;
     -webkit-transition: bottom 0.2s linear;
@@ -598,6 +592,17 @@ button {
     pointer-events: auto;
 	touch-action: none;
 	opacity: 0;
+}
+
+.scrollbar-thumb::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    right: -8px;
+    top: 0;
+    bottom: 0;
+    background: transparent;
+    z-index: 1;
 }
 
 .scrollbar-thumb.visible {
