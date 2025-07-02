@@ -323,7 +323,7 @@ async function changeStation(name, link, cachedElements = {}) {
     audio.src = link;
 
     // Update UI
-    document.title = `Radio | ${name}`;
+    document.title = `MojTalas | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     updateSelectedStation(name);
     updatePlayPauseButton(cachedElements);
@@ -1962,7 +1962,7 @@ function loadPreferences() {
         // Update UI immediately
         document.getElementById("audiotext").innerHTML = 
             `<div class="station-name">${savedStation.name}</div>`;
-        document.title = `Radio | ${savedStation.name}`;
+        document.title = `MojTalas | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
         
         // Set initial play/pause button state
@@ -1978,7 +1978,7 @@ function loadPreferences() {
             setupNowPlayingMetadata();
         }, 300);
     } else {
-        document.title = "Radio";
+        document.title = "MojTalas";
         updatePlayPauseButton();
         
         // Ensure empty state is handled
