@@ -2,20 +2,20 @@
 /* ROOT & VARIABLES */
 /* ================ */
 :root {
-    --accent-dark: #0064ae;
+    --accent-dark: #004f8b;
     --accent-light: #a4cdff;
     
     --green-dark: #166f45;
     --green-light: #7df09d;
 
-    --blue-dark: #0064ae;
+    --blue-dark: #004f8b;
     --blue-light: #a4cdff;
     
-    --yellow-dark: #6b4b21;
+    --yellow-dark: #523c2e;
     --yellow-light: #ffea84;
     
     --red-dark: #a72c2f;
-    --red-light: #ff9595;
+    --red-light: #ffaeae;
 }
 
 /* ========== */
@@ -96,22 +96,20 @@ button {
     --accent-color: var(--accent-light); 
 }
 
-.dark-mode .volume-icon,
-.light-mode .material-icons,
-.dark-mode #playPauseBtn .material-icons {
+.light-mode .material-icons {
     color: #000000;
 }
 
 .light-mode {
     --accent-color: var(--accent-dark);
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
     color: #000000;
 }
 
 .light-mode .history-dropdown,
 .light-mode .audio-container,
 .light-mode .dropdown-menu {
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
     border-color: #bdbdbd;
 }
 
@@ -126,7 +124,7 @@ button {
 
 .light-mode .expand-button,
 .light-mode .header {
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
     color: #000000;
     border-bottom-color: #bdbdbd;
 }
@@ -177,7 +175,7 @@ button {
 .light-mode .recently-played-wrapper,
 .light-mode .category-container,
 .light-mode .genre-buttons-wrapper {
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
 }
 
 .light-mode .genre-button {
@@ -192,7 +190,7 @@ button {
 .light-mode .tooltip-nav-button,
 .light-mode .history-nav-button,
 .light-mode .genre-nav-button {
-    background-color: #f0f0f0;
+    background-color: #f3f3f3;
     color: #000000;
 }
 
@@ -215,6 +213,7 @@ button {
 
 .light-mode .audio-player {
     background-color: #ffffff !important;
+	border-color: #bdbdbd;
 }
 
 .light-mode .search-container {
@@ -248,7 +247,7 @@ button {
 
 .light-mode .genre-tooltip {
 	color: #000000;
-	background-color: #f0f0f0;
+	background-color: #f3f3f3;
 	border-color: #bdbdbd;
 }
 
@@ -299,12 +298,6 @@ button {
 	box-shadow: 20px 0px 0px #ffffff, -20px 0px 0px #ffffff;
 }
 
-.light-mode	.audio-container.expanded .toggle-handle {
-    border-bottom-color: #d1d1d1;
-	border-left: 1px solid #bdbdbd;
-	border-right: 1px solid #bdbdbd;
-}
-
 .light-mode .toggle-handle:hover::before {
     background: #000000;
 }
@@ -317,13 +310,23 @@ button {
 	border-color: #bdbdbd;
 	color: #000;
 }
-.light-mode .theme-title,
+
 .light-mode .color-title,
+.light-mode .theme-title,
 .light-mode .quality-title,
-.light-mode .toggle-buttons,
 .light-mode .genre-tooltip strong,
 .light-mode .recently-played-title {
+	background-color: rgba(155,155,155,0.1);
 	border-color: #bdbdbd;
+}
+
+.light-mode .audio-container.expanded .toggle-handle {
+	background-color: rgba(195,195,195,0.1);
+	border-color: #c7c7c7;
+}
+
+.light-mode .toggle-buttons {
+	border-color: #dcdcdc;
 }
 
 .light-mode .format {
@@ -695,15 +698,25 @@ button {
 .genre-button.active {
     background-color: var(--accent-color);
     color: #000000;
-    transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
-	-moz-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
-    -webkit-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
-    -o-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
-    -ms-transition: color 0.2s linear, background-color 0.2s linear, filter 0.2s linear;
+    transition: all 0.2s linear;
+	-moz-transition: all 0.2s linear;
+    -webkit-transition: all 0.2s linear;
+    -o-transition: all 0.2s linear;
+    -ms-transition: all 0.2s linear;
 }
 
 .genre-button.active .material-icons {
     color: #000000;
+}
+
+.genre-button.active:hover {
+	box-shadow: inset 0px 0px 5px 1px var(--accent-dark);
+	border-color: var(--accent-dark);
+}
+
+.light-mode .genre-button.active:hover {
+	box-shadow: inset 0px 0px 5px 1px var(--accent-light);
+	border-color: var(--accent-light);
 }
 
 .genre-nav-button {
@@ -922,19 +935,19 @@ button {
 	display: inline-flex;
 	flex-grow: 1;
 	flex-shrink: 1;
-    border: 3px solid var(--accent-color);
+    border: 2px solid #444;
     border-radius: 25px;
     background-color: #121212;
-    padding: 5px;
+    padding: 6px;
     align-items: center;
     justify-content: space-between;
     margin: 5px 0px 15px 0px;
     transform: none;
-	transition: border-radius 0.1s linear;
-    -moz-transition: border-radius 0.1s linear;
+	transition: border-radius 0.2s linear;
+    -moz-transition: border-radius 0.2s linear;
     -webkit-transition: border-radius 0.1s linear;
     -o-transition: border-radius 0.1s linear;
-    -ms-transition: border-radius 0.1s linear;
+    -ms-transition: border-radius 0.2s linear;
 }
 
 /* When play icon is shown (paused state) */
@@ -959,13 +972,14 @@ button {
     border: none;
     cursor: pointer;
     border-radius: 18px;
-    background-color: var(--accent-color);
-    transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
-    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
-    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
-    -o-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
-    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.05s linear;
+    background-color: var(--accent-dark);
+    transition: box-shadow 0.2s linear, border-radius 0.05s linear;
+    -moz-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
+    -webkit-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
+    -o-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
+    -ms-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
 }
+
 .audio-controls.play-mode,
 #playPauseBtn.play-mode {
     border-radius: 50px;
@@ -973,38 +987,37 @@ button {
 
 #playPauseBtn .material-icons {
     font-size: 36px;
+	color: #fff;
 }
 
 #playPauseBtn:hover {
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-    filter: contrast(0.9);
+    box-shadow: inset 0px 0px 6px 1px var(--accent-color);
 }
 
 .audio-controls {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: var(--accent-color);
+    background-color: var(--accent-dark);
     border-radius: 18px;
     height: 50px;
     width: 125px;
-    transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
-    -moz-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
-    -webkit-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
-    -o-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
-    -ms-transition: box-shadow 0.2s linear, filter 0.2s linear, border-radius 0.1s linear;
+    transition: box-shadow 0.2s linear, border-radius 0.1s linear;
+    -moz-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
+    -webkit-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
+    -o-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
+    -ms-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
 }
 
 .audio-controls:hover {
-    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-    filter: contrast(0.9);
+	box-shadow: inset 0px 0px 6px 1px var(--accent-color);
 }
 
 .volume-icon {
     margin-right: 4px;
     font-size: 36px;
     cursor: pointer;
-    color: #000000;
+    color: #fff;
 }
 
 .volume-slider {
@@ -1013,7 +1026,7 @@ button {
     appearance: none;
     width: 70px; 
     height: 4px;
-    background: #000;
+    background: #fff;
     border-radius: 2px;
     outline: none;
     cursor: pointer;
@@ -1027,9 +1040,9 @@ button {
     height: 19px;
     min-width: 19px;
     min-height: 19px;
-    background: var(--accent-color);
+    background: var(--accent-dark);
     border-radius: 50%;
-    border: 3px solid #000000;
+    border: 3px solid #fff;
     cursor: pointer;
     position: relative;
     margin-top: -8px;
@@ -1044,7 +1057,7 @@ button {
 .volume-slider::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
-    background: #000000;
+    background: #fff;
     border-radius: 2px;
 }
 
@@ -1053,9 +1066,9 @@ button {
     height: 14px;
     min-width: 14px;
     min-height: 14px;
-    background: var(--accent-color);
+    background: var(--accent-dark);
     border-radius: 50%;
-    border: 3px solid #000000;
+    border: 3px solid #fff;
     cursor: pointer;
     position: relative;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
@@ -1069,7 +1082,7 @@ button {
 .volume-slider::-moz-range-track {
     width: 100%;
     height: 4px;
-    background: #000000;
+    background: #fff;
     border-radius: 2px;
 }
 
@@ -1078,9 +1091,9 @@ button {
     height: 18px;
     min-width: 18px;
     min-height: 18px;
-    background: var(--accent-color);
+    background: var(--accent-dark);
     border-radius: 50%;
-    border: 3px solid #000000;
+    border: 3px solid #fff;
     cursor: pointer;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
 	transition: all 0.2s linear;
@@ -1093,7 +1106,7 @@ button {
 .volume-slider::-ms-track {
     width: 100%;
     height: 4px;
-    background: #000000;
+    background: #fff;
     border-radius: 2px;
 }
 
@@ -1122,7 +1135,6 @@ button {
     justify-content: center;
     cursor: pointer;
 	border-top: 1px solid #444;
-	border-bottom: 1px solid transparent;
 	transition: border-bottom 0.2s linear;
     -moz-transition: border-bottom 0.2s linear;
     -webkit-transition: border-bottom 0.2s linear;
@@ -1134,9 +1146,6 @@ button {
 }
 
 .audio-container.expanded .toggle-handle {
-    border-bottom-color: #333;
-	border-left: 1px solid #444;
-	border-right: 1px solid #444;
 	background-color: rgba(0,0,0,0.1);
 }
 
@@ -1256,7 +1265,7 @@ button {
     display: none;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid #444;
+    border-bottom: 2px solid #2b2b2b;
 }
 
 .audio-container.expanded .toggle-buttons {
@@ -1501,7 +1510,7 @@ button {
 	width: 100%;
 }
 
-.light-mode .formar {
+.light-mode .format {
 	border-color: #bdbdbd;
 }
 
@@ -1582,15 +1591,6 @@ button {
     border-top: 1px solid #444;
     margin-top: 10px;
 	background-color: rgba(0,0,0,0.1);
-}
-
-.light-mode .color-title,
-.light-mode .theme-title,
-.light-mode .quality-title,
-.light-mode .genre-tooltip strong,
-.light-mode .recently-played-title,
-.light-mode .audio-container.expanded .toggle-handle {
-	background-color: rgba(155,155,155,0.1);
 }
 
 .theme-option {
@@ -1863,7 +1863,7 @@ button {
 /* EQUALIZER */
 /* ============ */
 .equalizer {
-    height: 8px;
+    height: 9px;
     width: 100%;
     display: flex;
     align-items: flex-end;
@@ -1882,7 +1882,7 @@ button {
 }
 
 .equalizer.animate div {
-    height: 6px;
+    height: 7px;
     background-color: var(--accent-color);
 	opacity: 0.5;
     transition: background-color 0.2s linear;
