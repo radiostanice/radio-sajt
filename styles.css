@@ -3,13 +3,13 @@
 /* ================ */
 :root {
     --accent-dark: #0064ae;
-    --accent-light: #b1d1ff;
+    --accent-light: #a4cdff;
     
     --green-dark: #166f45;
     --green-light: #7df09d;
 
     --blue-dark: #0064ae;
-    --blue-light: #b1d1ff;
+    --blue-light: #a4cdff;
     
     --yellow-dark: #6b4b21;
     --yellow-light: #ffea84;
@@ -1034,6 +1034,11 @@ button {
     position: relative;
     margin-top: -8px;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s linear;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+	transform: scale(1.1);
 }
 
 .volume-slider::-webkit-slider-runnable-track {
@@ -1054,6 +1059,11 @@ button {
     cursor: pointer;
     position: relative;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s linear;
+}
+
+.volume-slider::-moz-range-thumb:hover {
+	transform: scale(1.1);
 }
 
 .volume-slider::-moz-range-track {
@@ -1073,6 +1083,11 @@ button {
     border: 3px solid #000000;
     cursor: pointer;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s linear;
+}
+
+.volume-slider::-ms-thumb:hover {
+	transform: scale(1.1);
 }
 
 .volume-slider::-ms-track {
@@ -1343,7 +1358,7 @@ button {
 
 .recently-played-stations .radio {
     width: calc(100% - 20px);
-    margin: 15px auto;
+    margin: 10px auto;
 	height: 45px;
 }
 
@@ -1359,7 +1374,7 @@ button {
     align-items: center;
     font-weight: 600;
 	font-size: 18px;
-    border-bottom: 1px solid #444;
+    border-bottom: 2px solid #444;
 	background-color: rgba(0,0,0,0.1);
 }
 
@@ -1448,7 +1463,7 @@ button {
     padding: 10px 10px 5px 10px;
     font-size: 18px;
 	font-weight: 600;
-	border-bottom: 1px solid #444;
+	border-bottom: 2px solid #444;
 	margin: 0;
 	margin-bottom: 10px;
 	text-align: left;
@@ -1457,7 +1472,7 @@ button {
 
 .quality-title {
 	border-top: 1px solid #444;
-	border-radius: 10px 10px 0 0;
+	background-color: rgba(0,0,0,0.1);
 }
 
 .quality-info {
@@ -1482,8 +1497,12 @@ button {
 	display: inline-block;
 	margin-top: 5px;
 	padding-top: 5px;
-	border-top: 1px solid #ffffff;
+	border-top: 1px solid #444;
 	width: 100%;
+}
+
+.light-mode .formar {
+	border-color: #bdbdbd;
 }
 
 .tooltip-nav-container {
@@ -1548,7 +1567,7 @@ button {
     align-items: center;
     font-weight: 600;
 	font-size: 18px;
-    border-bottom: 1px solid #444;
+    border-bottom: 2px solid #444;
     margin-bottom: 10px;
 	background-color: rgba(0,0,0,0.1);
 }
@@ -1559,7 +1578,7 @@ button {
     align-items: center;
     font-weight: 600;
 	font-size: 18px;
-    border-bottom: 1px solid #444;
+    border-bottom: 2px solid #444;
     border-top: 1px solid #444;
     margin-top: 10px;
 	background-color: rgba(0,0,0,0.1);
@@ -1567,6 +1586,7 @@ button {
 
 .light-mode .color-title,
 .light-mode .theme-title,
+.light-mode .quality-title,
 .light-mode .genre-tooltip strong,
 .light-mode .recently-played-title,
 .light-mode .audio-container.expanded .toggle-handle {
