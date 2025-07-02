@@ -1323,7 +1323,7 @@ function updateTooltipContent() {
         tooltip.innerHTML = `
             <div class="tooltip-section">
                 <strong>Žanrovi:</strong>
-                <div class="genre-tooltip-item">Nema informacija o stanici</div>
+                <div class="genre-tooltip-item">Nema informacija</div>
             </div>
             <div class="tooltip-section">
                 <strong>Kvalitet:</strong>

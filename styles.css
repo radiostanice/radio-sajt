@@ -2,20 +2,20 @@
 /* ROOT & VARIABLES */
 /* ================ */
 :root {
-    --accent-dark: #00639B;
-    --accent-light: #97CBFF;
+    --accent-dark: #0064ae;
+    --accent-light: #b1d1ff;
     
-    --green-dark: #266A4A;
-    --green-light: #BBF294;
+    --green-dark: #166f45;
+    --green-light: #7df09d;
 
-    --blue-dark: #00639B;
-    --blue-light: #97CBFF;
+    --blue-dark: #0064ae;
+    --blue-light: #b1d1ff;
     
-    --yellow-dark: #835900;
-    --yellow-light: #FFE084;
+    --yellow-dark: #6b4b21;
+    --yellow-light: #ffea84;
     
-    --red-dark: #9C4049;
-    --red-light: #FF8E88;
+    --red-dark: #a72c2f;
+    --red-light: #ff9595;
 }
 
 /* ========== */
@@ -355,7 +355,6 @@ button {
     align-items: center;
     margin-left: 15px;
     margin-right: 10px;
-    border: 2px solid #444;
     padding: 10px;
     text-align: center;
     border-radius: 20px;
@@ -367,8 +366,17 @@ button {
     flex-shrink: 0;
     flex-grow: 0;
     font-weight: bold;
+	color: var(--accent-color);
+	background-color: rgba(255,255,255,0.1);
 }
 
+.logo .material-icons {
+	color: var(--accent-color);
+}
+
+.light-mode .logo {
+	background-color: rgba(255,255,255,1);
+}
 /* ============ */
 /* SEARCH COMPONENT */
 /* ============ */
@@ -1114,6 +1122,7 @@ button {
     border-bottom-color: #333;
 	border-left: 1px solid #444;
 	border-right: 1px solid #444;
+	background-color: rgba(0,0,0,0.1);
 }
 
 .toggle-handle::before {
@@ -1287,7 +1296,6 @@ button {
 }
 
 .empty-message {
-	font-size: 18px;
 	margin: 10px;
 	opacity: 0.8;
 }
@@ -1335,7 +1343,8 @@ button {
 
 .recently-played-stations .radio {
     width: calc(100% - 20px);
-    margin: 10px auto;
+    margin: 15px auto;
+	height: 45px;
 }
 
 .recently-played-stations, .genre-tooltip {
@@ -1345,12 +1354,13 @@ button {
 }
 
 .recently-played-title {
-    padding: 15px 5px 5px 15px;
+    padding: 10px 5px 5px 10px;
     display: flex;
     align-items: center;
     font-weight: 600;
-	font-size: 24px;
+	font-size: 18px;
     border-bottom: 1px solid #444;
+	background-color: rgba(0,0,0,0.1);
 }
 
 .genre-tooltip {
@@ -1442,6 +1452,7 @@ button {
 	margin: 0;
 	margin-bottom: 10px;
 	text-align: left;
+	background-color: rgba(0,0,0,0.1);
 }
 
 .quality-title {
@@ -1539,6 +1550,7 @@ button {
 	font-size: 18px;
     border-bottom: 1px solid #444;
     margin-bottom: 10px;
+	background-color: rgba(0,0,0,0.1);
 }
 
 .color-title {
@@ -1549,9 +1561,16 @@ button {
 	font-size: 18px;
     border-bottom: 1px solid #444;
     border-top: 1px solid #444;
-    border-top-right-radius: 10px;
-    border-top-left-radius: 10px;
     margin-top: 10px;
+	background-color: rgba(0,0,0,0.1);
+}
+
+.light-mode .color-title,
+.light-mode .theme-title,
+.light-mode .genre-tooltip strong,
+.light-mode .recently-played-title,
+.light-mode .audio-container.expanded .toggle-handle {
+	background-color: rgba(155,155,155,0.1);
 }
 
 .theme-option {
