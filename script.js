@@ -323,7 +323,7 @@ async function changeStation(name, link, cachedElements = {}) {
     audio.src = link;
 
     // Update UI
-    document.title = `MojTalas | ${name}`;
+    document.title = `KlikniPlay | ${name}`;
     localStorage.setItem("lastStation", JSON.stringify({ name, link }));
     updateSelectedStation(name);
     updatePlayPauseButton(cachedElements);
@@ -791,22 +791,22 @@ function setTheme(mode) {
 
 function changeColor(color) {
     const colors = {
-        blue: ["--blue-dark", "--blue-light"],
-        green: ["--green-dark", "--green-light"],
-        yellow: ["--yellow-dark", "--yellow-light"],
-        red: ["--red-dark", "--red-light"]
-    }[color] || ["--blue-dark", "--blue-light"];
+        blue: { dark: "0, 79, 139", light: "164, 205, 255" },
+        green: { dark: "22, 111, 69", light: "123, 242, 145" },
+		yellow: { dark: "82, 60, 46", light: "255, 234, 132" },
+		red: { dark: "167, 44, 47", light: "255, 174, 172" },
 
-    // Batch style updates
-    const docStyle = document.documentElement.style;
-    docStyle.setProperty("--accent-dark", `var(${colors[0]})`);
-    docStyle.setProperty("--accent-light", `var(${colors[1]})`);
+    }[color] || { dark: "0, 79, 139", light: "164, 205, 255" };
+
+    document.documentElement.style.setProperty("--accent-dark", colors.dark);
+    document.documentElement.style.setProperty("--accent-light", colors.light);
     
+    // Update current theme
     const currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-    docStyle.setProperty("--accent-color", `var(${colors[currentTheme === "dark" ? 1 : 0]})`);
-
-    localStorage.setItem("accentColor", color);
-    ScrollbarManager.updateAll();
+    document.documentElement.style.setProperty(
+        "--accent-color", 
+        `var(--accent-${currentTheme === "dark" ? "light" : "dark"})`
+    );
 }
 
 function setupThemeControls() {
@@ -1962,7 +1962,7 @@ function loadPreferences() {
         // Update UI immediately
         document.getElementById("audiotext").innerHTML = 
             `<div class="station-name">${savedStation.name}</div>`;
-        document.title = `MojTalas | ${savedStation.name}`;
+        document.title = `KlikniPlay | ${savedStation.name}`;
         updateSelectedStation(savedStation.name);
         
         // Set initial play/pause button state
@@ -1978,7 +1978,7 @@ function loadPreferences() {
             setupNowPlayingMetadata();
         }, 300);
     } else {
-        document.title = "MojTalas";
+        document.title = "KlikniPlay";
         updatePlayPauseButton();
         
         // Ensure empty state is handled
