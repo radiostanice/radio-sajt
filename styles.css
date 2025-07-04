@@ -54,7 +54,7 @@ body {
     font-family: "Inter", Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #222;
+    background-color: #1d1d1d;
     color: #ffffff;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -93,7 +93,7 @@ button {
 /* THEME MODES */
 /* ========== */
 .dark-mode {
-	--border-color: #444444;
+	--border-color: #333333;
     --accent-color: rgb(var(--accent-light)); 
 }
 
@@ -335,7 +335,6 @@ button {
 .light-mode .quality-title,
 .light-mode .genre-tooltip strong {
 	background-color: rgba(155,155,155,0.1);
-	border-color: var(--border-color);
 }
 
 .light-mode .category {
@@ -365,7 +364,7 @@ button {
     flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
-    background-color: #222222;
+    background-color: #1d1d1d;
     color: #ffffff;
     padding: 10px 0;
     border-bottom: 2px solid var(--border-color);
@@ -393,7 +392,7 @@ button {
     flex-grow: 0;
     font-weight: bold;
 	color: var(--accent-color);
-	background-color: rgba(255,255,255,0.1);
+	background-color: rgba(var(--accent-light), 0.12);
 }
 
 .logosvg {
@@ -407,7 +406,7 @@ svg path {
 }
 
 .light-mode svg path {
-	fill: var(--border-color);
+	fill: var(--accent-color);
 }
 
 .light-mode .logo {
@@ -421,7 +420,7 @@ svg path {
     display: inline-flex;
     position: relative;
     align-items: center;
-    background-color: #121212;
+    background-color: #0f0f0f;
     border-radius: 15px;
     border: 2px solid var(--border-color);
     padding: 5px;
@@ -570,10 +569,10 @@ svg path {
 
 /* SCROLLBAR */
 .scroll-list {
-    background-color: #0f0f0f;
+    background-color: #0a0a0a;
     position: absolute;
     top: 65.5px;
-    bottom: 150px;
+    bottom: 155px;
     left: 0;
     right: 0;
     overflow-y: scroll;
@@ -587,26 +586,26 @@ svg path {
 }
 
 .audio-container.expanded ~ .scroll-list {
-    bottom: 215px;
+    bottom: 220px;
 }
 
 .audio-container.expanded ~ .scroll-list .scrollbar-track {
-    bottom: 215px;
+    bottom: 220px;
 }
 
 .audio-container.has-now-playing.expanded ~ .scroll-list {
-    bottom: 235px;
+    bottom: 240px;
 }
 
 .audio-container.has-now-playing.expanded ~ .scroll-list .scrollbar-track {
-    bottom: 235px;
+    bottom: 240px;
 }
 
 .scrollbar-track {
     position: fixed;
     right: 0;
     top: 65.5px;
-    bottom: 150px;
+    bottom: 155px;
     width: 16px; /* Wider track for click area */
     padding: 0 6px; /* Padding to center the thumb visually */
     cursor: pointer;
@@ -666,10 +665,10 @@ svg path {
     margin: 0 15px 10px 15px;
     -moz-border-radius: 0 0 8px 8px;
     border-radius: 0 0 8px 8px;
-    background-color: #121212;
+    background-color: #0f0f0f;
     padding: 10px;
     overflow: hidden;
-	border: 1px solid #3f3f3f;
+	border: 1px solid #303030;
 }
 
 .genre-buttons {
@@ -760,7 +759,7 @@ svg path {
     transform: translateY(-50%);
     width: 35px;
     height: 100%;
-    background-color: #121212;
+    background-color: #0f0f0f;
     border: none;
     color: #ffffff;
     cursor: pointer;
@@ -779,22 +778,22 @@ svg path {
 
 .genre-nav-button.left {
     left: 0px;
-    border-left: 3px solid transparent;
-    box-shadow: 20px 0px 10px rgba(18, 18, 18, 1);
+    border-left: 2px solid transparent;
+    box-shadow: 20px 0px 10px rgba(15, 15, 15, 1);
 }
 
 .genre-nav-button.right {
     right: 0px;
-    border-right: 3px solid transparent;
-    box-shadow: -20px 0px 10px rgba(18, 18, 18, 1);
+    border-right: 2px solid transparent;
+    box-shadow: -20px 0px 10px rgba(15, 15, 15, 1);
 }
 
 .genre-nav-button.left:hover {
-    border-left: 3px solid var(--accent-color);
+    border-left: 2px solid var(--accent-color);
 }
 
 .genre-nav-button.right:hover {
-    border-right: 3px solid var(--accent-color);
+    border-right: 2px solid var(--accent-color);
 }
 
 .genre-nav-button .material-icons {
@@ -805,13 +804,13 @@ svg path {
 /* AUDIO PLAYER */
 /* ============ */
 .audio-container {
-    height: 150px;
+    height: 155px;
     overflow: visible !important;
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    background: #222222;
+    background: #1d1d1d;
     text-align: center;
     z-index: 100;
     border: none;
@@ -828,18 +827,18 @@ svg path {
 }
 
 .audio-container.has-now-playing {
-    height: 170px;
+    height: 175px;
 	display: flex;
     flex-direction: column;
     justify-content: flex-end;
 }
 
 .audio-container.has-now-playing.expanded {
-    height: 235px;
+    height: 240px;
 }
 
 .audio-container.expanded {
-    height: 215px;
+    height: 220px;
 }
 
 .audio-wrapper {
@@ -920,7 +919,7 @@ svg path {
     right: 0;
     width: 30px;
     height: 100%;
-    background: linear-gradient(270deg, rgba(34,34,34,1) 0%, rgba(34,34,34,0) 100%);
+    background: linear-gradient(270deg, rgba(29,29,29,1) 0%, rgba(29,29,29,0) 100%);
     pointer-events: none;
     z-index: 2;
 	opacity: 0;
@@ -955,7 +954,7 @@ svg path {
     pointer-events: none;
     z-index: 2;
 	left: 0;
-    background: linear-gradient(90deg, rgba(34,34,34,1) 0%, rgba(34,34,34,0) 100%);
+    background: linear-gradient(90deg, rgba(29,29,29,1) 0%, rgba(29,29,29,0) 100%);
 	pointer-events: none;
 }
 
@@ -970,13 +969,13 @@ svg path {
 	display: inline-flex;
 	flex-grow: 1;
 	flex-shrink: 1;
-    border: 2px solid rgba(var(--accent-dark), 0.7);
+    border: 2px solid rgba(var(--accent-dark), 0.5);
     border-radius: 25px;
-    background-color: #121212;
+    background-color: #0f0f0f;
     padding: 6px;
     align-items: center;
     justify-content: space-between;
-    margin: 5px 0px 15px 0px;
+    margin: 5px 0px 18px 0px;
     transform: none;
 	transition: border-radius 0.2s linear;
     -moz-transition: border-radius 0.2s linear;
@@ -1181,8 +1180,8 @@ svg path {
 }
 
 .audio-container.expanded .toggle-handle {
-	background: #222;
-	background: linear-gradient(180deg, #1a1a1a, #222);
+	background: #1d1d1d;
+	background: linear-gradient(180deg, #1a1a1a, #1d1d1d);
 }
 
 .toggle-handle::before {
@@ -1221,27 +1220,21 @@ svg path {
     font-size: 1rem;
     font-weight: 400;
     margin: 0;
+	transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
+    -moz-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
+    -webkit-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
+    -o-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
+    -ms-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
 }
 
-.segmented-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--accent-color);
-    opacity: 0;
-    transition: opacity 0.2s linear;
-    -moz-transition: opacity 0.2s linear;
-    -webkit-transition: opacity 0.2s linear;
-    -o-transition: opacity 0.2s linear;
-    -ms-transition: opacity 0.2s linear;
+.segmented-button:hover {
+	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1);
+	background-color: rgba(var(--accent-dark),0.08);
+	color: var(--accent-color);
 }
 
-.segmented-button:hover::before {
-    opacity: 0.08;
-	box-shadow: 0px 0px 2px rgba(0, 0, 0, 0.1), inset 0px 0px 8px #777;
+.segmented-button:hover .material-icons {
+	color: var(--accent-color);
 }
 
 .segmented-button .material-icons {
@@ -1250,6 +1243,11 @@ svg path {
     width: 18px;
     height: 18px;
     line-height: 18px;
+	transition: color 0.2s linear;
+    -moz-transition: color 0.2s linear;
+    -webkit-transition: color 0.2s linear;
+    -o-transition: color 0.2s linear;
+    -ms-transition: color 0.2s linear;
 }
 
 .segmented-button-group .segmented-button.active {
@@ -1311,20 +1309,20 @@ svg path {
 .has-now-playing .dropdown-menu,
 .has-now-playing .history-dropdown,
 .has-now-playing .genre-tooltip {
-    bottom: 215px;
+    bottom: 220px;
 	max-height: calc(100% - 287px) ! important;
 }
 
 .history-dropdown {
 	transform: translateX(50%) translateY(0);
     position: fixed;
-    bottom: 195px;
+    bottom: 200px;
     right: 50%;
     pointer-events: none;
     width: 90%;
     max-width: 300px;
-    max-height: calc(100% - 267px) ! important;
-    background: #222;
+    max-height: calc(100% - 272px) ! important;
+    background: #1d1d1d;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     opacity: 0;
@@ -1365,7 +1363,7 @@ svg path {
     z-index: 2;
     width: 100%;
     height: 35px;
-    background-color: #222;
+    background-color: #1d1d1d;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1382,14 +1380,14 @@ svg path {
 .tooltip-nav-button.top, .history-nav-button.top {
     top: 0;
     border-top: 2px solid transparent;
-	box-shadow: 0px -18px 7px rgba(34, 34, 34, 1);
+	box-shadow: 0px -18px 7px rgba(29, 29, 29, 1);
 	margin-bottom: -35px;
 }
 
 .tooltip-nav-button.bottom, .history-nav-button.bottom {
     bottom: 0;
     border-bottom: 2px solid transparent;
-	box-shadow: 0px -18px 7px rgba(34, 34, 34, 1);
+	box-shadow: 0px -18px 7px rgba(29, 29, 29, 1);
 	margin-top: -35px;
 }
 
@@ -1404,7 +1402,6 @@ svg path {
 .recently-played-stations .radio {
     width: calc(100% - 20px);
     margin: 10px auto;
-	height: 45px;
 }
 
 .recently-played-stations, .genre-tooltip {
@@ -1426,18 +1423,17 @@ svg path {
 .genre-tooltip {
     display: block;
     position: fixed;
-    bottom: 195px;
+    bottom: 200px;
 	left: 50%;
     transform: translateX(-50%) translateY(0) translateZ(0);
-    background-color: #222;
+    background-color: #1d1d1d;
     color: #ffffff;
     padding: 0;
     border-radius: 10px;
     font-size: 1rem;
     max-width: 300px;
-    width: 180px;
     border: 2px solid var(--border-color);
-	max-height: calc(100% - 267px) ! important;
+	max-height: calc(100% - 272px) ! important;
 	scrollbar-width: none;
     -ms-overflow-style: none;
 	opacity: 0;
@@ -1503,7 +1499,7 @@ svg path {
     align-items: center;
 }
 
-.genre-tooltip strong {
+.genre-title {
     display: block;
     padding: 10px 10px 5px 10px;
     font-size: 1.125rem;
@@ -1517,6 +1513,14 @@ svg path {
 
 .quality-title {
 	border-top: 1px solid var(--border-color);
+	display: block;
+    padding: 10px 10px 5px 10px;
+    font-size: 1.125rem;
+	font-weight: 600;
+	border-bottom: 2px solid var(--border-color);
+	margin: 0;
+	margin-bottom: 10px;
+	text-align: left;
 	background-color: rgba(0,0,0,0.1);
 }
 
@@ -1582,10 +1586,10 @@ svg path {
 
 .dropdown-menu {
     position: fixed;
-    bottom: 195px;
+    bottom: 200px;
 	left: 50%;
     transform: translateX(-50%) translateY(0) translateZ(0);
-    background-color: #222222;
+    background-color: #1d1d1d;
     border-radius: 8px;
     white-space: nowrap;
     border: 2px solid var(--border-color);
@@ -1598,7 +1602,7 @@ svg path {
     visibility: hidden;
     opacity: 0;
     align-items: center;
-    max-height: calc(100% - 267px) ! important;
+    max-height: calc(100% - 272px) ! important;
 }
 
 .dropdown-menu.show {
@@ -1639,7 +1643,7 @@ svg path {
     cursor: pointer;
     border-radius: 8px;
     border: 2px solid var(--border-color);
-    background-color: #121212;
+    background-color: #0f0f0f;
     font-size: 1rem;
 	transition: border-color 0.2s linear, box-shadow 0.2s linear;
     -moz-transition: border-color 0.2s linear, box-shadow 0.2s linear;
@@ -1709,11 +1713,11 @@ svg path {
     vertical-align: middle;
     margin: 0px 10px 15px 15px;
     border-radius: 0 0 8px 8px;
-    background-color: #121212;
+    background-color: #0f0f0f;
     padding: 5px 10px;
     max-width: calc(100% - 30px);
     box-sizing: border-box;
-	border: 1px solid #3f3f3f;
+	border: 1px solid #303030;
 }
 
 .radio {
@@ -1724,14 +1728,14 @@ svg path {
     display: flex;
     align-items: center;
     padding: 0;
-    background-color: #1e1e1e;
+    background-color: #171717;
     font-size: 1rem;
     cursor: pointer;
 	height: 45px;
-    width: calc(14.285% - 20px);
+    width: calc(20% - 20px);
     margin: 5px;
-    border: 1px solid #444;
-	box-shadow: inset 0 0 0 1px #333;
+    border: 1px solid #333;
+	box-shadow: inset 0 0 0 1px #222;
     border-radius: 15px;
     color: #ffffff;
     font-weight: bold;
@@ -1753,7 +1757,7 @@ svg path {
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 1px 17px 0 17px;
+    padding: 1px 10px 0 10px;
 	vertical-align: middle;
 }
 
@@ -1770,12 +1774,12 @@ svg path {
 	color: var(--accent-color);
 	position: relative;
 	border-color: var(--border-color);
-	box-shadow: inset 0 0 0 1px #333, 0px 0px 4px rgba(0, 0, 0, 0.1);
+	box-shadow: inset 0 0 0 1px #222, 0px 0px 4px rgba(0, 0, 0, 0.1);
 }
 
 .radio.selected:hover {
 	 background-color: rgba(var(--accent-light), 0.1);
-	 box-shadow: inset 0 0 0 1px #333, 0px 0px 6px rgba(0, 0, 0, 0.1);
+	 box-shadow: inset 0 0 0 1px #222, 0px 0px 6px rgba(0, 0, 0, 0.1);
 }
 
 .radio.selected::after {
@@ -1810,29 +1814,42 @@ svg path {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: flex;
-    align-items: flex-end;
-	position: relative;
     background-color: rgba(var(--accent-light), 0.08);
 	border-radius: 10px 10px 0 0;
-	padding: 15px 10px 5px 10px;
+	padding: 0;
 	margin: 35px 15px 0px 15px;
-	border: 1px solid #3f3f3f;
+	border: 1px solid #303030;
 	border-bottom: none;
+	vertical-align: middle;
 }
 
-.category img {
-	width: 42px;
-	height: 32px;
+.category h1, .category span {
+	padding-top: 3px;
+}
+
+.category img{
+	width: auto;
+	height: 33px;
 	object-fit: contain;
-	margin-right: 5px;
+	margin-right: 8px;
+	margin-left: 10px;
+	border-radius: 5px;
+}
+
+.highlighted {
+	height: 45px;
+	display: inline-flex;
+    align-items: center;
+	position: relative;
+	padding-right: 50px;
+	background: linear-gradient(90deg,  rgba(var(--accent-dark), 0.4), transparent);
 }
 
 #category-icon {
     position: relative;
-    margin-right: 4px;
+    padding-left: 10px;
+	padding-right: 4px;
     font-size: 28px;
-    bottom: 1px;
 }
 
 .category-container.has-expand-button {
@@ -1858,11 +1875,11 @@ svg path {
     -ms-flex-align: center;
     align-items: center;
     position: absolute;
-    background-color: #121212;
+    background-color: #0f0f0f;
     width: calc(100% + 2px);
     height: 30px;
     border-radius: 0px 0px 8px 8px;
-    border: 1px solid #3f3f3f;
+    border: 1px solid #303030;
 	border-top: none;
     bottom: -30px;
     left: -1px;
@@ -1894,7 +1911,7 @@ svg path {
 }
 
 .expand-button[data-expanded="false"] {
-    box-shadow: 0 -25px 20px rgba(18, 18, 18, 1);
+    box-shadow: 0 -25px 20px rgba(15, 15, 15, 1);
 	clip-path: inset(-45px 0px 0px 0px);
 }
 
@@ -1965,30 +1982,19 @@ svg path {
 /* ============ */
 /* MEDIA QUERIES */
 /* ============ */
-@media (max-width: 1580px) {
-    .radio { width: calc(16.66% - 20px); }
-}
 
-@media (max-width: 1340px) {
-    .radio { width: calc(20% - 20px); }
-}
-
-@media (max-width: 1140px) {
+@media (max-width: 1000px) {
     .radio { width: calc(25% - 20px); }
 }
 
-@media (max-width: 930px) {
+@media (max-width: 800px) {
     .radio { width: calc(33.33% - 20px); }
 }
 
-@media (max-width: 730px) {
+@media (max-width: 590px) {
     .radio { width: calc(50% - 20px); }
 }
 
-@media (max-width: 470px) {
+@media (max-width: 400px) {
     .radio { width: calc(100% - 20px); }
-}
-
-@media (max-width: 380px) {
-    #category-icon { font-size: 30px; }
 }

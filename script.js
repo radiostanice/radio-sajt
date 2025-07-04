@@ -268,7 +268,7 @@ const METADATA_CHECK_INTERVAL = 15000;
 const playPauseBtn = document.getElementById("playPauseBtn");
 const volumeIcon = document.getElementById("volumeIcon");
 const volumeSlider = document.getElementById("volumeSlider");
-const COLLAPSED_HEIGHT = 150;
+const COLLAPSED_HEIGHT = 155;
 const SCROLLBAR_HIDE_DELAY = 1500;
 const debounceMetadata = debounce((force) => checkMetadata(force), 500);
 let lastVolume = audio.volume || 1;
@@ -1322,11 +1322,11 @@ function updateTooltipContent() {
     if (!currentStation) {
         tooltip.innerHTML = `
             <div class="tooltip-section">
-                <strong>Žanrovi:</strong>
-                <div class="genre-tooltip-item">Nema informacija</div>
+                <strong class="genre-title">Žanrovi:</strong>
+                <div class="genre-tooltip-item">Nema informacija o žanru</div>
             </div>
             <div class="tooltip-section">
-                <strong>Kvalitet:</strong>
+                <strong class="quality-title">Kvalitet:</strong>
                 <div class="quality-info">
                     <span>Nepoznato</span>
                 </div>
@@ -1373,7 +1373,7 @@ function updateTooltipContent() {
     const contentContainer = document.createElement('div');
     contentContainer.innerHTML = `
         <div class="tooltip-section">
-            <strong>Žanrovi:</strong>
+            <strong class="genre-title">Žanrovi:</strong>
             ${formattedGenres}
         </div>
         ${qualitySection}
@@ -1995,9 +1995,9 @@ function updateAudioContainerHeight() {
     let newHeight = COLLAPSED_HEIGHT;
     
     if (audioContainer.classList.contains('has-now-playing')) {
-        newHeight = audioContainer.classList.contains('expanded') ? 235 : 170;
+        newHeight = audioContainer.classList.contains('expanded') ? 240 : 175;
     } else {
-        newHeight = audioContainer.classList.contains('expanded') ? 215 : 150;
+        newHeight = audioContainer.classList.contains('expanded') ? 220 : 155;
     }
     
     // Only update if height is actually changing
