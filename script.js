@@ -793,8 +793,8 @@ function changeColor(color) {
     const colors = {
         blue: { dark: "0, 79, 139", light: "164, 205, 255" },
         green: { dark: "22, 111, 69", light: "123, 242, 145" },
-		yellow: { dark: "82, 60, 46", light: "255, 234, 132" },
-		red: { dark: "167, 44, 47", light: "255, 174, 172" },
+		yellow: { dark: "141, 117, 71", light: "255, 234, 132" },
+		red: { dark: "167, 44, 47", light: "255, 121, 116" },
 
     }[color] || { dark: "0, 79, 139", light: "164, 205, 255" };
 
@@ -1322,11 +1322,11 @@ function updateTooltipContent() {
     if (!currentStation) {
         tooltip.innerHTML = `
             <div class="tooltip-section">
-                <strong class="genre-title">Žanrovi:</strong>
+                <strong class="genre-title">Žanrovi</strong>
                 <div class="genre-tooltip-item">Nema informacija o žanru</div>
             </div>
             <div class="tooltip-section">
-                <strong class="quality-title">Kvalitet:</strong>
+                <strong class="quality-title">Kvalitet</strong>
                 <div class="quality-info">
                     <span>Nepoznato</span>
                 </div>
@@ -1359,7 +1359,7 @@ function updateTooltipContent() {
         
         qualitySection = `
             <div class="tooltip-section">
-                <strong class="quality-title">Kvalitet:</strong>
+                <strong class="quality-title">Kvalitet</strong>
                 <div class="quality-info">
                     ${displayBitrate ? `<span title="Bitrate">${displayBitrate}</span>` : ''}
 					<br/>
@@ -1373,7 +1373,7 @@ function updateTooltipContent() {
     const contentContainer = document.createElement('div');
     contentContainer.innerHTML = `
         <div class="tooltip-section">
-            <strong class="genre-title">Žanrovi:</strong>
+            <strong class="genre-title">Žanrovi</strong>
             ${formattedGenres}
         </div>
         ${qualitySection}
