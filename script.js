@@ -791,12 +791,13 @@ function setTheme(mode) {
 
 function changeColor(color) {
     const colors = {
+		green: { dark: "22, 111, 69", light: "123, 242, 145" },
         blue: { dark: "0, 79, 139", light: "164, 205, 255" },
-        green: { dark: "22, 111, 69", light: "123, 242, 145" },
-		yellow: { dark: "141, 117, 71", light: "255, 234, 132" },
+		yellow: { dark: "247, 104, 6", light: "255, 234, 132" }, 
 		red: { dark: "167, 44, 47", light: "255, 121, 116" },
+		pink: { dark: "64, 50, 102", light: "202, 187, 230" },
 
-    }[color] || { dark: "0, 79, 139", light: "164, 205, 255" };
+    }[color] || { dark: "22, 111, 69", light: "123, 242, 145" };
 
     document.documentElement.style.setProperty("--accent-dark", colors.dark);
     document.documentElement.style.setProperty("--accent-light", colors.light);
@@ -1952,7 +1953,7 @@ function setupExpandableCategories() {
 
 function loadPreferences() {
     const savedTheme = localStorage.getItem("theme") || "dark";
-    const savedColor = localStorage.getItem("accentColor") || "blue";
+    const savedColor = localStorage.getItem("accentColor") || "green";
     const savedStation = safeParseJSON("lastStation", {});
 
     setTheme(savedTheme);

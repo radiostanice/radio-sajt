@@ -2,8 +2,8 @@
 /* ROOT & VARIABLES */
 /* ================ */
 :root {
-    --accent-dark: 0, 79, 139;
-    --accent-light: 164, 205, 255;
+    --accent-dark: 22, 111, 69;
+    --accent-light: 123, 242, 145;
     
     --green-dark: 22, 111, 69;
     --green-light: 123, 242, 145;
@@ -11,11 +11,14 @@
     --blue-dark: 0, 79, 139;
     --blue-light: 164, 205, 255;
     
-    --yellow-dark: 141, 117, 71;
+    --yellow-dark: 247, 104, 6;
     --yellow-light: 255, 234, 132;
     
     --red-dark: 167, 44, 47;
     --red-light: 255, 121, 116;
+	
+	--pink-dark: 64, 50, 102;
+    --pink-light: 203, 192, 230;
 }
 
 /* ========== */
@@ -295,12 +298,12 @@ button {
 
 .light-mode .history-nav-button.top,
 .light-mode .tooltip-nav-button.top {
-	box-shadow: 0px 18px 7px rgba(255, 255, 255, 1);
+	box-shadow: 0px 15px 10px rgba(255, 255, 255, 1);
 }
 
 .light-mode .history-nav-button.bottom,
 .light-mode .tooltip-nav-button.bottom {
-	box-shadow: 0px -18px 7px rgba(255, 255, 255, 1);
+	box-shadow: 0px -15px 10px rgba(255, 255, 255, 1);
 }
 
 .light-mode .toggle-handle {
@@ -1369,7 +1372,7 @@ svg path {
     position: sticky;
     z-index: 2;
     width: 100%;
-    height: 35px;
+    height: 30px;
     background-color: #0f0f0f;
     display: flex;
     align-items: center;
@@ -1387,15 +1390,15 @@ svg path {
 .tooltip-nav-button.top, .history-nav-button.top {
     top: 0;
     border-top: 2px solid transparent;
-	box-shadow: 0px 18px 7px rgba(15, 15, 15, 1);
-	margin-bottom: -35px;
+	box-shadow: 0px 15px 10px rgba(15, 15, 15, 1);
+	margin-bottom: -30px;
 }
 
 .tooltip-nav-button.bottom, .history-nav-button.bottom {
     bottom: 0;
     border-bottom: 2px solid transparent;
-	box-shadow: 0px -18px 7px rgba(15, 15, 15, 1);
-	margin-top: -35px;
+	box-shadow: 0px -15px 10px rgba(15, 15, 15, 1);
+	margin-top: -30px;
 }
 
 .tooltip-nav-button:hover, .history-nav-button:hover {
@@ -1656,7 +1659,7 @@ svg path {
 }
 
 .theme-option:not(:first-child) {
-    margin-left: 5px;
+    margin-left: 10px;
 }
 
 .theme-option:hover {
@@ -1672,7 +1675,7 @@ svg path {
 .color-picker {
     width: 35px;
     height: 35px;
-    border-radius: 50%;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -1701,7 +1704,7 @@ svg path {
 .color-picker-container {
     display: flex;
     justify-content: center;
-    padding: 10px 0;
+    padding: 10px;
 }
 
 /* ============ */
