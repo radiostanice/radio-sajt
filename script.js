@@ -943,8 +943,8 @@ class DropdownManager {
         // Event listeners
         topBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('top')));
         bottomBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('bottom')));
-		topBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('top')));
-		bottomBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('bottom')));
+		topBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('top')), { passive: false });
+		bottomBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('bottom')), { passive: false });
         dropdown.menu.addEventListener('scroll', () => {
             cancelAnimationFrame(dropdown.menu._scrollRAF);
             dropdown.menu._scrollRAF = requestAnimationFrame(checkVisibility);
