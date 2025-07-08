@@ -797,31 +797,38 @@ class DropdownManager {
                 this.toggle(id, e);
             };
             
+            // Use pointer events for better cross-device support
             dropdown.toggle.addEventListener("pointerdown", handler);
-            dropdown.menu.addEventListener('click', e => {
-                if (!e.target.closest(`.${dropdown.navButtonClass}`)) {
+            
+            // Don't stop propagation for menu content clicks
+            dropdown.menu.addEventListener('click', (e) => {
+                if (!e.target.closest('.history-nav-button') && 
+                    !e.target.closest('.tooltip-nav-button')) {
                     e.stopPropagation();
                 }
             });
         });
 
-        const handleOutside = e => {
-            const target = e.target || (e.touches?.[0]?.target);
-            if (!target || !this.currentOpen) return;
-
-            const clickedInside = Object.values(this.dropdowns).some(
-                dropdown => (dropdown.toggle?.contains(target) || 
-                           dropdown.menu?.contains(target)) &&
-                           !target.closest(`.${dropdown.navButtonClass}`)
-            );
-
-            if (!clickedInside) {
-                this.currentOpen === 'tooltip' ? 
-                    setTimeout(() => this.close(this.currentOpen), 100) : 
-                    this.close(this.currentOpen);
+        const handleOutside = (e) => {
+            // Handle both mouse and touch events
+            const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
+            if (!target) return;
+            
+            // Check if click was inside any dropdown
+            let clickedInside = false;
+            for (const dropdown of Object.values(this.dropdowns)) {
+                if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
+                    !target.closest(`.${dropdown.navButtonClass}`)) {
+                    clickedInside = true;
+                    break;
+                }
+            }
+            
+            if (!clickedInside && this.currentOpen) {
+                this.close(this.currentOpen);
             }
         };
-
+        
         document.addEventListener("click", handleOutside);
         document.addEventListener("touchend", handleOutside, { passive: true });
     }
