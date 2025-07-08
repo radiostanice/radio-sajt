@@ -1624,7 +1624,8 @@ const ScrollbarManager = {
     setupEvents() {
         // Thumb dragging
         const handleThumbMove = (startY, startTop) => e => {
-            const deltaY = e.clientY - startY;
+            const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const deltaY = clientY - startY;
             const newTop = Math.max(0, Math.min(
                 startTop + deltaY, 
                 this.scrollbarTrack.clientHeight - this.scrollbarThumb.clientHeight
@@ -1635,6 +1636,7 @@ const ScrollbarManager = {
                                        (this.scrollList.scrollHeight - this.scrollList.clientHeight);
         };
 
+        // Mouse drag
         this.scrollbarThumb.addEventListener('mousedown', e => {
             e.preventDefault();
             this.scrollbarThumb.classList.add('dragging');
@@ -1649,24 +1651,33 @@ const ScrollbarManager = {
             document.addEventListener('mousemove', moveHandler);
             document.addEventListener('mouseup', upHandler);
         });
-		
-		this.scrollbarThumb.addEventListener('touchstart', e => {
+        
+        // Touch drag
+        this.scrollbarThumb.addEventListener('touchstart', e => {
             e.preventDefault();
             this.scrollbarThumb.classList.add('dragging');
-			
+            
             const touch = e.touches[0];
-            const moveHandler = handleThumbMove(e.clientY, parseFloat(this.scrollbarThumb.style.top));
+            const moveHandler = handleThumbMove(touch.clientY, parseFloat(this.scrollbarThumb.style.top));
             const endHandler = () => {
                 this.scrollbarThumb.classList.remove('dragging');
                 document.removeEventListener('touchmove', moveHandler);
                 document.removeEventListener('touchend', endHandler);
             };
             
-			document.addEventListener('touchmove', moveHandler, { passive: false });
-			document.addEventListener('touchend', endHandler, { passive: true });
+            document.addEventListener('touchmove', moveHandler, { passive: false });
+            document.addEventListener('touchend', endHandler, { passive: true });
         });
 
-        // Track interaction
+        // Wheel handling
+        this.scrollbarTrack.addEventListener('wheel', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.scrollList.scrollTop += e.deltaY * 2;
+            this.positionThumb();
+        }, { passive: false });
+
+        // Track click
         this.scrollbarTrack.addEventListener('click', e => {
             if (e.target === this.scrollbarThumb) return;
             
@@ -1677,8 +1688,8 @@ const ScrollbarManager = {
                 behavior: 'smooth'
             });
         });
-		
-		// Hover effects
+        
+        // Hover effects
         this.scrollbarTrack.addEventListener('mouseenter', () => {
             this.scrollbarThumb.classList.add('hovering');
         });
@@ -1686,11 +1697,17 @@ const ScrollbarManager = {
         this.scrollbarTrack.addEventListener('mouseleave', () => {
             this.scrollbarThumb.classList.remove('hovering');
         });
-		
+        
         // Scroll events
         this.scrollList.addEventListener('scroll', () => {
             cancelAnimationFrame(this.scrollRAF);
             this.scrollRAF = requestAnimationFrame(() => this.positionThumb());
+        }, { passive: true });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            cancelAnimationFrame(this.resizeRAF);
+            this.resizeRAF = requestAnimationFrame(() => this.updateTrackPosition());
         }, { passive: true });
     },
 
