@@ -825,21 +825,6 @@ class DropdownManager {
         document.addEventListener("click", handleOutside);
         document.addEventListener("touchend", handleOutside, { passive: true });
     }
-	    keepOpen(id) {
-        if (this.currentOpen !== id) return;
-        
-        const dropdown = this.dropdowns[id];
-        if (!dropdown || !dropdown.menu) return;
-        
-        // Force the dropdown to stay open
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.classList.add('show');
-        dropdown.menu.style.opacity = '1';
-        dropdown.toggle.classList.add('active');
-        
-        // Refresh the dropdown position
-        this.updateDropdownHeights();
-    }
 
     toggle(id, event) {
         if (this.isOperating || performance.now() - this.lastToggleTime < 300) return;
@@ -958,6 +943,8 @@ class DropdownManager {
         // Event listeners
         topBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('top')));
         bottomBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('bottom')));
+		topBtn.addEventListener('touchend', (e) => {e.preventDefault();e.stopPropagation();}, { passive: false });
+		bottomBtn.addEventListener('touchend', (e) => {e.preventDefault();e.stopPropagation();}, { passive: false });
         dropdown.menu.addEventListener('scroll', () => {
             cancelAnimationFrame(dropdown.menu._scrollRAF);
             dropdown.menu._scrollRAF = requestAnimationFrame(checkVisibility);
