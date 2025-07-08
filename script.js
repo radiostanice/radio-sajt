@@ -1,74 +1,57 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Search container functionality
-    const searchContainer = document.querySelector('.search-container');
-    const searchInput = document.getElementById("stationSearch");
-    const searchIcon = document.getElementById("Search");
-    const clearSearch = document.getElementById("clearSearch");
+// Search container functionality
+const searchContainer = document.querySelector('.search-container');
+const searchInput = document.getElementById("stationSearch");
+const clearSearch = document.getElementById("clearSearch");
+
+if (searchContainer && searchInput && clearSearch) {
+    const toggleSearch = expand => {
+        searchContainer.style.width = expand ? '250px' : '44px';
+        searchContainer.style.borderRadius = expand ? '10px' : '15px';
+        
+        if (expand) {
+            setTimeout(() => {
+                searchContainer.classList.toggle('active', true);
+                searchInput.focus?.();
+            }, 170);
+        } else if (!searchInput.value) {
+            searchContainer.classList.toggle('active', false);
+            searchInput.blur?.();
+        }
+    };
+
+    searchContainer.addEventListener('click', e => {
+        !searchContainer.classList.contains('active') && toggleSearch(true);
+        e.stopPropagation();
+    });
     
-    if (searchContainer && searchInput && searchIcon && clearSearch) {
-        // Toggle search container expansion
-        const toggleSearch = (expand) => {
-            if (expand) {
-                // First set the width to trigger transition
-                searchContainer.style.width = '250px';
-                searchContainer.style.borderRadius = '10px';
-                // Then add the active class after a small delay
-                setTimeout(() => {
-                    searchContainer.classList.add('active');
-                    searchInput.focus();
-                }, 170);
-            } else {
-                // Only collapse if input is empty
-                if (!searchInput.value) {
-                    // First remove the active class
-                    searchContainer.classList.remove('active');
-                    // Then reset width and borderRadius to trigger transition
-                    searchContainer.style.width = '44px';
-                    searchContainer.style.borderRadius = '15px';
-                    searchInput.blur();
-                }
-            }
-        };
-        
-        // Handle click anywhere on search container
-        searchContainer.addEventListener('click', (e) => {
-            if (!searchContainer.classList.contains('active')) {
-                toggleSearch(true);
-            }
-            e.stopPropagation();
-        });
-        
-        // Handle click on clear search
-        clearSearch.addEventListener('click', (e) => {
-            searchInput.value = '';
-            clearSearch.style.display = 'none';
-            filterStations();
-            toggleSearch(false); // Collapse after clearing
-            e.stopPropagation();
-        });
-        
-        // Handle input changes
-        searchInput.addEventListener('input', () => {
-            clearSearch.style.display = searchInput.value ? 'block' : 'none';
-        });
-        
-        // Close search when clicking outside (only if input is empty)
-        document.addEventListener('click', (e) => {
-            if (!searchContainer.contains(e.target) && 
-                searchContainer.classList.contains('active') &&
-                !searchInput.value) {
-                toggleSearch(false);
-            }
-        });
-        
-        // Mobile touch support
-        searchContainer.addEventListener('touchend', (e) => {
-            if (!searchContainer.classList.contains('active')) {
-                toggleSearch(true);
-                e.preventDefault();
-            }
-        }, { passive: false });
-    }
+    clearSearch.addEventListener('click', e => {
+        searchInput.value = '';
+        clearSearch.style.display = 'none';
+        filterStations();
+        toggleSearch(false);
+        e.stopPropagation();
+    });
+    
+    searchInput.addEventListener('input', () => {
+        clearSearch.style.display = searchInput.value ? 'block' : 'none';
+    });
+    
+    document.addEventListener('click', e => {
+        if (!searchContainer.contains(e.target) && 
+            searchContainer.classList.contains('active') &&
+            !searchInput.value) {
+            toggleSearch(false);
+        }
+    });
+    
+    searchContainer.addEventListener('touchend', e => {
+        if (!searchContainer.classList.contains('active')) {
+            toggleSearch(true);
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
 
     // Cache frequently used elements
     const cachedElements = {
@@ -114,85 +97,69 @@ document.addEventListener("DOMContentLoaded", () => {
         initFunctions.forEach(fn => fn());
     }
 
-    function handleRadioClick(e) {
-        // Always prevent default for touch events
-        if (e.type === 'touchend') {
-            e.preventDefault();
-        }
-        
+const handleRadioClick = e => {
+    e.type === 'touchend' && e.preventDefault();
+    const radio = e.target.closest('.radio');
+    if (!radio || (e.type === 'touchend' && radio._touchMoved)) return;
+
+    changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
+
+    if (!radio.closest('.history-dropdown')) return;
+    
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    if (e.type === 'touchend') {
+        radio.addEventListener('click', clickEvent => {
+            clickEvent.stopPropagation();
+            clickEvent.stopImmediatePropagation();
+            clickEvent.preventDefault();
+        }, { once: true });
+    }
+
+    dropdownManager?.currentOpen === 'history' && 
+        requestAnimationFrame(() => dropdownManager.keepOpen('history'));
+};
+
+// Add touch event handlers for history dropdown
+if (cachedElements.historyDropdown) {
+    cachedElements.historyDropdown.addEventListener('touchstart', e => {
         const radio = e.target.closest('.radio');
-        if (!radio) return;
-        
-        // Check for movement (only for touch events)
-        if (e.type === 'touchend' && radio._touchMoved) {
-            return;
+        if (radio) {
+            const touch = e.touches[0];
+            radio._touchStart = { x: touch.clientX, y: touch.clientY };
+            radio._touchMoved = false;
         }
-        
-        changeStation(radio.dataset.name, radio.dataset.link, cachedElements);
-        
-        // Special handling for history dropdown items
-        if (radio.closest('.history-dropdown')) {
+    }, { passive: true });
+
+    cachedElements.historyDropdown.addEventListener('touchmove', e => {
+        const radio = e.target.closest('.radio');
+        if (radio?._touchStart) {
+            const touch = e.touches[0];
+            const moveX = Math.abs(touch.clientX - radio._touchStart.x);
+            const moveY = Math.abs(touch.clientY - radio._touchStart.y);
+            
+            if (moveX > 5 || moveY > 5) {
+                radio._touchMoved = true;
+            }
+        }
+    }, { passive: true });
+
+    cachedElements.historyDropdown.addEventListener('touchend', function(e) {
+        const radio = e.target.closest('.radio');
+        if (radio && !radio._touchMoved) {
+            e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
-            
-            // On mobile, prevent the subsequent click event
-            if (e.type === 'touchend') {
-                const clickHandler = (clickEvent) => {
-                    clickEvent.stopPropagation();
-                    clickEvent.stopImmediatePropagation();
-                    clickEvent.preventDefault();
-                    radio.removeEventListener('click', clickHandler);
-                };
-                radio.addEventListener('click', clickHandler, { once: true });
-            }
-            
-            // Explicitly keep the dropdown open
-            if (window.dropdownManager?.currentOpen === 'history') {
-                requestAnimationFrame(() => {
-                    dropdownManager.keepOpen('history');
-                });
-            }
+            handleRadioClick(e);
+            dropdownManager.currentOpen === 'history' && dropdownManager.keepOpen('history');
         }
-    }
+    }, { passive: false, capture: true });
+}
 
-cachedElements.historyDropdown?.addEventListener('touchstart', (e) => {
-    const radio = e.target.closest('.radio');
-    if (radio) {
-        const touch = e.touches[0];
-        radio._touchStart = { x: touch.clientX, y: touch.clientY };
-        radio._touchMoved = false;
-    }
-}, { passive: true });
-
-cachedElements.historyDropdown?.addEventListener('touchmove', (e) => {
-    const radio = e.target.closest('.radio');
-    if (radio && radio._touchStart) {
-        const touch = e.touches[0];
-        const moveX = Math.abs(touch.clientX - radio._touchStart.x);
-        const moveY = Math.abs(touch.clientY - radio._touchStart.y);
-        
-        // If significant movement detected, mark as moved
-        if (moveX > 5 || moveY > 5) {
-            radio._touchMoved = true;
-        }
-    }
-}, { passive: true });
-
-cachedElements.historyDropdown?.addEventListener('touchend', function(e) {
-    const radio = e.target.closest('.radio');
-    if (radio && !radio._touchMoved) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        
-        handleRadioClick(e);
-        
-        // Ensure proper dropdown state
-        if (dropdownManager.currentOpen === 'history') {
-            dropdownManager.keepOpen('history');
-        }
-    }
-}, { passive: false, capture: true });
+// Add event listeners
+cachedElements.scrollList?.addEventListener('click', handleRadioClick);
+cachedElements.historyDropdown?.addEventListener('click', handleRadioClick);
 
 // Add capture phase to info icon events
 document.querySelector(".info-icon")?.addEventListener('touchend', function(e) {
@@ -212,37 +179,31 @@ cachedElements.historyDropdown?.addEventListener('click', handleRadioClick);
 });
 
 function cleanupResources() {
-    // Use a single DOM query for all tooltip elements
+    // Cleanup tooltip
     const tooltip = document.querySelector('.genre-tooltip');
+    if (tooltip) {
+        tooltip._wheelHandler && tooltip.removeEventListener('wheel', tooltip._wheelHandler);
+        tooltip._scrollHandler && tooltip.removeEventListener('scroll', tooltip._scrollHandler);
+        tooltip._mutationObserver?.disconnect();
+    }
     
-    // Cleanup dropdown listeners
+    // Cleanup dropdown manager
     if (window.dropdownManager) {
         document.removeEventListener("click", dropdownManager.handleOutsideClick);
         document.removeEventListener("touchend", dropdownManager.handleOutsideClick);
         
         Object.values(dropdownManager.dropdowns || {}).forEach(dropdown => {
-            if (dropdown.toggle) {
-                dropdown.toggle.removeEventListener("click", dropdownManager.toggle);
-                dropdown.toggle.removeEventListener("touchend", dropdownManager.toggle);
-            }
+            dropdown.toggle?.removeEventListener("click", dropdownManager.toggle);
+            dropdown.toggle?.removeEventListener("touchend", dropdownManager.toggle);
         });
     }
     
-    // Cleanup tooltip listeners
-    if (tooltip) {
-        if (tooltip._wheelHandler) tooltip.removeEventListener('wheel', tooltip._wheelHandler);
-        if (tooltip._scrollHandler) tooltip.removeEventListener('scroll', tooltip._scrollHandler);
-        if (tooltip._mutationObserver) tooltip._mutationObserver.disconnect();
-    }
-    
-    // Cleanup intervals and timeouts
+    // Cleanup intervals and styles
     clearInterval(metadataInterval);
     clearTimeout(scrollbarHideTimeout);
-    
-    // Cleanup dynamic styles
     document.getElementById('marquee-style')?.remove();
-    const dynamicStyles = document.querySelectorAll('[data-dynamic-style]');
-    dynamicStyles.forEach(el => el.remove());
+    
+    document.querySelectorAll('[data-dynamic-style]').forEach(el => el.remove());
     
     // Cleanup observers
     [windowResizeObserver, ...(ScrollbarManager.resizeObservers || [])]
@@ -250,9 +211,8 @@ function cleanupResources() {
     
     // Reset UI states
     if (window.dropdownManager) {
-        Object.keys(dropdownManager.dropdowns).forEach(id => {
-            const dropdown = dropdownManager.dropdowns[id];
-            if (dropdown.toggle) dropdown.toggle.classList.remove("active");
+        Object.entries(dropdownManager.dropdowns).forEach(([id, dropdown]) => {
+            dropdown.toggle?.classList.remove("active");
             if (dropdown.menu) {
                 dropdown.menu.classList.remove("show", "visible");
                 dropdown.menu.style.display = 'none';
@@ -302,8 +262,7 @@ async function changeStation(name, link, cachedElements = {}) {
         audioContainer?.classList.remove('has-now-playing');
         lastTitle = '';
         
-        const songTitleElement = audioTextElement.querySelector('.song-title');
-        if (songTitleElement) audioTextElement.removeChild(songTitleElement);
+        audioTextElement.querySelector('.song-title')?.remove();
         updateAudioContainerHeight(cachedElements);
     }
 
@@ -347,16 +306,12 @@ async function changeStation(name, link, cachedElements = {}) {
 
     updateTooltipContent();
     
-    // Define play function
+    // Setup audio handlers
     const playAudio = async () => {
         try {
-            const playPromise = audio.play();
-            if (playPromise !== undefined) {
-                await playPromise.catch(e => handlePlayError(e, cachedElements));
-            }
-            
-            if (currentStation?.name === currentStationName) {
-                await checkMetadata(true, cachedElements);
+            await audio.play().catch(handlePlayError);
+            if (currentStation?.name === name) {
+                await checkMetadata(true);
                 setupNowPlayingMetadata();
             }
         } catch (e) {
@@ -365,22 +320,11 @@ async function changeStation(name, link, cachedElements = {}) {
         }
     };
 
-    // Set up audio event handlers
     audio.oncanplay = playAudio;
-    audio.onerror = () => {
-        console.log('Audio error occurred, retrying...');
-        setTimeout(playAudio, 1000);
-    };
-    
-    // Metadata handler
-    const metadataEndHandler = () => {
-        if (currentStation?.name === currentStationName) {
-            checkMetadata(true, cachedElements);
-        }
-    };
-    
-    audio.removeEventListener('ended', metadataEndHandler);
-    audio.addEventListener('ended', metadataEndHandler);
+    audio.onerror = () => setTimeout(playAudio, 1000);
+
+    // Set up metadata handler
+    audio.addEventListener('ended', () => currentStation?.name === name && checkMetadata(true), { once: true });
 
     // Try to play
     try {
@@ -409,7 +353,7 @@ function isLikelyStationName(title) {
     return stationPatterns.some(pattern => pattern.test(title));
 }
 
-function handlePlayError(e, cachedElements = {}) {
+function handlePlayError(e, cachedElements) {
     console.error("Playback error:", e);
     setupNowPlayingMetadata();
     updatePlayPauseButton(cachedElements);
@@ -452,14 +396,11 @@ async function getNowPlaying(station) {
 }
 
 function cleanMetadata(title) {
-    if (!title) return null;
-    
-    return title
-        .replace(/<\/?[^>]+(>|$)/g, '')
+    return title?.replace(/<\/?[^>]+(>|$)/g, '')
         .replace(/(https?:\/\/[^\s]+)/g, '')
-        .replace(/^\s+|\s+$/g, '')
+        .trim()
         .replace(/\|.*$/, '')
-        .replace(/\b(?:Radio Paradise|RP)\b/i, '');
+        .replace(/\b(?:Radio Paradise|RP)\b/i, '') || null;
 }
 
 // Helper function with timeout
@@ -469,6 +410,39 @@ function fetchWithTimeout(url, timeout) {
     
     return fetch(url, { signal: controller.signal })
         .finally(() => clearTimeout(timeoutId));
+}
+
+async function checkMetadata(force = false) {
+    if (!currentStation?.link || !force && Date.now() - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
+    
+    const tooltip = document.querySelector('.genre-tooltip');
+    if (!force && tooltip && !tooltip.classList.contains('visible')) return;
+    
+    lastMetadataCheck = Date.now();
+    const title = await getNowPlaying(currentStation);
+    
+    if (title && title !== lastTitle) {
+        lastTitle = title;
+        updateNowPlayingUI(title);
+        tooltip?.classList.contains('visible') && updateTooltipContent();
+    }
+}
+
+// Add this new function
+function shouldUpdateTooltip() {
+    const tooltip = document.querySelector('.genre-tooltip');
+    return tooltip && tooltip.classList.contains('visible') && 
+           document.visibilityState === 'visible';
+}
+
+// Modify setupNowPlayingMetadata()
+function setupNowPlayingMetadata() {
+    clearInterval(metadataInterval);
+    metadataInterval = setInterval(() => {
+        (shouldUpdateTooltip() || Date.now() - lastMetadataCheck > 30000) && 
+        debounceMetadata();
+    }, 5000);
+    debounceMetadata(true);
 }
 
 function updateNowPlayingUI(title, cachedElements = {}) {
@@ -509,20 +483,16 @@ function updateNowPlayingUI(title, cachedElements = {}) {
 
 function applyMarqueeEffect(element) {
     removeExistingMarqueeElements();
-    
-    // Reset element styles
-    element.style.cssText = 'animation: none; transform: translateX(0); position: relative; display: inline-block; white-space: nowrap; width: auto; overflow: visible;';
+    element.style.cssText = 'animation: none; transform: translateX(0); position: relative; display: inline-block; white-space: nowrap;';
     
     const container = element.parentElement;
     if (!container) return;
     
     container.style.overflow = 'hidden';
-    
     const containerWidth = container.clientWidth;
     const textWidth = element.scrollWidth;
-    const isOverflowing = textWidth > containerWidth;
     
-    if (!isOverflowing) {
+    if (textWidth <= containerWidth) {
         element.style.overflow = '';
         container.style.overflow = '';
         element.classList.remove('marquee-active');
@@ -534,13 +504,7 @@ function applyMarqueeEffect(element) {
 }
 
 function removeExistingMarqueeElements() {
-    const existingElements = [
-        document.getElementById('marquee-fade-left'),
-        ...document.querySelectorAll('.marquee-clone')
-    ];
-    
-    existingElements.forEach(el => el?.remove());
-    document.getElementById('marquee-style')?.remove();
+    document.querySelectorAll('#marquee-fade-left, .marquee-clone, #marquee-style').forEach(el => el.remove());
 }
 
 function setupMarqueeAnimation(element, textWidth) {
@@ -552,41 +516,21 @@ function setupMarqueeAnimation(element, textWidth) {
     leftFade.style.cssText = 'position: absolute; top: 0; left: 0; width: 30px; height: 100%; pointer-events: none; z-index: 2; opacity: 0;';
     container.appendChild(leftFade);
 
-    // Create wrapper for animation
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'display: inline-block; position: relative; white-space: nowrap;';
-
-    // Original content
-    const originalContent = element.innerHTML;
-    const originalSpan = document.createElement('span');
-    originalSpan.innerHTML = originalContent;
-    wrapper.appendChild(originalSpan);
-    
-    // Clone for seamless looping
-    const cloneSpan = document.createElement('span');
-    cloneSpan.className = 'marquee-clone';
-    cloneSpan.innerHTML = originalContent;
-    cloneSpan.style.paddingLeft = '100px';
-    wrapper.appendChild(cloneSpan);
-    
-    element.innerHTML = '';
-    element.appendChild(wrapper);
-
     // Animation parameters
-    const scrollDistance = textWidth + 100;
+    const scrollDistance = textWidth + 107;
     const scrollSpeed = 40;
     const scrollDuration = scrollDistance / scrollSpeed;
     const pauseDuration = 2;
     const totalDuration = scrollDuration + pauseDuration * 2;
-    
     const initialPauseEnd = (pauseDuration / totalDuration * 100).toFixed(6);
     const scrollEnd = (((pauseDuration + scrollDuration) / totalDuration) * 100).toFixed(6);
     const fadeOutStart = (Number(scrollEnd) - 5).toFixed(6);
-
-    // Animation definitions
     const animationName = `marquee-${Date.now()}`;
     
-    const keyframes = `
+    // Create style element with keyframes
+    const style = document.createElement('style');
+    style.id = 'marquee-style';
+    style.innerHTML = `
         @keyframes ${animationName} {
             0% { transform: translateX(0); }
             ${initialPauseEnd}% { transform: translateX(0); }
@@ -600,115 +544,57 @@ function setupMarqueeAnimation(element, textWidth) {
             ${(Number(fadeOutStart) + 0.0001).toFixed(6)}%, 100% { opacity: 0; }
         }
     `;
-
-    const style = document.createElement('style');
-    style.id = 'marquee-style';
-    style.innerHTML = keyframes;
     document.head.appendChild(style);
+    
+    // Clone content for seamless animation
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display: inline-block; position: relative; white-space: nowrap;';
+    
+    wrapper.innerHTML = `
+        <span>${element.innerHTML}</span>
+        <span class="marquee-clone" style="padding-left:100px">${element.innerHTML}</span>
+    `;
+    
+    element.innerHTML = '';
+    element.appendChild(wrapper);
     
     wrapper.style.animation = `${animationName} ${totalDuration}s linear infinite`;
     leftFade.style.animation = `${animationName}-left-fade ${totalDuration}s linear infinite`;
 }
 
-// In checkMetadata() function
-async function checkMetadata(force = false, cachedElements = {}) {
-    if (!currentStation?.link) return;
-    
-    try {
-        const now = Date.now();
-        if (!force && now - lastMetadataCheck < METADATA_CHECK_INTERVAL) return;
-        
-        // Skip if tooltip is not visible
-        const tooltip = document.querySelector('.genre-tooltip');
-        if (!force && tooltip && !tooltip.classList.contains('visible')) {
-            return;
-        }
-        
-        lastMetadataCheck = now;
-        const title = await getNowPlaying(currentStation);
-        
-        if (title && title !== lastTitle) {
-            lastTitle = title;
-            updateNowPlayingUI(title, cachedElements);
-            
-            // Only update tooltip if it's visible
-            if (tooltip && tooltip.classList.contains('visible')) {
-                updateTooltipContent();
-            }
-        }
-    } catch (e) {
-        console.error('Metadata check failed:', e);
-    }
-}
-
-
-// Add this new function
-function shouldUpdateTooltip() {
-    const tooltip = document.querySelector('.genre-tooltip');
-    return tooltip && tooltip.classList.contains('visible') && 
-           document.visibilityState === 'visible';
-}
-
-// Modify setupNowPlayingMetadata()
-function setupNowPlayingMetadata() {
-    if (metadataInterval) clearInterval(metadataInterval);
-    
-    metadataInterval = setInterval(() => {
-        // Only check if tooltip is visible and page is visible
-        if (shouldUpdateTooltip() || 
-            (Date.now() - lastMetadataCheck > 30000)) {
-            debounceMetadata();
-        }
-    }, 5000);
-    
-    // Initial check
-    debounceMetadata(true);
-}
-
 function updateSelectedStation(name) {
-    const radios = document.querySelectorAll(".radio");
-    radios.forEach(radio => {
+    document.querySelectorAll(".radio").forEach(radio => {
         const isSelected = radio.dataset.name === name;
         radio.classList.toggle("selected", isSelected);
         
+        const equalizer = radio.querySelector(".equalizer");
         if (isSelected) {
-            const existingEqualizer = radio.querySelector(".equalizer");
-            if (existingEqualizer) {
-                existingEqualizer.className = "equalizer animate";
+            if (!equalizer) {
+                const eq = document.createElement("div");
+                eq.className = "equalizer animate";
+                eq.innerHTML = '<div></div>'.repeat(14);
+                radio.insertBefore(eq, radio.querySelector(".radio-text"));
             } else {
-                const equalizer = document.createElement("div");
                 equalizer.className = "equalizer animate";
-                equalizer.innerHTML = "<div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>";
-                radio.insertBefore(equalizer, radio.querySelector(".radio-text") || null);
             }
-        } else {
-            const equalizer = radio.querySelector(".equalizer");
-            if (equalizer) radio.removeChild(equalizer);
+        } else if (equalizer) {
+            equalizer.remove();
         }
     });
 }
 
 // Genre Filtering Functions
 function setupGenreFiltering(cachedElements = {}) {
-    const genreButtons = document.querySelector('.genre-buttons');
-    if (!genreButtons) return;
-    
-    genreButtons.addEventListener('click', (e) => {
+    document.querySelector('.genre-buttons')?.addEventListener('click', e => {
         const button = e.target.closest('.genre-button');
         if (!button) return;
         
         e.preventDefault();
         e.stopPropagation();
         
-        const searchInput = cachedElements.stationSearch || document.getElementById("stationSearch");
-        const clearSearch = cachedElements.clearSearch || document.getElementById("clearSearch");
-        
-        searchInput.value = "";
-        clearSearch.style.display = "none";
-        
-        document.querySelectorAll('.genre-button').forEach(btn => {
-            btn.classList.toggle('active', btn === button);
-        });
+        cachedElements.stationSearch.value = "";
+        cachedElements.clearSearch.style.display = "none";
+        document.querySelectorAll('.genre-button').forEach(btn => btn.classList.toggle('active', btn === button));
         
         currentGenre = button.dataset.genre;
         applyGenreFilter(cachedElements);
@@ -727,10 +613,10 @@ function applyGenreFilter(cachedElements = {}) {
         let hasVisibleStations = false;
         
         document.querySelectorAll('.radio:not(.history-dropdown .radio)').forEach(station => {
-            const stationGenres = station.dataset.genre?.split(',') || [];
-            const shouldShow = currentGenre === 'all' || stationGenres.includes(currentGenre);
+            const shouldShow = currentGenre === 'all' || 
+                (station.dataset.genre?.split(',').includes(currentGenre) ?? false);
             station.style.display = shouldShow ? 'flex' : 'none';
-            if (shouldShow) hasVisibleStations = true;
+            hasVisibleStations ||= shouldShow;
         });
 
         if (noResultsElement) {
@@ -759,83 +645,54 @@ function updateCategoryVisibility() {
 
 // Theme Functions
 function setTheme(mode) {
-    // Batch DOM updates
-    const allElements = document.querySelectorAll("*");
-    const body = document.body;
+    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const actualMode = mode || (prefersDark ? 'dark' : 'light');
     
-    // Add transition class to all elements
-    allElements.forEach(el => el.classList.add("no-transition"));
-    body.classList.add("no-transition");
-    
-    // Set theme class
-    body.className = `${mode}-mode`;
+    document.body.className = `${actualMode}-mode`;
     document.documentElement.style.setProperty(
-        "--accent-color", 
-        `var(--accent-${mode === "dark" ? "light" : "dark"})`
+        '--accent-color', 
+        `var(--accent-${actualMode === 'dark' ? 'light' : 'dark'})`
     );
-    localStorage.setItem("theme", mode);
+    localStorage.setItem('theme', actualMode);
 
-    // Remove transition class after a delay
-    setTimeout(() => {
-        allElements.forEach(el => el.classList.remove("no-transition"));
-        body.classList.remove("no-transition");
-        ScrollbarManager.updateAll();
-    }, 50);
-
-    // Update theme icons
-    const themeIcons = document.querySelectorAll(".theme-icon");
-    themeIcons.forEach(icon => {
-        icon.textContent = mode === "dark" ? "dark_mode" : "light_mode";
+    document.querySelectorAll('.theme-icon').forEach(icon => {
+        icon.textContent = actualMode === 'dark' ? 'dark_mode' : 'light_mode';
     });
+    
+    setTimeout(() => ScrollbarManager.updateAll(), 50);
 }
 
 function changeColor(color) {
     const colors = {
-		green: { dark: "22, 111, 69", light: "123, 242, 145" },
+        green: { dark: "22, 111, 69", light: "123, 242, 145" },
         blue: { dark: "0, 79, 139", light: "164, 205, 255" },
-		yellow: { dark: "247, 104, 6", light: "255, 234, 132" }, 
-		red: { dark: "167, 44, 47", light: "255, 121, 116" },
-		pink: { dark: "64, 50, 102", light: "202, 187, 230" },
+        yellow: { dark: "247, 104, 6", light: "255, 234, 132" }, 
+        red: { dark: "167, 44, 47", light: "255, 121, 116" },
+        pink: { dark: "64, 50, 102", light: "202, 187, 230" },
+    }[color] || colors.green;
 
-    }[color] || { dark: "22, 111, 69", light: "123, 242, 145" };
-
-    document.documentElement.style.setProperty("--accent-dark", colors.dark);
-    document.documentElement.style.setProperty("--accent-light", colors.light);
-    
-    // Update current theme
-    const currentTheme = document.body.classList.contains("dark-mode") ? "dark" : "light";
-    document.documentElement.style.setProperty(
-        "--accent-color", 
-        `var(--accent-${currentTheme === "dark" ? "light" : "dark"})`
-    );
+    document.documentElement.style.setProperty('--accent-dark', colors.dark);
+    document.documentElement.style.setProperty('--accent-light', colors.light);
+    localStorage.setItem('accentColor', color);
 }
 
 function setupThemeControls() {
-    const colorPickers = document.querySelectorAll('.color-picker');
-    const themeOptions = document.querySelectorAll('.theme-option');
-    
-    // Color picker handlers
-    colorPickers.forEach(picker => {
-        const handlePicker = (e) => {
-            e.stopPropagation(); // Prevent event from bubbling up
-            const color = picker.dataset.color;
-            if (color) changeColor(color);
+    document.querySelectorAll('.color-picker').forEach(picker => {
+        const handler = e => {
+            e.stopPropagation();
+            picker.dataset.color && changeColor(picker.dataset.color);
         };
-        
-        picker.addEventListener('click', handlePicker);
-        picker.addEventListener('touchend', handlePicker, { passive: false });
+        picker.addEventListener('click', handler);
+        picker.addEventListener('touchend', handler, { passive: false });
     });
     
-    // Theme option handlers - removed the dropdown closing logic
-    themeOptions.forEach(option => {
-        const handleOption = (e) => {
-            e.stopPropagation(); // Prevent event from bubbling up
-            const mode = option.dataset.theme;
-            if (mode) setTheme(mode);
+    document.querySelectorAll('.theme-option').forEach(option => {
+        const handler = e => {
+            e.stopPropagation();
+            option.dataset.theme && setTheme(option.dataset.theme);
         };
-        
-        option.addEventListener('click', handleOption);
-        option.addEventListener('touchend', handleOption, { passive: false });
+        option.addEventListener('click', handler);
+        option.addEventListener('touchend', handler, { passive: false });
     });
 }
 
@@ -847,16 +704,58 @@ function updateRecentlyPlayed(name, link, genre = '', cachedElements = {}) {
     ].slice(0, 12);
     
     localStorage.setItem('recentlyPlayed', JSON.stringify(newRecentlyPlayed));
-    
     loadRecentlyPlayed(cachedElements);
+}
 
+function loadRecentlyPlayed(cachedElements = {}) {
+    const container = document.querySelector('.recently-played-stations');
+    if (!container) return;
+    
+    container.scrollTop = 0;
+    const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
+    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()];
+    
+    container.innerHTML = recentlyPlayed.length ? '' : '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
+    container.style.flexDirection = 'column';
+    container.style.overflowY = 'auto';
+    
+    uniqueStations.forEach(station => {
+        const radio = document.createElement('div');
+        radio.className = 'radio';
+        if (station.name === (currentStation?.name || safeParseJSON("lastStation", {}).name)) {
+            radio.classList.add('selected');
+        }
+        
+        Object.assign(radio.dataset, {
+            name: station.name,
+            link: station.link,
+            genre: station.genre || ''
+        });
+        
+        const radioText = document.createElement('div');
+        radioText.className = 'radio-text';
+        radioText.textContent = station.name;
+        radio.appendChild(radioText);
+        
+        radio.addEventListener('click', e => {
+            e.stopPropagation();
+            changeStation(station.name, station.link);
+        });
+        
+        container.appendChild(radio);
+    });
+    
+    if (currentStation?.name) {
+        const historyStation = container.querySelector(`.radio[data-name="${currentStation.name}"]`);
+        historyStation?.classList.contains('selected') && updateSelectedStation(currentStation.name);
+    }
 }
 
 function safeParseJSON(key, fallback) {
-    try { 
-        return JSON.parse(localStorage.getItem(key)) || fallback; 
-    } catch (e) { 
-        return fallback; 
+    try {
+        return JSON.parse(localStorage.getItem(key)) || fallback;
+    } catch {
+        return fallback;
     }
 }
 
@@ -865,33 +764,26 @@ class DropdownManager {
     constructor(cachedElements = {}) {
         this.isOperating = false;
         this.currentOpen = null;
+        this.lastToggleTime = 0;
         this.dropdowns = {
             theme: {
                 toggle: document.querySelector(".theme-toggle"),
-                menu: document.querySelector(".dropdown-menu"),
-                needsScroll: false
+                menu: document.querySelector(".dropdown-menu")
             },
             history: {
                 toggle: document.getElementById("historyBtn"),
                 menu: document.getElementById("historyDropdown"),
                 navButtonClass: 'history-nav-button',
-                needsScroll: true,
-                overflowBehavior: 'contain'
+                needsScroll: true
             },
             tooltip: {
                 toggle: document.querySelector(".info-icon"),
                 menu: document.querySelector(".genre-tooltip"),
                 navButtonClass: 'tooltip-nav-button',
-                needsScroll: true,
-                overflowBehavior: 'contain'
+                needsScroll: true
             }
         };
-        
-        // Position dropdown groups
-        document.querySelectorAll('.dropdown-group').forEach(group => {
-            group.style.position = 'relative';
-        });
-        
+
         this.init();
     }
 
@@ -899,296 +791,95 @@ class DropdownManager {
         Object.entries(this.dropdowns).forEach(([id, dropdown]) => {
             if (!dropdown.toggle || !dropdown.menu) return;
             
-            const handler = (e) => {
-                // Prevent default only for touch events
-                if (e.type === 'touchend') {
-                    e.preventDefault();
-                }
+            const handler = e => {
+                e.type === 'touchend' && e.preventDefault();
                 e.stopPropagation();
                 this.toggle(id, e);
             };
             
-            // Use pointer events for better cross-device support
             dropdown.toggle.addEventListener("pointerdown", handler);
-            
-            // Don't stop propagation for menu content clicks
-            dropdown.menu.addEventListener('click', (e) => {
-                if (!e.target.closest('.history-nav-button') && 
-                    !e.target.closest('.tooltip-nav-button')) {
+            dropdown.menu.addEventListener('click', e => {
+                if (!e.target.closest(`.${dropdown.navButtonClass}`)) {
                     e.stopPropagation();
                 }
             });
         });
-    
-        const handleOutside = (e) => {
-            // Handle both mouse and touch events
-            const target = e.target || (e.touches && e.touches[0] && e.touches[0].target);
-            if (!target) return;
-            
-            // Check if click was inside any dropdown
-            let clickedInside = false;
-            for (const dropdown of Object.values(this.dropdowns)) {
-                if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
-                    !target.closest(`.${dropdown.navButtonClass}`)) {
-                    clickedInside = true;
-                    break;
-                }
-            }
-            
-            if (!clickedInside && this.currentOpen) {
-                this.close(this.currentOpen);
+
+        const handleOutside = e => {
+            const target = e.target || (e.touches?.[0]?.target);
+            if (!target || !this.currentOpen) return;
+
+            const clickedInside = Object.values(this.dropdowns).some(
+                dropdown => (dropdown.toggle?.contains(target) || 
+                           dropdown.menu?.contains(target)) &&
+                           !target.closest(`.${dropdown.navButtonClass}`)
+            );
+
+            if (!clickedInside) {
+                this.currentOpen === 'tooltip' ? 
+                    setTimeout(() => this.close(this.currentOpen), 100) : 
+                    this.close(this.currentOpen);
             }
         };
-        
+
         document.addEventListener("click", handleOutside);
         document.addEventListener("touchend", handleOutside, { passive: true });
     }
 
-    keepOpen(id) {
-        if (this.currentOpen !== id) return;
-        
-        const dropdown = this.dropdowns[id];
-        if (!dropdown || !dropdown.menu) return;
-        
-        // Force the dropdown to stay open
-        dropdown.menu.style.display = 'block';
-        dropdown.menu.classList.add('show');
-        dropdown.menu.style.opacity = '1';
-        dropdown.toggle.classList.add('active');
-        
-        // Refresh the dropdown position
-        this.updateDropdownHeights();
-    }
-
-   
-    async toggle(id, event) {
-        if (this.isOperating) return;
+    toggle(id, event) {
+        if (this.isOperating || performance.now() - this.lastToggleTime < 300) return;
+        this.lastToggleTime = performance.now();
         this.isOperating = true;
-        
-        try {
-            const dropdown = this.dropdowns[id];
-    if (!dropdown) return;
 
-    // Add better debouncing with timestamp check
-    const now = performance.now();
-    if (this.lastToggleTime && now - this.lastToggleTime < 300) {
-        return;
-    }
-    this.lastToggleTime = now;
-
-    // Prevent toggle if clicking on theme options or color pickers
-    if (event.target.closest('.theme-option') || 
-        event.target.closest('.color-picker') ||
-        event.target.closest('.tooltip-nav-button')) {
-        return;
-    }
-
-    // If clicking the same dropdown toggle
-    if (this.currentOpen === id) {
-        this.close(id);
-        return;
-    }
-
-    // Close any other dropdown first
-    if (this.currentOpen) {
-        // For touch events, add a small delay between closing and opening
-        const isTouch = event.type === 'touchend';
-        
-        if (isTouch) {
-            this.close(this.currentOpen);
-            setTimeout(() => this.open(id), 50);
-        } else {
-            this.close(this.currentOpen);
-            this.open(id);
-        }
-    } else {
-        this.open(id);
-    }
-        } finally {
-            setTimeout(() => {
-                this.isOperating = false;
-            }, 50);
-        }
-    }
-
-    refreshDropdown(id) {
         const dropdown = this.dropdowns[id];
-        if (!dropdown || !dropdown.menu) return;
-        
-        // Force a reflow to keep dropdown visible
-        dropdown.menu.classList.remove('show');
-        void dropdown.menu.offsetWidth;
-        dropdown.menu.classList.add('show');
-        dropdown.menu.style.opacity = '1';
-        
-        // Ensure proper positioning
-        this.updateDropdownHeights();
+        if (!dropdown) return;
+
+        if (this.currentOpen === id) {
+            this.close(id);
+        } else {
+            this.currentOpen && this.close(this.currentOpen);
+            event.type === 'touchend' ? 
+                setTimeout(() => this.open(id), 50) : 
+                this.open(id);
+        }
+
+        setTimeout(() => this.isOperating = false, 50);
     }
-    
-setupDropdownScroll(id) {
-    const dropdown = this.dropdowns[id];
-    if (!dropdown || !dropdown.menu) return;
 
-    // Remove existing buttons first
-    dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(btn => btn.remove());
+    open(id) {
+        const dropdown = this.dropdowns[id];
+        if (!dropdown) return;
 
-    // Create navigation buttons
-    const topButton = document.createElement('button');
-    topButton.className = `${dropdown.navButtonClass} top`;
-    topButton.innerHTML = '<span class="material-icons">expand_less</span>';
-    
-    const bottomButton = document.createElement('button');
-    bottomButton.className = `${dropdown.navButtonClass} bottom`;
-    bottomButton.innerHTML = '<span class="material-icons">expand_more</span>';
+        Object.assign(dropdown.menu.style, {
+            display: 'block',
+            opacity: '0',
+            scrollTop: 0
+        });
 
-    // Add buttons to the dropdown
-    dropdown.menu.insertBefore(topButton, dropdown.menu.firstChild);
-    dropdown.menu.appendChild(bottomButton);
-    
-        const checkButtons = () => {
-            const scrollTop = dropdown.menu.scrollTop;
-            const buffer = 1;
-            const maxScroll = dropdown.menu.scrollHeight - dropdown.menu.clientHeight;
+        requestAnimationFrame(() => {
+            dropdown.menu.classList.add('show');
+            if (id === 'tooltip') {
+                dropdown.menu.classList.add('visible');
+                updateTooltipContent();
+            }
+            dropdown.menu.style.opacity = '1';
+            dropdown.toggle.classList.add('active');
             
-            const atTop = scrollTop <= buffer;
-            const atBottom = scrollTop >= maxScroll - buffer;
-            
-            topButton.style.opacity = atTop ? '0' : '1';
-            topButton.style.pointerEvents = atTop ? 'none' : 'auto';
-            
-            bottomButton.style.opacity = atBottom ? '0' : '1';
-            bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
-        };
-    
-        // Improved touch handling with better isolation
-        let touchStartY = 0;
-        let isDragging = false;
-        let initialScrollTop = 0;
-        
-        dropdown.menu.addEventListener('touchstart', (e) => {
-            if (e.target.closest(`.${dropdown.navButtonClass}`)) return;
-            touchStartY = e.touches[0].clientY;
-            initialScrollTop = dropdown.menu.scrollTop;
-            isDragging = true;
-            dropdown.menu.style.scrollBehavior = 'auto';
-            e.stopPropagation(); // Prevent event from reaching parent
-            e.preventDefault();
-        }, { passive: false });
-    
-        dropdown.menu.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            const currentY = e.touches[0].clientY;
-            const diff = touchStartY - currentY;
-            dropdown.menu.scrollTop = initialScrollTop + diff;
-            e.stopPropagation(); // Prevent event from reaching parent
-            e.preventDefault();
-        }, { passive: false });
-    
-        dropdown.menu.addEventListener('touchend', () => {
-            isDragging = false;
-            dropdown.menu.style.scrollBehavior = 'smooth';
-            e.stopPropagation(); // Prevent event from reaching parent
-        }, { passive: true });
-    
-        // Regular scroll events
-        dropdown.menu.addEventListener('scroll', () => {
-            cancelAnimationFrame(dropdown.menu._scrollTimer);
-            dropdown.menu._scrollTimer = requestAnimationFrame(checkButtons);
-        }, { passive: true });
-    
-        const handleTopButton = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            smoothScroll('top');
-        };
-    
-        const handleBottomButton = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            smoothScroll('bottom');
-        };
-    
-        topButton.addEventListener('click', handleTopButton);
-        topButton.addEventListener('touchend', handleTopButton, { passive: false });
-        
-        bottomButton.addEventListener('click', handleBottomButton);
-        bottomButton.addEventListener('touchend', handleBottomButton, { passive: false });
-    
-        const smoothScroll = (direction) => {
-            if (dropdown.menu._isScrolling) return;
-            dropdown.menu._isScrolling = true;
-            
-            const amount = dropdown.menu.clientHeight * 0.8;
-            const start = dropdown.menu.scrollTop;
-            const target = direction === 'top' 
-                ? Math.max(0, start - amount)
-                : Math.min(start + amount, dropdown.menu.scrollHeight - dropdown.menu.clientHeight);
-            
-            const duration = 300;
-            const startTime = performance.now();
-    
-            const animate = (time) => {
-                const elapsed = time - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easedProgress = easeOutQuad(progress);
-                dropdown.menu.scrollTop = start + (target - start) * easedProgress;
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                } else {
-                    dropdown.menu._isScrolling = false;
-                    checkButtons();
-                }
-            };
-            
-            requestAnimationFrame(animate);
-        };
-    
-        checkButtons();
-    }    
+            dropdown.needsScroll && this.setupDropdownScroll(id);
+            this.updateDropdownHeights();
+        });
 
-// In DropdownManager class
-open(id) {
-    const dropdown = this.dropdowns[id];
-    if (!dropdown) return;
-
-    // First make it visible before adding show class
-    dropdown.menu.style.display = 'block';
-    dropdown.menu.style.opacity = '0';
-    dropdown.menu.scrollTop = 0;
-    
-    // Force reflow before adding classes
-    void dropdown.menu.offsetHeight;
-    
-    dropdown.menu.classList.add('show');
-    dropdown.menu.style.opacity = '1';
-    
-    if (id === 'tooltip') {
-        dropdown.menu.classList.add('visible');
-        updateTooltipContent();
+        this.currentOpen = id;
     }
-    
-    dropdown.toggle.classList.add('active');
-    
-    if (dropdown.needsScroll) {
-        this.setupDropdownScroll(id);
-    }
-    
-    this.currentOpen = id;
-    this.updateDropdownHeights();
-}
 
-    
     close(id) {
         const dropdown = this.dropdowns[id];
         if (!dropdown) return;
-    
-        // Start transition
+
         dropdown.menu.style.opacity = '0';
         dropdown.menu.classList.remove('show', 'visible');
         dropdown.toggle.classList.remove('active');
         
-        // Remove after transition completes
         setTimeout(() => {
             if (!dropdown.menu.classList.contains('show') && 
                 !dropdown.menu.classList.contains('visible')) {
@@ -1196,69 +887,84 @@ open(id) {
             }
         }, 300);
         
-        if (this.currentOpen === id) {
-            this.currentOpen = null;
-        }
+        this.currentOpen = null;
     }
-    
-// In DropdownManager class
-handleOutsideClick(e) {
-    const target = e.target || (e.touches && e.touches[0]?.target);
-    if (!target || !this.currentOpen) return;
 
-    // Check if clicking inside any dropdown
-    let clickedInside = false;
-    for (const [id, dropdown] of Object.entries(this.dropdowns)) {
-        if ((dropdown.toggle?.contains(target) || dropdown.menu?.contains(target)) &&
-            !target.closest(`.${dropdown.navButtonClass}`)) {
-            clickedInside = true;
-            break;
-        }
-    }
-    
-    if (!clickedInside) {
-        // For tooltip dropdown, add a small delay to allow metadata updates
-        if (this.currentOpen === 'tooltip') {
-            setTimeout(() => {
-                this.close(this.currentOpen);
-            }, 100);
-        } else {
-            this.close(this.currentOpen);
-        }
-    }
-}
-   
-    
-// In DropdownManager class
-updateDropdownHeights() {
-    const audioContainer = document.querySelector('.audio-container');
-    if (!audioContainer) return;
-
-    // First get all measurements
-    const containerRect = audioContainer.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    const safeAreaBottom = window.visualViewport?.offsetTop || 0;
-    
-    // Calculate max height with adjustments
-    const maxDropdownHeight = Math.max(windowHeight - containerRect.bottom - safeAreaBottom - 10);
-
-    Object.values(this.dropdowns).forEach(dropdown => {
+    setupDropdownScroll(id) {
+        const dropdown = this.dropdowns[id];
         if (!dropdown.menu) return;
 
-        // Calculate without constraints first
-        dropdown.menu.style.maxHeight = 'none';
-        const naturalHeight = dropdown.menu.scrollHeight;
+        // Clear existing
+        dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(b => b.remove());
         
-        // Apply constraints
-        const constrainedHeight = Math.min(naturalHeight, maxDropdownHeight);
-        dropdown.menu.style.maxHeight = `${constrainedHeight}px`;
-        dropdown.menu.style.overflowY = naturalHeight > constrainedHeight ? 'auto' : 'hidden';
-        
-        // Force synchronous layout/reflow
-        void dropdown.menu.offsetHeight;
-    });
-}
+        // Create buttons
+        const createButton = (pos) => {
+            const btn = document.createElement('button');
+            btn.className = `${dropdown.navButtonClass} ${pos}`;
+            btn.innerHTML = `<span class="material-icons">expand_${pos === 'top' ? 'less' : 'more'}</span>`;
+            return btn;
+        };
 
+        const topBtn = createButton('top');
+        const bottomBtn = createButton('bottom');
+        dropdown.menu.prepend(topBtn);
+        dropdown.menu.append(bottomBtn);
+
+        const checkVisibility = () => {
+            const { scrollTop, scrollHeight, clientHeight } = dropdown.menu;
+            const maxScroll = scrollHeight - clientHeight;
+            
+            topBtn.style.opacity = scrollTop <= 1 ? '0' : '1';
+            bottomBtn.style.opacity = scrollTop >= maxScroll - 1 ? '0' : '1';
+        };
+
+        const smoothScroll = (dir) => {
+            if (dropdown.menu._isAnimating) return;
+            dropdown.menu._isAnimating = true;
+            
+            const start = dropdown.menu.scrollTop;
+            const target = dir === 'top' ? 
+                Math.max(0, start - dropdown.menu.clientHeight * 0.8) :
+                Math.min(start + dropdown.menu.clientHeight * 0.8, 
+                        dropdown.menu.scrollHeight - dropdown.menu.clientHeight);
+            
+            const startTime = performance.now();
+            const animate = (time) => {
+                const progress = Math.min((time - startTime) / 300, 1);
+                dropdown.menu.scrollTop = start + (target - start) * (1 - Math.pow(1 - progress, 3));
+                
+                progress < 1 ? 
+                    requestAnimationFrame(animate) : 
+                    (dropdown.menu._isAnimating = false, checkVisibility());
+            };
+            requestAnimationFrame(animate);
+        };
+
+        // Event listeners
+        topBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('top')));
+        bottomBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('bottom')));
+        dropdown.menu.addEventListener('scroll', () => {
+            cancelAnimationFrame(dropdown.menu._scrollRAF);
+            dropdown.menu._scrollRAF = requestAnimationFrame(checkVisibility);
+        }, { passive: true });
+
+        checkVisibility();
+    }
+
+    updateDropdownHeights() {
+        const audioHeight = document.querySelector('.audio-container')?.getBoundingClientRect().bottom || 0;
+        const windowHeight = window.innerHeight;
+        const maxHeight = Math.max(windowHeight - audioHeight - 10, 100);
+
+        Object.values(this.dropdowns).forEach(dropdown => {
+            if (!dropdown.menu) return;
+
+            dropdown.menu.style.maxHeight = 'none';
+            const height = Math.min(dropdown.menu.scrollHeight, maxHeight);
+            dropdown.menu.style.maxHeight = `${height}px`;
+            dropdown.menu.style.overflowY = dropdown.menu.scrollHeight > height ? 'auto' : 'hidden';
+        });
+    }
 }
 
 function getGenreIcon(genre) {
@@ -1406,105 +1112,76 @@ function isUnknownValue(value) {
     return val === 'undefined' || val === 'undefinedkbps' || val === 'plain' || val === 'html' || val === '';
 }
 
-function setupRecentlyPlayedToggle() {
-    const audioContainer = document.querySelector('.audio-container');
-    const toggle = document.getElementById('recentlyPlayedToggle');
-    const toggleHandle = toggle?.querySelector('.toggle-handle');
-
-    if (!toggleHandle) return;
-
-    // Handle toggle
-    const toggleCollapse = () => {
-        const isExpanded = !audioContainer.classList.contains('expanded');
-        audioContainer.classList.toggle('expanded', isExpanded);
-        
-        // Close any open dropdowns when collapsing
-        if (!isExpanded && dropdownManager.currentOpen) {
-            dropdownManager.close(dropdownManager.currentOpen);
-        }
-        
-        updateAudioContainerHeight();
-        ScrollbarManager.updateAll();
-    };
-
-    toggleHandle.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleCollapse();
-    });
-
-    // Add touch event for mobile
-    toggleHandle.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        toggleCollapse();
-    }, { passive: false });
-}
-
 function setupAudioContainerObserver() {
-    const audioContainer = document.querySelector('.audio-container');
-    if (!audioContainer) return;
-    
-    const observer = new ResizeObserver(() => {
-        ScrollbarManager.updateAll();
-    });
-    observer.observe(audioContainer);
-    
-    // Add to cleanup:
-    window.addEventListener('beforeunload', () => {
-        observer.disconnect();
-    });
+    const observer = new ResizeObserver(() => ScrollbarManager.updateAll());
+    document.querySelector('.audio-container') && observer.observe(document.querySelector('.audio-container'));
+    window.addEventListener('beforeunload', () => observer.disconnect());
 }
 
 function setupAudioContainerGestures() {
     const audioContainer = document.querySelector('.audio-container');
     if (!audioContainer) return;
 
-    let startY = 0;
-    let startHeight = 0;
-    let isDragging = false;
+    audioContainer.addEventListener('touchstart', e => {
+        if (!e.target.closest('.toggle-handle')) return;
+        
+        const touch = e.touches[0];
+        const height = audioContainer.clientHeight;
+        let startY = touch.clientY;
+        
+        const moveHandler = e => {
+            const deltaY = e.touches[0].clientY - startY;
+            audioContainer.style.height = `${Math.min(Math.max(COLLAPSED_HEIGHT, height - deltaY), 300)}px`;
+            ScrollbarManager.updateAll();
+        };
+        
+        const endHandler = () => {
+            document.removeEventListener('touchmove', moveHandler);
+            document.removeEventListener('touchend', endHandler);
+            audioContainer.classList.toggle('expanded', 
+                audioContainer.clientHeight > COLLAPSED_HEIGHT + 50);
+            updateAudioContainerHeight();
+        };
+        
+        document.addEventListener('touchmove', moveHandler, { passive: false });
+        document.addEventListener('touchend', endHandler);
+    }, { passive: true });
+}
 
-    audioContainer.addEventListener('touchstart', (e) => {
-        // Only start drag if touching the toggle handle
-        if (!e.target.closest('.toggle-handle')) {
-            return;
-        }
-        
-        startY = e.touches[0].clientY;
-        startHeight = audioContainer.clientHeight;
-        isDragging = true;
-        audioContainer.style.transition = 'none';
-        e.preventDefault();
-    }, { passive: false });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        
-        const currentY = e.touches[0].clientY;
-        const deltaY = startY - currentY;
-        const newHeight = Math.min(Math.max(COLLAPSED_HEIGHT, startHeight + deltaY), 300);
-        
-        audioContainer.style.height = `${newHeight}px`;
+function updateAudioContainerHeight() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
+    
+    const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
+    const expanded = audioContainer.classList.contains('expanded');
+    const hasMetadata = audioContainer.classList.contains('has-now-playing');
+    
+    const targetHeight = expanded ? 
+        (hasMetadata ? 240 : 220) : 
+        (hasMetadata ? 175 : 155);
+    
+    if (Math.abs(currentHeight - targetHeight) > 1) {
+        audioContainer.style.height = `${targetHeight}px`;
         ScrollbarManager.updateAll();
-        e.preventDefault();
-    }, { passive: false });
+    }
+}
 
-    document.addEventListener('touchend', () => {
-        if (!isDragging) return;
-        isDragging = false;
+function setupRecentlyPlayedToggle() {
+    const toggleHandle = document.querySelector('#recentlyPlayedToggle .toggle-handle');
+    if (!toggleHandle) return;
+    
+    const toggle = () => {
+        const audioContainer = document.querySelector('.audio-container');
+        const expand = !audioContainer.classList.contains('expanded');
         
-        const currentHeight = audioContainer.clientHeight;
-        audioContainer.style.transition = '';
-        
-        // Snap to nearest state
-        if (currentHeight > COLLAPSED_HEIGHT + 50) {
-            audioContainer.classList.add('expanded');
-        } else {
-            audioContainer.classList.remove('expanded');
-        }
-        
+        audioContainer.classList.toggle('expanded', expand);
+        expand || dropdownManager.currentOpen && dropdownManager.close(dropdownManager.currentOpen);
         updateAudioContainerHeight();
-    });
+        ScrollbarManager.updateAll();
+    };
+    
+    toggleHandle.addEventListener('click', e => (e.preventDefault(), e.stopPropagation(), toggle()));
+    toggleHandle.addEventListener('touchstart', e => (e.preventDefault(), e.stopPropagation(), toggle()), { passive: false });
 }
 
 function setupScrollableContainer(container, wrapperClass, buttonClass) {
@@ -1564,9 +1241,6 @@ function updateButtonVisibility() {
         
         bottomButton.style.opacity = atBottom ? '0' : '1';
         bottomButton.style.pointerEvents = atBottom ? 'none' : 'auto';
-    
-    // Force reflow to ensure smooth transitions
-
 }
 
     function smoothScroll(direction) {
@@ -1637,65 +1311,6 @@ function updateButtonVisibility() {
     container._resizeObserver = resizeObserver;
     
     return { checkOverflow, updateButtonVisibility };
-}
-
-function loadRecentlyPlayed() {
-    const container = document.querySelector('.recently-played-stations');
-    if (!container) return;
-    
-    container.scrollTop = 0;
-    
-    const recentlyPlayed = safeParseJSON('recentlyPlayed', []);
-    const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()].slice(0, 12);
-
-    container.innerHTML = '';
-    
-    // Change to vertical layout
-    container.style.flexDirection = 'column';
-    container.style.overflowY = 'auto';
-    container.style.overflowX = 'hidden';
-    
-    if (uniqueStations.length === 0) {
-        container.innerHTML = '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
-        return;
-    }
-
-    // Get current station name
-    const currentStationName = currentStation?.name || 
-                             safeParseJSON("lastStation", {}).name;
-
-    uniqueStations.forEach(station => {
-        const radio = document.createElement('div');
-        radio.className = 'radio';
-        if (station.name === currentStationName) {
-            radio.classList.add('selected');
-        }
-        
-        radio.dataset.name = station.name;
-        radio.dataset.link = station.link;
-        radio.dataset.genre = station.genre || '';
-        
-        // Create the same structure as in the main list
-        const radioText = document.createElement('div');
-        radioText.className = 'radio-text';
-        radioText.textContent = station.name;
-        
-        radio.appendChild(radioText);
-        
-        radio.addEventListener('click', (e) => {
-            e.stopPropagation();
-            changeStation(station.name, station.link);
-        });
-        container.appendChild(radio);
-    });
-    
-    // If the current station is in history, ensure it has the equalizer
-    if (currentStationName) {
-        const historyStation = container.querySelector(`.radio[data-name="${currentStationName}"]`);
-        if (historyStation && historyStation.classList.contains('selected')) {
-            updateSelectedStation(currentStationName);
-        }
-    }
 }
 
 function createExpandButton(stations, category) {
@@ -1816,23 +1431,23 @@ volumeIcon.addEventListener("click", () => {
 });
 
 function updateVolumeIcon() {
-    volumeIcon.innerHTML = audio.muted || audio.volume === 0 ? "volume_off" :
-                         audio.volume < 0.5 ? "volume_down" : "volume_up";
+    volumeIcon.textContent = 
+        audio.muted || audio.volume === 0 ? "volume_off" :
+        audio.volume < 0.5 ? "volume_down" : "volume_up";
 }
 
 // Search and Filter Functions
-function debounce(func, wait, immediate) {
+function debounce(func, wait = 300, immediate = false) {
     let timeout;
     return function() {
         const context = this, args = arguments;
-        const later = function() {
+        const later = () => {
             timeout = null;
-            if (!immediate) func.apply(context, args);
+            !immediate && func.apply(context, args);
         };
-        const callNow = immediate && !timeout;
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
-        if (callNow) func.apply(context, args);
+        immediate && !timeout && func.apply(context, args);
     };
 }
 
@@ -1988,34 +1603,7 @@ function loadPreferences() {
     }
 }
 
-function updateAudioContainerHeight() {
-    const audioContainer = document.querySelector('.audio-container');
-    if (!audioContainer) return;
-    
-    // Calculate new height based on current state
-    let newHeight = COLLAPSED_HEIGHT;
-    
-    if (audioContainer.classList.contains('has-now-playing')) {
-        newHeight = audioContainer.classList.contains('expanded') ? 240 : 175;
-    } else {
-        newHeight = audioContainer.classList.contains('expanded') ? 220 : 155;
-    }
-    
-    // Only update if height is actually changing
-    const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
-    if (Math.abs(currentHeight - newHeight) < 1) return;
-    
-    // Apply the new height with transition
-    audioContainer.style.height = `${newHeight}px`;
-    
-    // Update scrollbar and other dependent elements
-    ScrollbarManager.updateAll();
-}
-
 const ScrollbarManager = {
-    resizeObservers: [],
-    resizeTimeout: null,
-    
     init(cachedElements = {}) {
         this.scrollList = cachedElements.scrollList || document.querySelector('.scroll-list');
         this.scrollbarThumb = document.querySelector('.scrollbar-thumb');
@@ -2023,51 +1611,56 @@ const ScrollbarManager = {
         
         if (!this.scrollList || !this.scrollbarThumb || !this.scrollbarTrack) return;
 
-        // Move scrollbar elements inside scroll-list
-        this.scrollList.appendChild(this.scrollbarTrack);
-        this.scrollbarTrack.appendChild(this.scrollbarThumb);
+        this.scrollList.append(this.scrollbarTrack);
+        this.scrollbarTrack.append(this.scrollbarThumb);
         
         this.setupEvents();
+        this.setupResizeObserver();
         this.updateAll();
-        this.setupResizeObservers();
     },
 
-    setupResizeObservers() {
-        // Clean up existing observers
-        this.resizeObservers.forEach(observer => observer.disconnect());
-        this.resizeObservers = [];
-        
-        const debouncedResize = debounce(() => {
-            this.updateTrackPosition();
-        }, 100);
-        
-        const observer = new ResizeObserver(debouncedResize);
-        
-        [
-            document.querySelector('.audio-container'),
-            document.body
-        ].filter(Boolean).forEach(el => observer.observe(el));
-        
-        this.resizeObservers.push(observer);
-    },
-      
     setupEvents() {
-        // Use passive listeners where possible
-        window.addEventListener('resize', this.handleWindowResize.bind(this), { passive: true });
-        
         // Thumb dragging
-        this.scrollbarThumb.addEventListener('mousedown', this.handleThumbMouseDown.bind(this));
-        this.scrollbarThumb.addEventListener('touchstart', this.handleThumbTouchStart.bind(this), { passive: false });
-        
+        const handleThumbMove = (startY, startTop) => e => {
+            const deltaY = e.clientY - startY;
+            const newTop = Math.max(0, Math.min(
+                startTop + deltaY, 
+                this.scrollbarTrack.clientHeight - this.scrollbarThumb.clientHeight
+            ));
+            
+            this.scrollbarThumb.style.top = `${newTop}px`;
+            this.scrollList.scrollTop = (newTop / (this.scrollbarTrack.clientHeight - this.scrollbarThumb.clientHeight)) * 
+                                       (this.scrollList.scrollHeight - this.scrollList.clientHeight);
+        };
+
+        this.scrollbarThumb.addEventListener('mousedown', e => {
+            e.preventDefault();
+            this.scrollbarThumb.classList.add('dragging');
+            
+            const moveHandler = handleThumbMove(e.clientY, parseFloat(this.scrollbarThumb.style.top));
+            const upHandler = () => {
+                this.scrollbarThumb.classList.remove('dragging');
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mouseup', upHandler);
+            };
+            
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('mouseup', upHandler);
+        });
+
         // Track interaction
-        this.scrollbarTrack.addEventListener('click', this.handleTrackClick.bind(this));
-        this.scrollbarTrack.addEventListener('wheel', this.handleTrackWheel.bind(this), { passive: false });
-        this.scrollbarTrack.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
-        
-        // Scroll events
-        this.scrollList.addEventListener('scroll', this.handleScroll.bind(this), { passive: true });
-        
-        // Hover effects
+        this.scrollbarTrack.addEventListener('click', e => {
+            if (e.target === this.scrollbarThumb) return;
+            
+            this.scrollList.scrollTo({
+                top: ((e.clientY - this.scrollbarTrack.getBoundingClientRect().top) / 
+                     this.scrollbarTrack.clientHeight) * 
+                     (this.scrollList.scrollHeight - this.scrollList.clientHeight),
+                behavior: 'smooth'
+            });
+        });
+		
+		// Hover effects
         this.scrollbarTrack.addEventListener('mouseenter', () => {
             this.scrollbarThumb.classList.add('hovering');
         });
@@ -2075,161 +1668,59 @@ const ScrollbarManager = {
         this.scrollbarTrack.addEventListener('mouseleave', () => {
             this.scrollbarThumb.classList.remove('hovering');
         });
-        
-        // Resize observer for scroll list
-        this.resizeObserver = new ResizeObserver(() => {
-            cancelAnimationFrame(this.resizeRAF);
-            this.resizeRAF = requestAnimationFrame(() => this.updateAll());
-        });
-        this.resizeObserver.observe(this.scrollList);
+		
+        // Scroll events
+        this.scrollList.addEventListener('scroll', () => {
+            cancelAnimationFrame(this.scrollRAF);
+            this.scrollRAF = requestAnimationFrame(() => this.positionThumb());
+        }, { passive: true });
     },
-    
-    handleWindowResize() {
-        clearTimeout(this.resizeTimeout);
-        this.resizeTimeout = setTimeout(() => {
-            this.updateTrackPosition();
-        }, 100);
-    },
-    
-    handleTrackWheel(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        this.scrollList.scrollTop += e.deltaY * 2;
-        this.positionThumb();
-    },
-    
-    handleScroll() {
-        cancelAnimationFrame(this.scrollRAF);
-        this.scrollRAF = requestAnimationFrame(() => {
-            this.positionThumb();
-        });
-    },
-    
+
     updateAll() {
         this.updateThumbSize();
         this.positionThumb();
         this.updateTrackPosition();
     },
-    
+
     updateThumbSize() {
-        const { scrollHeight, clientHeight } = this.scrollList;
-        
-        if (scrollHeight <= clientHeight) {
+        if (this.scrollList.scrollHeight <= this.scrollList.clientHeight) {
             this.scrollbarThumb.style.display = 'none';
             return;
         }
         
-        const thumbHeight = Math.max(30, (clientHeight / scrollHeight) * clientHeight);
-        this.scrollbarThumb.style.display = 'block';
-        this.scrollbarThumb.style.height = `${thumbHeight}px`;
+        const thumbHeight = Math.max(30, 
+            (this.scrollList.clientHeight / this.scrollList.scrollHeight) * 
+            this.scrollList.clientHeight
+        );
+        
+        this.scrollbarThumb.style.cssText = `
+            display: block;
+            height: ${thumbHeight}px;
+        `;
     },
-  
+
     positionThumb() {
-        const { scrollHeight, clientHeight, scrollTop } = this.scrollList;
+        if (this.scrollList.scrollHeight <= this.scrollList.clientHeight) return;
         
-        if (scrollHeight <= clientHeight) return;
-        
-        const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
-        const trackHeight = this.scrollbarTrack.clientHeight;
-        const thumbHeight = this.scrollbarThumb.clientHeight;
-        const maxThumbPosition = trackHeight - thumbHeight;
-        const thumbPosition = Math.min(scrollPercentage * maxThumbPosition, maxThumbPosition);
+        const scrollPercentage = this.scrollList.scrollTop / 
+                               (this.scrollList.scrollHeight - this.scrollList.clientHeight);
+        const thumbPosition = scrollPercentage * 
+                            (this.scrollbarTrack.clientHeight - this.scrollbarThumb.clientHeight);
         
         this.scrollbarThumb.style.top = `${thumbPosition}px`;
     },
-  
-    handleThumbMouseDown(e) {
-        e.preventDefault();
-        this.scrollbarThumb.classList.add('dragging');
-        
-        const startY = e.clientY;
-        const startTop = parseFloat(this.scrollbarThumb.style.top) || 0;
-        const trackHeight = this.scrollbarTrack.clientHeight;
-        const thumbHeight = this.scrollbarThumb.clientHeight;
-        
-        const moveHandler = (e) => {
-            const deltaY = e.clientY - startY;
-            let newTop = Math.max(0, Math.min(startTop + deltaY, trackHeight - thumbHeight));
-            
-            const scrollPercentage = newTop / (trackHeight - thumbHeight);
-            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
-            
-            this.scrollbarThumb.style.top = `${newTop}px`;
-            this.scrollList.scrollTop = Math.min(scrollPercentage * maxScroll, maxScroll);
-        };
-        
-        const upHandler = () => {
-            this.scrollbarThumb.classList.remove('dragging');
-            document.removeEventListener('mousemove', moveHandler);
-            document.removeEventListener('mouseup', upHandler);
-        };
-        
-        document.addEventListener('mousemove', moveHandler);
-        document.addEventListener('mouseup', upHandler);
-    },
-    
-    handleThumbTouchStart(e) {
-        e.preventDefault();
-        this.scrollbarThumb.classList.add('dragging');
-        
-        const touch = e.touches[0];
-        const startY = touch.clientY;
-        const startTop = parseFloat(this.scrollbarThumb.style.top) || 0;
-        const trackHeight = this.scrollbarTrack.clientHeight;
-        const thumbHeight = this.scrollbarThumb.clientHeight;
-        
-        const moveHandler = (e) => {
-            const touch = e.touches[0];
-            const deltaY = touch.clientY - startY;
-            let newTop = Math.max(0, Math.min(startTop + deltaY, trackHeight - thumbHeight));
-            
-            const scrollPercentage = newTop / (trackHeight - thumbHeight);
-            const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
-            
-            this.scrollbarThumb.style.top = `${newTop}px`;
-            this.scrollList.scrollTop = Math.min(scrollPercentage * maxScroll, maxScroll);
-        };
-        
-        const endHandler = () => {
-            this.scrollbarThumb.classList.remove('dragging');
-            document.removeEventListener('touchmove', moveHandler);
-            document.removeEventListener('touchend', endHandler);
-        };
-        
-        document.addEventListener('touchmove', moveHandler, { passive: false });
-        document.addEventListener('touchend', endHandler, { passive: true });
-    },
-  
-    handleTrackClick(e) {
-        if (e.target === this.scrollbarThumb) return;
-        
-        const trackRect = this.scrollbarTrack.getBoundingClientRect();
-        const thumbHeight = this.scrollbarThumb.clientHeight;
-        
-        // Calculate based on full track width
-        const clickPosition = e.clientY - trackRect.top;
-        const trackHeight = trackRect.height;
-        
-        // Map click position to scroll position
-        const scrollPercentage = clickPosition / trackHeight;
-        const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
-        
-        this.scrollList.scrollTo({
-            top: scrollPercentage * maxScroll,
-            behavior: 'smooth'
+
+    setupResizeObserver() {
+        this.resizeObserver = new ResizeObserver(() => {
+            cancelAnimationFrame(this.resizeRAF);
+            this.resizeRAF = requestAnimationFrame(() => this.updateAll());
         });
-    },    
-  
-    scrollBy(amount) {
-        const currentScroll = this.scrollList.scrollTop;
-        const maxScroll = this.scrollList.scrollHeight - this.scrollList.clientHeight;
         
-        this.scrollList.scrollTo({
-            top: Math.max(0, Math.min(currentScroll + amount, maxScroll)),
-            behavior: 'smooth'
-        });
+        [document.querySelector('.audio-container'), document.body]
+            .filter(Boolean)
+            .forEach(el => this.resizeObserver.observe(el));
     },
-    
+	
     updateTrackPosition() {
         const audioContainer = document.querySelector('.audio-container');
         if (!audioContainer) return;
@@ -2250,66 +1741,36 @@ const ScrollbarManager = {
         this.updateThumbSize();
         this.positionThumb();
     },
-
+	
     setupAutoHide() {
         if (!this.scrollList || !this.scrollbarThumb) return;
         
-        // Show scrollbar on scroll
+        const checkHide = () => {
+            if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
+                !this.scrollbarThumb.matches(':hover, .dragging')) {
+                this.scrollbarThumb.classList.remove('visible');
+            }
+        };
+
         this.scrollList.addEventListener('scroll', () => {
             lastScrollTime = Date.now();
             this.scrollbarThumb.classList.add('visible');
             clearTimeout(scrollbarHideTimeout);
-            
-            scrollbarHideTimeout = setTimeout(() => {
-                if (Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY && 
-                    !this.scrollbarThumb.matches(':hover') && 
-                    !this.scrollbarThumb.classList.contains('dragging')) {
-                    this.scrollbarThumb.classList.remove('visible');
-                }
-            }, SCROLLBAR_HIDE_DELAY);
+            scrollbarHideTimeout = setTimeout(checkHide, SCROLLBAR_HIDE_DELAY);
         });
 
-        // Hover effects
-        const thumb = this.scrollbarThumb;
-        thumb.addEventListener('mouseenter', () => {
-            thumb.classList.add('visible');
+        this.scrollbarThumb.addEventListener('mouseenter', () => {
+            this.scrollbarThumb.classList.add('visible');
             clearTimeout(scrollbarHideTimeout);
         });
 
-        thumb.addEventListener('mouseleave', () => {
-            scrollbarHideTimeout = setTimeout(() => {
-                if (!thumb.classList.contains('dragging') && 
-                    Date.now() - lastScrollTime >= SCROLLBAR_HIDE_DELAY) {
-                    thumb.classList.remove('visible');
-                }
-            }, SCROLLBAR_HIDE_DELAY);
+        this.scrollbarThumb.addEventListener('mouseleave', () => {
+            scrollbarHideTimeout = setTimeout(checkHide, SCROLLBAR_HIDE_DELAY);
         });
 
-        // Initial hide
-        thumb.classList.remove('visible');
+        this.scrollbarThumb.classList.remove('visible');
     }
 };
-
-// Helper to check if element is in viewport
-function isInViewport(element) {
-    const rect = element.getBoundingClientRect();
-    return (
-        rect.top >= 0 &&
-        rect.left >= 0 &&
-        rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-        rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-    );
-}
-
-// Helper to scroll element into view if needed
-function scrollIntoViewIfNeeded(element) {
-    if (!isInViewport(element)) {
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-    }
-}
 
 function setupGenreButtonsNavigation() {
     const genreWrapper = document.querySelector('.genre-buttons-wrapper');

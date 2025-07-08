@@ -1772,10 +1772,6 @@ svg path {
     border-color: rgb(var(--accent-dark));
 }
 
-.no-transition {
-    transition: none !important;
-}
-
 .radio.selected {
 	color: var(--accent-color);
 	position: relative;
