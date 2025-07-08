@@ -1649,6 +1649,22 @@ const ScrollbarManager = {
             document.addEventListener('mousemove', moveHandler);
             document.addEventListener('mouseup', upHandler);
         });
+		
+		this.scrollbarThumb.addEventListener('touchstart', e => {
+            e.preventDefault();
+            this.scrollbarThumb.classList.add('dragging');
+			
+            const touch = e.touches[0];
+            const moveHandler = handleThumbMove(e.clientY, parseFloat(this.scrollbarThumb.style.top));
+            const endHandler = () => {
+                this.scrollbarThumb.classList.remove('dragging');
+                document.removeEventListener('touchmove', moveHandler);
+                document.removeEventListener('touchend', endHandler);
+            };
+            
+			document.addEventListener('touchmove', moveHandler, { passive: false });
+			document.addEventListener('touchend', endHandler, { passive: true });
+        });
 
         // Track interaction
         this.scrollbarTrack.addEventListener('click', e => {
