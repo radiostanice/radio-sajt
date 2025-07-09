@@ -691,6 +691,7 @@ svg path {
     scroll-behavior: smooth;
     overflow-x: auto;
     scroll-snap-type: x proximity;
+    transition: scroll-left 0.15s ease-out;
 }
 
 .genre-buttons::-webkit-scrollbar {

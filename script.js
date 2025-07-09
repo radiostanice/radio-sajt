@@ -1027,64 +1027,87 @@ handleTouchEnd = (e) => {
         }, 10);
     }
 
-    createExpandButton(stations, category) {
-        const expandButton = document.createElement("button");
-        expandButton.className = "expand-button";
-        expandButton.dataset.expanded = "false";
+createExpandButton(stations, category) {
+    const expandButton = document.createElement("button");
+    expandButton.className = "expand-button";
+    expandButton.dataset.expanded = "false";
 
-        const content = document.createElement("div");
-        Object.assign(content.style, {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-        });
+    const content = document.createElement("div");
+    Object.assign(content.style, {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+    });
 
-        const icon = document.createElement("span");
-        icon.className = "material-icons";
-        icon.textContent = "expand_more";
-        icon.style.margin = "0px";
+    const icon = document.createElement("span");
+    icon.className = "material-icons";
+    icon.textContent = "expand_more";
+    icon.style.margin = "0px";
 
-        const text = document.createElement("span");
-        text.className = "expand-text";
-        text.textContent = "Više";
-        Object.assign(text.style, {
-            fontSize: '0px',
-            transition: 'font-size 0.15s linear'
-        });
+    const text = document.createElement("span");
+    text.className = "expand-text";
+    text.textContent = "Više";
+    Object.assign(text.style, {
+        fontSize: '0px',
+        transition: 'font-size 0.15s linear'
+    });
 
-        content.append(icon, text);
-        expandButton.append(content);
+    content.append(icon, text);
+    expandButton.append(content);
 
-        expandButton.addEventListener("mouseover", () => {
-            expandButton.querySelector('.expand-text').style.fontSize = '15px';
-        });
-
-        expandButton.addEventListener("mouseout", () => {
-            expandButton.querySelector('.expand-text').style.fontSize = '0px';
-        });
-
-        expandButton.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const expanded = expandButton.dataset.expanded === "true";
-            const newState = !expanded;
+    // Add transition effect to stations
+    stations.forEach((station, index) => {
+        if (index >= CONFIG.STATION_THRESHOLD) {
+            station.style.transition = 'opacity 0.2s linear';
+            station.style.opacity = '0';
             
-            expandButton.dataset.expanded = newState.toString();
-            expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
-            expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
-            
-            stations.forEach((station, index) => {
-                if (index >= CONFIG.STATION_THRESHOLD) {
-                    station.style.display = newState ? "flex" : "none";
+            station.style.overflow = 'hidden';
+        }
+    });
+
+    expandButton.addEventListener("mouseover", () => {
+        expandButton.querySelector('.expand-text').style.fontSize = '15px';
+    });
+
+    expandButton.addEventListener("mouseout", () => {
+        expandButton.querySelector('.expand-text').style.fontSize = '0px';
+    });
+
+    expandButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const expanded = expandButton.dataset.expanded === "true";
+        const newState = !expanded;
+        
+        expandButton.dataset.expanded = newState.toString();
+        expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
+        expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
+        
+        stations.forEach((station, index) => {
+            if (index >= CONFIG.STATION_THRESHOLD) {
+                if (newState) {
+                    // Expanding
+                    station.style.display = "flex";
+                    setTimeout(() => {
+                        station.style.opacity = '1';
+                       
+                    }, 10);
+                } else {
+                    // Collapsing
+                    station.style.opacity = '0';
+                    setTimeout(() => {
+                        station.style.display = "none";
+                    }, 300); // Match transition duration
                 }
-            });
-            
-            setTimeout(() => {
-                this.ScrollbarManager.updateAll();
-            }, 300);
+            }
         });
+        
+        setTimeout(() => {
+            this.ScrollbarManager.updateAll();
+        }, 350); // Slightly longer than transition
+    });
 
-        return expandButton;
-    }
+    return expandButton;
+}
 
     // Audio Container Functions
     setupAudioContainerObserver() {
@@ -1294,33 +1317,17 @@ handleTouchEnd = (e) => {
             rightButton.style.display = scrollLeft >= maxScroll - 1 ? 'none' : 'flex';
         }
 
-        function smoothScroll(direction) {
-            const scrollAmount = genreButtons.clientWidth * 0.8;
-            const start = genreButtons.scrollLeft;
-            const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-            const target = direction === 'left' 
-                ? Math.max(0, start - scrollAmount)
-                : Math.min(start + scrollAmount, maxScroll);
-            
-            const duration = 300;
-            const startTime = performance.now();
+   function smoothScroll(direction) {
+       const scrollAmount = genreButtons.clientWidth * 0.6;
+       const start = genreButtons.scrollLeft;
+       const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+       const target = direction === 'left' 
+           ? Math.max(0, start - scrollAmount)
+           : Math.min(start + scrollAmount, maxScroll);
 
-            function animateScroll(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const easedProgress = 1 - Math.pow(1 - progress, 2);
-                
-                genreButtons.scrollLeft = start + (target - start) * easedProgress;
-                
-                if (progress < 1) {
-                    requestAnimationFrame(animateScroll);
-                } else {
-                    updateButtonVisibility();
-                }
-            }
-
-            requestAnimationFrame(animateScroll);
-        }
+       // Set position
+       genreButtons.scrollLeft = target;
+   }
 
         // Event listeners
         leftButton.addEventListener('click', () => smoothScroll('left'));
