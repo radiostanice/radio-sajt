@@ -3,7 +3,7 @@ const CONFIG = {
     DEFAULT_COLOR: 'green',
     SCROLLBAR_HIDE_DELAY: 1500,
     COLLAPSED_HEIGHT: 155,
-    METADATA_CHECK_INTERVAL: 15000,
+    METADATA_CHECK_INTERVAL: 5000,
     METADATA_PROXY: 'https://radiometadata.kosta04miletic.workers.dev',
     STATION_THRESHOLD: 10
 };
@@ -1236,9 +1236,9 @@ handleTouchEnd = (e) => {
     setupNowPlayingMetadata() {
         clearInterval(this.metadataInterval);
         this.metadataInterval = setInterval(() => {
-            (this.shouldUpdateTooltip() || Date.now() - this.lastMetadataCheck > 30000) && 
+            (this.shouldUpdateTooltip() || Date.now() - this.lastMetadataCheck > 10000) && 
             this.debounceMetadata();
-        }, 5000);
+        }, 3000);
         this.debounceMetadata(true);
     }
 

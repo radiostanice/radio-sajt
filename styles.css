@@ -981,10 +981,10 @@ svg path {
     border: 2px solid rgba(var(--accent-dark), 0.6);
     border-radius: 25px;
     background-color: #121212;
-    padding: 6px;
+    padding: 5px 6px;
     align-items: center;
     justify-content: space-between;
-    margin: 5px 0px 18px 0px;
+    margin: 5px 0px 20px 0px;
     transform: none;
 	transition: border-radius 0.2s linear, border-color 0.2s linear;
     -moz-transition: border-radius 0.2s linear, border-color 0.2s linear;
