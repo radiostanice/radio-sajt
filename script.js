@@ -18,6 +18,8 @@ class RadioPlayer {
         this.lastMetadataCheck = 0;
 		this.lastScrollTime = 0;
         this.scrollbarHideTimeout = null;
+		this.handleTouchEnd = this.handleTouchEnd.bind(this);
+		this.toggleSearch = this.toggleSearch.bind(this);
         
         this.elements = {
             audio: document.getElementById("audioctrl"),
@@ -54,13 +56,33 @@ class RadioPlayer {
 
     setupEventListeners() {
         // Search functionality
-        if (this.elements.searchContainer && this.elements.stationSearch && this.elements.clearSearch) {
-            this.elements.searchContainer.addEventListener('click', this.handleSearchContainerClick);
-            this.elements.clearSearch.addEventListener('click', this.handleClearSearch);
-            this.elements.stationSearch.addEventListener('input', this.handleSearchInput);
-            document.addEventListener('click', this.handleDocumentClick);
-            this.elements.searchContainer.addEventListener('touchend', this.handleSearchTouch, { passive: false });
-        }
+    if (this.elements.searchContainer && this.elements.stationSearch && this.elements.clearSearch) {
+        this.elements.searchContainer.addEventListener('click', (e) => {
+            if (!this.elements.searchContainer.classList.contains('active')) {
+                this.toggleSearch(true);
+                e.stopPropagation();
+            }
+        });
+        
+        this.elements.clearSearch.addEventListener('click', this.handleClearSearch);
+        this.elements.stationSearch.addEventListener('input', this.handleSearchInput);
+        
+        document.addEventListener('click', (e) => {
+            if (!this.elements.searchContainer.contains(e.target) && 
+                this.elements.searchContainer.classList.contains('active') &&
+                !this.elements.stationSearch.value) {
+                this.toggleSearch(false);
+            }
+        });
+        
+        // Make sure touch events are properly handled
+        this.elements.searchContainer.addEventListener('touchend', (e) => {
+            if (!this.elements.searchContainer.classList.contains('active')) {
+                e.preventDefault();
+                this.toggleSearch(true);
+            }
+        }, { passive: false });
+    }
 
         // Playback controls
         this.elements.playPauseBtn.addEventListener("click", this.togglePlayback);
@@ -95,13 +117,18 @@ class RadioPlayer {
         e.stopPropagation();
     }
 
-    handleClearSearch = (e) => {
-        this.elements.stationSearch.value = '';
-        this.elements.clearSearch.style.display = 'none';
-        this.filterStations();
+handleClearSearch = (e) => {
+    this.elements.stationSearch.value = '';
+    this.elements.clearSearch.style.display = 'none';
+    this.filterStations();
+    
+    // Only close search if it's not already closed
+    if (this.elements.searchContainer.classList.contains('active')) {
         this.toggleSearch(false);
-        e.stopPropagation();
     }
+    
+    e.stopPropagation();
+}
 
     handleSearchInput = () => {
         this.elements.clearSearch.style.display = this.elements.stationSearch.value ? 'block' : 'none';
@@ -122,21 +149,24 @@ class RadioPlayer {
         }
     }
 
-// In RadioPlayer class
 toggleSearch = (expand) => {
-    const { searchContainer, searchInput } = this.elements;
+    const { searchContainer, stationSearch } = this.elements;
+    
+    // Clear any existing timeouts
+    clearTimeout(this.searchFocusTimeout);
     
     searchContainer.style.width = expand ? '250px' : '44px';
     searchContainer.style.borderRadius = expand ? '10px' : '15px';
     
     if (expand) {
-        setTimeout(() => {
+        // Defer adding active class to match animation timing
+        this.searchFocusTimeout = setTimeout(() => {
             searchContainer.classList.add('active');
-            searchInput.focus();
-        }, 170);
-    } else if (!searchInput.value) {
+            stationSearch.focus();
+        }, 170); // Match the CSS transition duration
+    } else {
         searchContainer.classList.remove('active');
-        searchInput.blur();
+        stationSearch.blur();
     }
 }
 
@@ -188,16 +218,18 @@ toggleSearch = (expand) => {
         }
     }
 
-    handleTouchEnd = function(e) {
-        const radio = e.target.closest('.radio');
-        if (radio && !radio._touchMoved) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.handleStationClick(e);
-            this.DropdownManager.currentOpen === 'history' && this.DropdownManager.keepOpen('history');
+handleTouchEnd = (e) => {
+    const radio = e.target.closest('.radio');
+    if (radio && !radio._touchMoved) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        this.handleStationClick(e);
+        if (this.DropdownManager && this.DropdownManager.currentOpen === 'history') {
+            this.DropdownManager.keepOpen('history');
         }
     }
+}
 
     // Station and Playback Functions
     async changeStation(name, link) {
@@ -1366,6 +1398,7 @@ toggleSearch = (expand) => {
     // Scrollbar Manager
     cleanupResources = () => {
         // Cleanup tooltip
+		clearTimeout(this.searchFocusTimeout);
         const tooltip = document.querySelector('.genre-tooltip');
         if (tooltip) {
             tooltip._scrollHandler && tooltip.removeEventListener('scroll', tooltip._scrollHandler);
@@ -1494,7 +1527,6 @@ class DropdownManager {
         setTimeout(() => this.isOperating = false, 50);
     }
 
-// In DropdownManager class
 open(id) {
     const dropdown = this.dropdowns[id];
     if (!dropdown) return;
@@ -1509,21 +1541,23 @@ open(id) {
         dropdown.menu.classList.add('show');
         if (id === 'tooltip') {
             dropdown.menu.classList.add('visible');
-            // Add slight delay to ensure visibility before updating content
+            // Wait for the dropdown to be fully visible before updating content
             setTimeout(() => {
                 window.radioPlayer?.updateTooltipContent();
-            }, 10);
+                // Then setup scroll after content is loaded
+                this.setupDropdownScroll(id);
+            }, 50);
+        } else if (dropdown.needsScroll) {
+            this.setupDropdownScroll(id);
         }
+        
         dropdown.menu.style.opacity = '1';
         dropdown.toggle.classList.add('active');
-        
-        dropdown.needsScroll && this.setupDropdownScroll(id);
         this.updateDropdownHeights();
     });
 
     this.currentOpen = id;
 }
-
 
     close(id) {
         const dropdown = this.dropdowns[id];
@@ -1543,68 +1577,88 @@ open(id) {
         this.currentOpen = null;
     }
 
-    setupDropdownScroll(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown.menu) return;
+setupDropdownScroll(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown.menu) return;
 
-        // Clear existing
-        dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(b => b.remove());
+    // First clear existing buttons
+    dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(b => b.remove());
+
+    // Calculate if we need scroll buttons AFTER content is loaded
+    const checkScroll = () => {
+        const hasScroll = dropdown.menu.scrollHeight > dropdown.menu.clientHeight;
         
-        // Create buttons
-        const createButton = (pos) => {
-            const btn = document.createElement('button');
-            btn.className = `${dropdown.navButtonClass} ${pos}`;
-            btn.innerHTML = `<span class="material-icons">expand_${pos === 'top' ? 'less' : 'more'}</span>`;
-            return btn;
-        };
-
-        const topBtn = createButton('top');
-        const bottomBtn = createButton('bottom');
-        dropdown.menu.prepend(topBtn);
-        dropdown.menu.append(bottomBtn);
-
-        const checkVisibility = () => {
-            const { scrollTop, scrollHeight, clientHeight } = dropdown.menu;
-            const maxScroll = scrollHeight - clientHeight;
-            
-            topBtn.style.opacity = scrollTop <= 1 ? '0' : '1';
-            bottomBtn.style.opacity = scrollTop >= maxScroll - 1 ? '0' : '1';
-        };
-
-        const smoothScroll = (dir) => {
-            if (dropdown.menu._isAnimating) return;
-            dropdown.menu._isAnimating = true;
-            
-            const start = dropdown.menu.scrollTop;
-            const target = dir === 'top' ? 
-                Math.max(0, start - dropdown.menu.clientHeight * 0.8) :
-                Math.min(start + dropdown.menu.clientHeight * 0.8, 
-                        dropdown.menu.scrollHeight - dropdown.menu.clientHeight);
-            
-            const startTime = performance.now();
-            const animate = (time) => {
-                const progress = Math.min((time - startTime) / 300, 1);
-                dropdown.menu.scrollTop = start + (target - start) * (1 - Math.pow(1 - progress, 3));
-                
-                progress < 1 ? 
-                    requestAnimationFrame(animate) : 
-                    (dropdown.menu._isAnimating = false, checkVisibility());
+        if (hasScroll) {
+            // Create buttons only if needed
+            const createButton = (pos) => {
+                const btn = document.createElement('button');
+                btn.className = `${dropdown.navButtonClass} ${pos}`;
+                btn.innerHTML = `<span class="material-icons">expand_${pos === 'top' ? 'less' : 'more'}</span>`;
+                return btn;
             };
-            requestAnimationFrame(animate);
-        };
 
-        // Event listeners
-        topBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('top')));
-        bottomBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('bottom')));
-        topBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('top')), { passive: false });
-        bottomBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('bottom')), { passive: false });
-        dropdown.menu.addEventListener('scroll', () => {
-            cancelAnimationFrame(dropdown.menu._scrollRAF);
-            dropdown.menu._scrollRAF = requestAnimationFrame(checkVisibility);
-        }, { passive: true });
+            const topBtn = createButton('top');
+            const bottomBtn = createButton('bottom');
+            dropdown.menu.prepend(topBtn);
+            dropdown.menu.append(bottomBtn);
 
-        checkVisibility();
-    }
+            const checkVisibility = () => {
+                const { scrollTop, scrollHeight, clientHeight } = dropdown.menu;
+                const maxScroll = scrollHeight - clientHeight;
+                
+                topBtn.style.opacity = scrollTop <= 1 ? '0' : '1';
+                topBtn.style.pointerEvents = scrollTop <= 1 ? 'none' : 'auto';
+                bottomBtn.style.opacity = scrollTop >= maxScroll - 1 ? '0' : '1';
+                bottomBtn.style.pointerEvents = scrollTop >= maxScroll - 1 ? 'none' : 'auto';
+            };
+
+            const smoothScroll = (dir) => {
+                if (dropdown.menu._isAnimating) return;
+                dropdown.menu._isAnimating = true;
+                
+                const start = dropdown.menu.scrollTop;
+                const target = dir === 'top' ? 
+                    Math.max(0, start - dropdown.menu.clientHeight * 0.8) :
+                    Math.min(start + dropdown.menu.clientHeight * 0.8, 
+                            dropdown.menu.scrollHeight - dropdown.menu.clientHeight);
+                
+                const startTime = performance.now();
+                const animate = (time) => {
+                    const progress = Math.min((time - startTime) / 300, 1);
+                    dropdown.menu.scrollTop = start + (target - start) * (1 - Math.pow(1 - progress, 3));
+                    
+                    progress < 1 ? 
+                        requestAnimationFrame(animate) : 
+                        (dropdown.menu._isAnimating = false, checkVisibility());
+                };
+                requestAnimationFrame(animate);
+            };
+
+            // Event listeners
+            topBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('top')));
+            bottomBtn.addEventListener('click', (e) => (e.stopPropagation(), smoothScroll('bottom')));
+            topBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('top')), { passive: false });
+            bottomBtn.addEventListener('touchend', (e) => (e.stopPropagation(), smoothScroll('bottom')), { passive: false });
+            
+            // Properly handle scroll events
+            const scrollHandler = () => {
+                cancelAnimationFrame(dropdown.menu._scrollRAF);
+                dropdown.menu._scrollRAF = requestAnimationFrame(checkVisibility);
+            };
+            
+            dropdown.menu.addEventListener('scroll', scrollHandler, { passive: true });
+            dropdown.menu._scrollHandler = scrollHandler;
+            
+            // Initial check
+            checkVisibility();
+        }
+    };
+    
+    // Wait for next frame to ensure proper measurements
+    requestAnimationFrame(() => {
+        checkScroll();
+    });
+}
 
     updateDropdownHeights() {
         const audioHeight = document.querySelector('.audio-container')?.getBoundingClientRect().bottom || 0;
