@@ -1340,60 +1340,61 @@ handleTouchEnd = (e) => {
         checkOverflow();
     }
 
-    setupGenreCategoriesSwipe() {
-        const genreWrapper = document.querySelector('.genre-buttons-wrapper');
-        if (!genreWrapper) return;
+setupGenreCategoriesSwipe() {
+    const genreWrapper = document.querySelector('.genre-buttons-wrapper');
+    if (!genreWrapper) return;
+    
+    const genreButtons = genreWrapper.querySelector('.genre-buttons');
+    if (!genreButtons) return;
+
+    let touchStartX = 0;
+    let isSwiping = false;
+    let scrollLeftStart = 0;
+    
+    genreButtons.addEventListener('touchstart', function(e) {
+        // Only handle horizontal swipes when we're at scroll boundaries
+        if (genreButtons.scrollLeft > 0 && 
+            genreButtons.scrollLeft < genreButtons.scrollWidth - genreButtons.clientWidth) {
+            return;
+        }
         
-        const genreButtons = genreWrapper.querySelector('.genre-buttons');
-        if (!genreButtons) return;
+        touchStartX = e.changedTouches[0].screenX;
+        scrollLeftStart = genreButtons.scrollLeft;
+        isSwiping = true;
+        
+        // Preserve native scrolling behavior by not preventing default
+        genreButtons.style.overscrollBehaviorX = 'contain';
+    }, { passive: true });
 
-        let touchStartX = 0;
-        let isSwiping = false;
-        let scrollLeftStart = 0;
-        let touchMoved = false;
-
-        genreButtons.addEventListener('touchstart', function(e) {
-            if (!e.target.classList.contains('genre-button')) return;
-            
-            touchStartX = e.changedTouches[0].screenX;
-            scrollLeftStart = genreButtons.scrollLeft;
-            isSwiping = true;
-            touchMoved = false;
+    genreButtons.addEventListener('touchmove', function(e) {
+        if (!isSwiping) return;
+        const touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        
+        // For horizontal swiping at boundaries only
+        if ((scrollLeftStart <= 0 && diff < 0) || 
+            (scrollLeftStart >= genreButtons.scrollWidth - genreButtons.clientWidth && diff > 0)) {
+            e.preventDefault();
+            genreButtons.scrollLeft = scrollLeftStart + diff;
             genreButtons.style.scrollBehavior = 'auto';
-        }, { passive: true });
+        }
+    }, { passive: false });
 
-        genreButtons.addEventListener('touchmove', function(e) {
-            if (!isSwiping) return;
-            const touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
-            
-            if (Math.abs(diff) > 10) {
-                touchMoved = true;
-                e.preventDefault();
-                genreButtons.scrollLeft = scrollLeftStart + diff;
+    genreButtons.addEventListener('touchend', function() {
+        isSwiping = false;
+        genreButtons.style.scrollBehavior = 'smooth';
+        
+        // Update buttons visibility
+        setTimeout(() => {
+            const buttons = genreWrapper.querySelectorAll('.genre-nav-button');
+            if (buttons.length) {
+                buttons[0].style.display = genreButtons.scrollLeft <= 1 ? 'none' : 'flex';
+                buttons[1].style.display = genreButtons.scrollLeft >= 
+                    (genreButtons.scrollWidth - genreButtons.clientWidth - 1) ? 'none' : 'flex';
             }
-        }, { passive: false });
-
-        genreButtons.addEventListener('touchend', function() {
-            if (!isSwiping) return;
-            isSwiping = false;
-            
-            if (!touchMoved) {
-                genreButtons.style.scrollBehavior = 'auto';
-                return;
-            }
-            
-            // Update buttons visibility
-            setTimeout(() => {
-                const buttons = genreWrapper.querySelectorAll('.genre-nav-button');
-                if (buttons.length) {
-                    buttons[0].style.display = genreButtons.scrollLeft <= 1 ? 'none' : 'flex';
-                    buttons[1].style.display = genreButtons.scrollLeft >= 
-                        (genreButtons.scrollWidth - genreButtons.clientWidth - 1) ? 'none' : 'flex';
-                }
-            }, 100);
-        }, { passive: true });
-    }
+        }, 100);
+    }, { passive: true });
+}
 
     // Scrollbar Manager
     cleanupResources = () => {

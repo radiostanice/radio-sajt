@@ -686,6 +686,11 @@ svg path {
     overflow: hidden;
     padding: 0 5px !important;
     margin: 0 -5px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
 }
 
 .genre-buttons::-webkit-scrollbar {
