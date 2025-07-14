@@ -795,57 +795,98 @@ updatePlayPauseButton = () => {
     }
 
     // Theme Functions
-    setTheme(mode) {
-        const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
-        const actualMode = mode || (prefersDark ? 'dark' : 'light');
+setTheme(mode) {
+    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const actualMode = mode || (prefersDark ? 'dark' : 'light');
+    
+    document.body.className = `${actualMode}-mode`;
+    document.documentElement.style.setProperty(
+        '--accent-color', 
+        `var(--accent-${actualMode === 'dark' ? 'light' : 'dark'})`
+    );
+    localStorage.setItem('theme', actualMode);
+
+    // Update active state
+    document.querySelectorAll('.theme-option').forEach(option => 
+        option.classList.remove('active')
+    );
+    document.querySelector(`.theme-option[data-theme="${actualMode}"]`)?.classList.add('active');
+    
+    setTimeout(() => this.ScrollbarManager.updateAll(), 50);
+}
+
+changeColor(color) {
+    const colors = {
+        green: { dark: "22, 111, 69", light: "123, 242, 145" },
+        blue: { dark: "0, 79, 139", light: "164, 205, 255" },
+        yellow: { dark: "143, 124, 65", light: "255, 234, 132" }, 
+        red: { dark: "167, 44, 47", light: "255, 150, 150" },
+        pink: { dark: "64, 50, 102", light: "202, 187, 230" },
+    }[color] || colors.green;
+
+    document.documentElement.style.setProperty('--accent-dark', colors.dark);
+    document.documentElement.style.setProperty('--accent-light', colors.light);
+    localStorage.setItem('accentColor', color);
+    
+    // Update active state
+    document.querySelectorAll('.color-picker').forEach(picker => 
+        picker.classList.remove('active')
+    );
+    document.querySelector(`.color-picker[data-color="${color}"]`)?.classList.add('active');
+}
+
+setupThemeControls() {
+    // Update theme options handlers
+    document.querySelectorAll('.theme-option').forEach(option => {
+        const handler = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            option.dataset.theme && this.setTheme(option.dataset.theme);
+            
+            // Update active state
+            document.querySelectorAll('.theme-option').forEach(opt => 
+                opt.classList.remove('active')
+            );
+            option.classList.add('active');
+        };
         
-        document.body.className = `${actualMode}-mode`;
-        document.documentElement.style.setProperty(
-            '--accent-color', 
-            `var(--accent-${actualMode === 'dark' ? 'light' : 'dark'})`
-        );
-        localStorage.setItem('theme', actualMode);
-
-        document.querySelectorAll('.theme-icon').forEach(icon => {
-            icon.textContent = actualMode === 'dark' ? 'dark_mode' : 'light_mode';
-        });
+        option.addEventListener('click', handler);
+        option.addEventListener('touchend', handler, { passive: false });
+    });
+    
+    // Update color picker handlers
+    document.querySelectorAll('.color-picker').forEach(picker => {
+        const handler = e => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (picker.dataset.color) {
+                this.changeColor(picker.dataset.color);
+                
+                // Update active state
+                document.querySelectorAll('.color-picker').forEach(p => 
+                    p.classList.remove('active')
+                );
+                picker.classList.add('active');
+            }
+        };
         
-        setTimeout(() => this.ScrollbarManager.updateAll(), 50);
-    }
+        picker.addEventListener('click', handler);
+        picker.addEventListener('touchend', handler, { passive: false });
+    });
+    
+    // Set initial active states
+    this.setInitialActiveStates();
+}
 
-    changeColor(color) {
-        const colors = {
-            green: { dark: "22, 111, 69", light: "123, 242, 145" },
-            blue: { dark: "0, 79, 139", light: "164, 205, 255" },
-            yellow: { dark: "247, 104, 6", light: "255, 234, 132" }, 
-            red: { dark: "167, 44, 47", light: "255, 121, 116" },
-            pink: { dark: "64, 50, 102", light: "202, 187, 230" },
-        }[color] || colors.green;
-
-        document.documentElement.style.setProperty('--accent-dark', colors.dark);
-        document.documentElement.style.setProperty('--accent-light', colors.light);
-        localStorage.setItem('accentColor', color);
-    }
-
-    setupThemeControls() {
-        document.querySelectorAll('.color-picker').forEach(picker => {
-            const handler = e => {
-                e.stopPropagation();
-                picker.dataset.color && this.changeColor(picker.dataset.color);
-            };
-            picker.addEventListener('click', handler);
-            picker.addEventListener('touchend', handler, { passive: false });
-        });
-        
-        document.querySelectorAll('.theme-option').forEach(option => {
-            const handler = e => {
-                e.stopPropagation();
-                option.dataset.theme && this.setTheme(option.dataset.theme);
-            };
-            option.addEventListener('click', handler);
-            option.addEventListener('touchend', handler, { passive: false });
-        });
-    }
+setInitialActiveStates() {
+    // Set active theme
+    const currentTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
+    document.querySelector(`.theme-option[data-theme="${currentTheme}"]`)?.classList.add('active');
+    
+    // Set active color
+    const currentColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
+    document.querySelector(`.color-picker[data-color="${currentColor}"]`)?.classList.add('active');
+}
 
     // Tooltip Functions
     getGenreIcon(genre) {
@@ -1243,12 +1284,14 @@ updateAudioContainerHeight() {
         setTimeout(() => this.ScrollbarManager.updateAll(), 500);
     }
 
-    loadPreferences() {
-        const savedTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
-        const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
-        const savedStation = this.safeParseJSON("lastStation", {});
-		this.setTheme(savedTheme);
-        this.changeColor(savedColor);
+loadPreferences() {
+    const savedTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
+    const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
+    const savedStation = this.safeParseJSON("lastStation", {});
+    
+    this.setTheme(savedTheme);
+    this.changeColor(savedColor);
+    this.setInitialActiveStates();
 
         if (savedStation.name && savedStation.link) {
             // Update UI immediately
@@ -1487,10 +1530,10 @@ class DropdownManager {
         this.currentOpen = null;
         this.lastToggleTime = 0;
         this.dropdowns = {
-            theme: {
-                toggle: document.querySelector(".theme-toggle"),
-                menu: document.querySelector(".dropdown-menu")
-            },
+			theme: {
+				toggle: document.querySelector(".theme-toggle"),
+				menu: document.querySelector(".theme-dropdown__menu")
+			},
             history: {
                 toggle: document.getElementById("historyBtn"),
                 menu: document.getElementById("historyDropdown"),

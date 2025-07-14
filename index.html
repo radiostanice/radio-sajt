@@ -452,29 +452,46 @@
         <div class="genre-tooltip"></div>
 
 <!-- Theme Dropdown Container -->
-        <div class="dropdown">
-            <div class="dropdown-menu">
-                <span class="theme-title">Tema</span>
-                <div class="theme-options-container">
-                    <div class="theme-option" data-theme="dark">
-                        <span class="material-icons dark_mode">dark_mode</span>
-                        <span class="theme-text">Tamna</span>
-                    </div>
-                    <div class="theme-option" data-theme="light">
-                        <span class="material-icons light_mode">light_mode</span>
-                        <span class="theme-text">Svetla</span>
-                    </div>
-                </div>
-                <span class="color-title">Boja</span>
-                <div class="color-picker-container">
-					<div class="color-picker" style="background: #50cb70;" data-color="green"></div>
-                    <div class="color-picker" style="background: #3396f0;" data-color="blue"></div>
-                    <div class="color-picker" style="background: #fbdb37;" data-color="yellow"></div>
-                    <div class="color-picker" style="background: #e82424;" data-color="red"></div>
-					<div class="color-picker" style="background: #c656cf;" data-color="pink"></div>
-                </div>
-            </div>
-        </div>
+<div class="theme-dropdown">
+  <div class="theme-dropdown__menu">
+    <!-- Theme Section -->
+    <div class="theme-section">
+      <h3 class="theme-section__title">Tema</h3>
+      <div class="theme-options">
+        <button type="button" class="theme-option" data-theme="dark" aria-label="Dark Theme">
+          <span class="material-icons dark_mode">dark_mode</span>
+          <span class="theme-option__text">Tamna</span>
+        </button>
+        <button type="button" class="theme-option" data-theme="light" aria-label="Light Theme">
+          <span class="material-icons light_mode">light_mode</span>
+          <span class="theme-option__text">Svetla</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Color Section -->
+    <div class="color-section">
+      <h3 class="color-section__title">Boja</h3>
+      <div class="color-picker__grid">
+        <button type="button" class="color-picker color-picker--green" data-color="green" aria-label="Green Color">
+          <span class="color-picker__check"></span>
+        </button>
+        <button type="button" class="color-picker color-picker--blue" data-color="blue" aria-label="Blue Color">
+          <span class="color-picker__check"></span>
+        </button>
+        <button type="button" class="color-picker color-picker--yellow" data-color="yellow" aria-label="Yellow Color">
+          <span class="color-picker__check"></span>
+        </button>
+        <button type="button" class="color-picker color-picker--red" data-color="red" aria-label="Red Color">
+          <span class="color-picker__check"></span>
+        </button>
+        <button type="button" class="color-picker color-picker--pink" data-color="pink" aria-label="Pink Color">
+          <span class="color-picker__check"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </div>
     
     <!-- History Dropdown Container -->
