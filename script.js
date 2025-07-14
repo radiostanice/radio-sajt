@@ -817,11 +817,11 @@ setTheme(mode) {
 
 changeColor(color) {
     const colors = {
-        green: { dark: "22, 111, 69", light: "123, 242, 145" },
-        blue: { dark: "0, 79, 139", light: "164, 205, 255" },
+        green: { dark: "22, 111, 69", light: "146, 244, 164" },
+        blue: { dark: "0, 79, 139", light: "190, 219, 255" }, 
         yellow: { dark: "143, 124, 65", light: "255, 234, 132" }, 
-        red: { dark: "167, 44, 47", light: "255, 150, 150" },
-        pink: { dark: "64, 50, 102", light: "202, 187, 230" },
+        red: { dark: "167, 44, 47", light: "255, 195, 195" },
+        pink: { dark: "64, 50, 102", light: "217, 206, 237" },
     }[color] || colors.green;
 
     document.documentElement.style.setProperty('--accent-dark', colors.dark);
