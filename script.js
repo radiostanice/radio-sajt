@@ -5,7 +5,6 @@ const CONFIG = {
     COLLAPSED_HEIGHT: 155,
     METADATA_CHECK_INTERVAL: 5000,
     METADATA_PROXY: 'https://radiometadata.kosta04miletic.workers.dev',
-    STATION_THRESHOLD: 10
 };
 
 // Main Application Controller
@@ -38,76 +37,75 @@ class RadioPlayer {
         this.init();
     }
 
-    init() {
-        this.setupEventListeners();
-        this.loadPreferences();
-        this.ScrollbarManager = new ScrollbarManager(this.elements);
-        this.DropdownManager = new DropdownManager(this.elements);
+init() {
+    this.setupEventListeners();
+    this.loadPreferences();
+    this.ScrollbarManager = new ScrollbarManager(this.elements);
+    this.DropdownManager = new DropdownManager(this.elements);
+    
+    // Initialize scrollbar auto-hide
+    this.ScrollbarManager.setupAutoHide();
+    
+    // Setup search functionality
+    this.elements.stationSearch.addEventListener('input', this.debounce(this.filterStations.bind(this), 300));
+    
+    // Add window resize handler for category expansion
+this.handleResize = this.debounce(() => {
+    if (!this.elements.stationSearch.value.trim()) {
+        // First apply genre filter to ensure we're working with correct stations
+        this.applyGenreFilter(); 
         
-        // Initialize scrollbar auto-hide
-        this.ScrollbarManager.setupAutoHide();
-        
-        // Setup search functionality
-        this.elements.stationSearch.addEventListener('input', this.debounce(this.filterStations.bind(this), 300));
-        
-        this.setupInitialUI();
-        this.queueInitializations();
+        // Then setup expandable categories
+        this.setupExpandableCategories();
+    }
+}, 200);
+    window.addEventListener('resize', this.handleResize);
+    
+    this.setupInitialUI();
+    this.queueInitializations();
+}
+
+setupEventListeners() {
+    const { searchContainer, stationSearch, clearSearch, historyDropdown } = this.elements;
+    if (searchContainer && stationSearch && clearSearch) {
+        searchContainer.addEventListener('click', this.handleSearchContainerClick);
+        clearSearch.addEventListener('click', this.handleClearSearch);
+        stationSearch.addEventListener('input', this.handleSearchInput);
+        document.addEventListener('click', this.handleDocumentClick);
+        searchContainer.addEventListener('touchend', this.handleSearchTouch, { passive: false });
     }
 
-    setupEventListeners() {
-        // Search functionality
-    if (this.elements.searchContainer && this.elements.stationSearch && this.elements.clearSearch) {
-        this.elements.searchContainer.addEventListener('click', (e) => {
-            if (!this.elements.searchContainer.classList.contains('active')) {
-                this.toggleSearch(true);
-                e.stopPropagation();
+    this.elements.playPauseBtn.addEventListener("click", this.togglePlayback);
+    this.elements.volumeSlider.addEventListener("input", this.handleVolumeChange);
+    this.elements.volumeIcon.addEventListener("click", this.toggleMute);
+
+    this.elements.audio.addEventListener("play", this.updatePlayPauseButton);
+    this.elements.audio.addEventListener("pause", this.updatePlayPauseButton);
+    this.elements.audio.addEventListener('ended', () => this.checkMetadata(true), { once: true });
+
+        this.elements.scrollList?.addEventListener('click', (e) => {
+        let target = e.target;
+        // Walk up the DOM tree to find the radio element
+        while (target && target !== this.elements.scrollList) {
+            if (target.classList.contains('radio')) {
+                this.handleStationClick(e);
+                break;
             }
-        });
-        
-        this.elements.clearSearch.addEventListener('click', this.handleClearSearch);
-        this.elements.stationSearch.addEventListener('input', this.handleSearchInput);
-        
-        document.addEventListener('click', (e) => {
-            if (!this.elements.searchContainer.contains(e.target) && 
-                this.elements.searchContainer.classList.contains('active') &&
-                !this.elements.stationSearch.value) {
-                this.toggleSearch(false);
-            }
-        });
-        
-        // Make sure touch events are properly handled
-        this.elements.searchContainer.addEventListener('touchend', (e) => {
-            if (!this.elements.searchContainer.classList.contains('active')) {
-                e.preventDefault();
-                this.toggleSearch(true);
-            }
-        }, { passive: false });
-    }
-
-        // Playback controls
-        this.elements.playPauseBtn.addEventListener("click", this.togglePlayback);
-        this.elements.volumeSlider.addEventListener("input", this.handleVolumeChange);
-        this.elements.volumeIcon.addEventListener("click", this.toggleMute);
-
-        // Audio events
-        this.elements.audio.addEventListener("play", this.updatePlayPauseButton);
-        this.elements.audio.addEventListener("pause", this.updatePlayPauseButton);
-        this.elements.audio.addEventListener('ended', () => this.checkMetadata(true), { once: true });
-
-        // Station selection
-        this.elements.scrollList?.addEventListener('click', this.handleStationClick);
-        this.elements.historyDropdown?.addEventListener('click', this.handleStationClick);
-
-        // Touch handling for history dropdown
-        if (this.elements.historyDropdown) {
-            this.elements.historyDropdown.addEventListener('touchstart', this.handleTouchStart, { passive: true });
-            this.elements.historyDropdown.addEventListener('touchmove', this.handleTouchMove, { passive: true });
-            this.elements.historyDropdown.addEventListener('touchend', this.handleTouchEnd, { passive: false, capture: true });
+            target = target.parentElement;
         }
+    });
+    
 
-        // Cleanup on unload
-        window.addEventListener('beforeunload', this.cleanupResources);
+    this.elements.historyDropdown?.addEventListener('click', this.handleStationClick);
+
+    if (historyDropdown) {
+        historyDropdown.addEventListener('touchstart', this.handleTouchStart, { passive: true });
+        historyDropdown.addEventListener('touchmove', this.handleTouchMove, { passive: true });
+        historyDropdown.addEventListener('touchend', this.handleTouchEnd, { passive: false, capture: true });
     }
+
+    window.addEventListener('beforeunload', this.cleanupResources);
+}
 
     // Event Handlers
     handleSearchContainerClick = (e) => {
@@ -170,31 +168,29 @@ toggleSearch = (expand) => {
     }
 }
 
-    handleStationClick = (e) => {
-        e.type === 'touchend' && e.preventDefault();
-        const radio = e.target.closest('.radio');
-        if (!radio || (e.type === 'touchend' && radio._touchMoved)) return;
+handleStationClick(e) {
+    const radio = e.target.closest('.radio');
+    if (!radio || (e.type === 'touchend' && radio._touchMoved)) return;
 
-        const { name, link } = radio.dataset;
-        this.changeStation(name, link);
+    // Stop propagation to prevent any potential parent handlers from interfering
+    e.stopPropagation();
+    e.preventDefault();
+    
+    const { name, link } = radio.dataset;
+    this.changeStation(name, link);
 
-        if (!radio.closest('.history-dropdown')) return;
-        
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-
-        if (e.type === 'touchend') {
-            const handler = (clickEvent) => {
-                clickEvent.stopPropagation();
-                clickEvent.stopImmediatePropagation();
-                clickEvent.preventDefault();
-            };
-            radio.addEventListener('click', handler, { once: true });
-        }
-
-        this.DropdownManager?.currentOpen === 'history' && 
-            requestAnimationFrame(() => this.DropdownManager.keepOpen('history'));
+    if (!radio.closest('.history-dropdown')) return;
+    
+    if (e.type === 'touchend') {
+        radio.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+        }, { once: true });
     }
+
+    this.DropdownManager?.currentOpen === 'history' && 
+        requestAnimationFrame(() => this.DropdownManager.keepOpen('history'));
+}
 
     handleTouchStart = (e) => {
         const radio = e.target.closest('.radio');
@@ -232,141 +228,85 @@ handleTouchEnd = (e) => {
 }
 
     // Station and Playback Functions
-    async changeStation(name, link) {
-        const { audioText, audioContainer } = this.elements;
-        
-        // Clear UI immediately
-        if (audioText) {
-            audioText.innerHTML = `<div class="station-name">${name}</div>`;
-            audioText.classList.remove('has-now-playing');
-            audioContainer?.classList.remove('has-now-playing');
-            this.lastTitle = '';
-            
-            audioText.querySelector('.song-title')?.remove();
-            this.updateAudioContainerHeight();
-        }
-
-        // Stop metadata requests
-        if (this.metadataInterval) {
-            clearInterval(this.metadataInterval);
-            this.metadataInterval = null;
-        }
-
-        // Store current station
-        this.currentStation = { name, link };
-
-        // Reset audio
-        const { audio } = this.elements;
-        audio.pause();
-        audio.currentTime = 0;
-        audio.src = link;
-
-        // Update UI
-        document.title = `KlikniPlay | ${name}`;
-        localStorage.setItem("lastStation", JSON.stringify({ name, link }));
-        this.updateSelectedStation(name);
-        this.updatePlayPauseButton();
-        this.updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
-
-        // Scroll to station
-        const selectedStation = document.querySelector(`.radio[data-name="${name}"]`);
-        const historyDropdown = document.querySelector('.history-dropdown');
-        if (selectedStation) {
-            requestAnimationFrame(() => {
-                selectedStation.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-                historyDropdown.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
-        }
-
-        this.updateTooltipContent();
-        
-        // Setup audio handlers
-        const playAudio = async () => {
-            try {
-                await audio.play().catch(this.handlePlayError);
-                if (this.currentStation?.name === name) {
-                    await this.checkMetadata(true);
-                    this.setupNowPlayingMetadata();
-                }
-            } catch (e) {
-                this.handlePlayError(e);
-                setTimeout(playAudio, 1000);
-            }
-        };
-
-        audio.oncanplay = playAudio;
-        audio.onerror = () => setTimeout(playAudio, 1000);
-
-        // Try to play
-        try {
-            await playAudio();
-        } catch (e) {
-            console.error('Initial play failed:', e);
-        }
+async changeStation(name, link) {
+    const { audioText, audioContainer, audio } = this.elements;
+    if (audioText) {
+        audioText.innerHTML = `<div class="station-name">${name}</div>`;
+        audioText.classList.remove('has-now-playing');
+        audioContainer?.classList.remove('has-now-playing');
+        this.lastTitle = '';
+        this.updateAudioContainerHeight();
     }
 
-    async checkMetadata(force = false) {
-        if (!this.currentStation?.link || !force && Date.now() - this.lastMetadataCheck < CONFIG.METADATA_CHECK_INTERVAL) return;
+    clearInterval(this.metadataInterval);
+    this.currentStation = { name, link };
+
+    audio.pause();
+    audio.src = link;
+    document.title = `KlikniPlay | ${name}`;
+
+    localStorage.setItem("lastStation", JSON.stringify({ name, link }));
+    this.updateSelectedStation(name);
+    this.updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
+    
+    const station = document.querySelector(`.radio[data-name="${name}"]`);
+    station && requestAnimationFrame(() => station.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+
+    try {
+        await audio.play();
+        this.currentStation?.name === name && (await this.checkMetadata(true), this.setupNowPlayingMetadata());
+    } catch (e) {
+        this.handlePlayError(e);
+        setTimeout(() => this.changeStation(name, link), 1000);
+    }
+}
+
+async checkMetadata(force = false) {
+    if (!this.currentStation?.link || !force && Date.now() - this.lastMetadataCheck < CONFIG.METADATA_CHECK_INTERVAL) return;
+    
+    const tooltip = document.querySelector('.genre-tooltip');
+    if (!force && tooltip && !tooltip.classList.contains('visible')) return;
+    
+    this.lastMetadataCheck = Date.now();
+    const title = await this.getNowPlaying(this.currentStation);
+    
+    if (title && title !== this.lastTitle) {
+        this.lastTitle = title;
+        this.updateNowPlayingUI(title);
+        tooltip?.classList.contains('visible') && this.updateTooltipContent();
+    }
+}
+
+async getNowPlaying(station) {
+    if (!station?.link) return null;
+    
+    try {
+        const response = await this.fetchWithTimeout(`${CONFIG.METADATA_PROXY}?url=${encodeURIComponent(station.link)}`, 5000);
+        if (!response.ok) return null;
         
-        const tooltip = document.querySelector('.genre-tooltip');
-        if (!force && tooltip && !tooltip.classList.contains('visible')) return;
+        const data = await response.json();
+        const stationElement = document.querySelector(`.radio[data-name="${station.name}"]`);
         
-        this.lastMetadataCheck = Date.now();
-        const title = await this.getNowPlaying(this.currentStation);
-        
-        if (title && title !== this.lastTitle) {
-            this.lastTitle = title;
-            this.updateNowPlayingUI(title);
-            tooltip?.classList.contains('visible') && this.updateTooltipContent();
+        if (stationElement && data.quality) {
+            const bitrate = (data.quality.bitrate || '').toString().replace(/[^\d]/g, '').replace(/^0+/, '').slice(0, 3);
+            stationElement.dataset.bitrate = bitrate ? `${bitrate}kbps` : '';
+            stationElement.dataset.format = data.quality.format || '';
         }
+        
+        return data.success && data.title && !data.isStationName ? this.cleanMetadata(data.title) : null;
+    } catch (e) {
+        console.error('Metadata fetch failed:', e);
+        return null;
     }
+}
 
-    async getNowPlaying(station) {
-        if (!station?.link) return null;
-
-        try {
-            const proxyUrl = `${CONFIG.METADATA_PROXY}?url=${encodeURIComponent(station.link)}`;
-            const response = await this.fetchWithTimeout(proxyUrl, 5000);
-            
-            if (!response.ok) return null;
-            
-            const data = await response.json();
-            
-            // Update station quality info
-            const stationElement = document.querySelector(`.radio[data-name="${station.name}"]`);
-            if (stationElement && data.quality) {
-                let bitrate = data.quality.bitrate || '';
-                bitrate = bitrate.toString()
-                    .replace(/[^\d]/g, '')
-                    .replace(/^0+/, '')
-                    .slice(0, 3);
-                
-                if (bitrate) bitrate = `${bitrate}kbps`;
-                
-                stationElement.dataset.bitrate = bitrate;
-                stationElement.dataset.format = data.quality.format || '';
-            }
-            
-            return data.success && data.title && !data.isStationName ? this.cleanMetadata(data.title) : null;
-        } catch (e) {
-            console.error('Metadata fetch failed:', e);
-            return null;
-        }
-    }
-
-    cleanMetadata(title) {
-        return title?.replace(/<\/?[^>]+(>|$)/g, '')
-            .replace(/(https?:\/\/[^\s]+)/g, '')
-            .trim()
-            .replace(/\|.*$/, '')
-            .replace(/\b(?:Radio Paradise|RP)\b/i, '') || null;
-    }
+cleanMetadata(title) {
+    return title?.replace(/<\/?[^>]+(>|$)/g, '')
+        .replace(/(https?:\/\/[^\s]+)/g, '')
+        .trim()
+        .replace(/\|.*$/, '')
+        .replace(/\b(?:Radio Paradise|RP)\b/i, '') || null;
+}
 
     fetchWithTimeout(url, timeout) {
         const controller = new AbortController();
@@ -395,26 +335,26 @@ handleTouchEnd = (e) => {
     }
 
     // UI Update Functions
-    updateSelectedStation(name) {
-        document.querySelectorAll(".radio").forEach(radio => {
-            const isSelected = radio.dataset.name === name;
-            radio.classList.toggle("selected", isSelected);
-            
-            const equalizer = radio.querySelector(".equalizer");
-            if (isSelected) {
-                if (!equalizer) {
-                    const eq = document.createElement("div");
-                    eq.className = "equalizer animate";
-                    eq.innerHTML = '<div></div>'.repeat(14);
-                    radio.insertBefore(eq, radio.querySelector(".radio-text"));
-                } else {
-                    equalizer.className = "equalizer animate";
-                }
-            } else if (equalizer) {
-                equalizer.remove();
+updateSelectedStation(name) {
+    document.querySelectorAll(".radio").forEach(radio => {
+        const isSelected = radio.dataset.name === name;
+        radio.classList.toggle("selected", isSelected);
+        
+        if (isSelected) {
+            let equalizer = radio.querySelector(".equalizer");
+            if (!equalizer) {
+                equalizer = document.createElement("div");
+                equalizer.className = "equalizer animate";
+                equalizer.innerHTML = '<div></div>'.repeat(14);
+                radio.insertBefore(equalizer, radio.querySelector(".radio-text"));
+            } else {
+                equalizer.className = "equalizer animate";
             }
-        });
-    }
+        } else {
+            radio.querySelector(".equalizer")?.remove();
+        }
+    });
+}
 
     updateNowPlayingUI(title) {
         const { audioText, audioContainer } = this.elements;
@@ -533,40 +473,32 @@ handleTouchEnd = (e) => {
     }
 
     // Playback Control Functions
-    togglePlayback = () => {
-        if (this.elements.audio.paused) {
-            this.elements.audio.play().then(() => {
-                this.checkMetadata(true);
-                this.setupNowPlayingMetadata();
-            }).catch(this.handlePlayError);
-        } else {
-            this.elements.audio.pause();
-        }
-    }
-
-    updatePlayPauseButton = () => {
-        const { audio, playPauseBtn } = this.elements;
-        const audioPlayer = document.querySelector('.audio-player');
-        const audioControls = document.querySelector('.audio-controls');
-        
-        playPauseBtn.innerHTML = `<span class="material-icons">${audio.paused ? 'play_arrow' : 'stop'}</span>`;
-        
-        if (audio.paused) {
-            playPauseBtn.classList.add('play-mode');
-            audioPlayer.classList.add('play-mode');
-            audioControls.classList.add('play-mode');
-        } else {
-            playPauseBtn.classList.remove('play-mode');
-            audioPlayer.classList.remove('play-mode');
-            audioControls.classList.remove('play-mode');
+togglePlayback = () => {
+    const { audio } = this.elements;
+    audio.paused ? 
+        audio.play().then(() => {
             this.checkMetadata(true);
             this.setupNowPlayingMetadata();
-        }
+        }).catch(this.handlePlayError) : 
+        audio.pause();
+}
 
-        document.querySelectorAll(".radio.selected .equalizer").forEach(equalizer => {
-            equalizer.className = audio.paused ? "equalizer displaypaused" : "equalizer animate";
-        });
-    }
+updatePlayPauseButton = () => {
+    const { audio, playPauseBtn } = this.elements;
+    const audioPlayer = document.querySelector('.audio-player');
+    const audioControls = document.querySelector('.audio-controls');
+    
+    const isPlaying = !audio.paused;
+    playPauseBtn.innerHTML = `<span class="material-icons">${isPlaying ? 'stop' : 'play_arrow'}</span>`;
+    
+    [playPauseBtn, audioPlayer, audioControls].forEach(el => 
+        el?.classList.toggle('play-mode', !isPlaying)
+    );
+
+    document.querySelectorAll(".radio.selected .equalizer").forEach(equalizer => 
+        equalizer.className = `equalizer ${isPlaying ? 'animate' : 'displaypaused'}`
+    );
+}
 
     // Volume Control Functions
     handleVolumeChange = () => {
@@ -982,109 +914,145 @@ handleTouchEnd = (e) => {
     }
 
     // Expandable Categories
-    setupExpandableCategories() {
+setupExpandableCategories() {
+    if (this.elements.stationSearch.value.trim()) {
         document.querySelectorAll('.expand-button').forEach(btn => btn.remove());
-        
-        if (this.elements.stationSearch.value.trim() !== "") return;
-        
-        document.querySelectorAll(".category-container").forEach(category => {
-            category.classList.remove("no-radius", "has-expand-button");
-            
-            const stations = [...category.querySelectorAll(".radio")]
-                .filter(station => window.getComputedStyle(station).display !== "none");
-            
-            if (stations.length === 0) {
-                category.style.display = "none";
-                const title = category.previousElementSibling;
-                if (title?.classList.contains("category")) {
-                    title.style.display = "none";
-                }
-                return;
-            }
-            
-            category.style.display = "flex";
-            const title = category.previousElementSibling;
-            if (title?.classList.contains("category")) {
-                title.style.display = "flex";
-            }
-            
-            if (stations.length > CONFIG.STATION_THRESHOLD) {
-                category.append(this.createExpandButton(stations, category));
-                category.classList.add("no-radius", "has-expand-button");
-                
-                stations.forEach((station, index) => {
-                    station.style.display = index < CONFIG.STATION_THRESHOLD ? "flex" : "none";
-                });
-            } else {
-                stations.forEach(station => {
-                    station.style.display = "flex";
-                });
-            }
-        });
-        
-        setTimeout(() => {
-            this.ScrollbarManager.updateAll();
-        }, 10);
+        return;
     }
 
-    createExpandButton(stations, category) {
-        const expandButton = document.createElement("button");
-        expandButton.className = "expand-button";
-        expandButton.dataset.expanded = "false";
-
-        const content = document.createElement("div");
-        Object.assign(content.style, {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
+    document.querySelectorAll(".category-container").forEach(category => {
+        const stations = [...category.querySelectorAll(".radio")].filter(s => 
+            window.getComputedStyle(s).display !== "none" && 
+            (this.currentGenre === 'all' || 
+             s.dataset.genre?.split(',').includes(this.currentGenre))
+        );
+        
+        if (stations.length === 0) {
+            category.style.display = "none";
+            const title = category.previousElementSibling;
+            title?.classList.contains("category") && (title.style.display = "none");
+            return;
+        }
+        
+        const isExpanded = category.dataset.expanded === "true";
+        const maxVisible = this.calculateMaxStations(stations[0]);
+        
+        stations.forEach((s, i) => {
+            s.style.display = (isExpanded || i < maxVisible) ? "flex" : "none";
         });
+        
+        if (!isExpanded && stations.length > maxVisible && !category.querySelector('.expand-button')) {
+            category.append(this.createExpandButton(stations, category));
+            category.classList.add("no-radius", "has-expand-button");
+        } else if (stations.length <= maxVisible) {
+            category.querySelector('.expand-button')?.remove();
+            category.classList.remove("no-radius", "has-expand-button");
+        }
+    });
+    
+    setTimeout(() => this.ScrollbarManager?.updateAll(), 10);
+}
 
-        const icon = document.createElement("span");
-        icon.className = "material-icons";
-        icon.textContent = "expand_more";
-        icon.style.margin = "0px";
+calculateMaxStations(stationElement) {
+    if (!stationElement) return 5;
+    const stationHeight = stationElement.offsetHeight || 50; // Default fallback
+    const maxHeight = window.innerWidth * 0.5; // 50vw in pixels
+    return Math.max(1, Math.floor(maxHeight / stationHeight));
+}
 
-        const text = document.createElement("span");
-        text.className = "expand-text";
-        text.textContent = "Više";
-        Object.assign(text.style, {
-            fontSize: '0px',
-            transition: 'font-size 0.15s linear'
-        });
+createExpandButton(stations, category) {
+    const expandButton = document.createElement("button");
+    expandButton.className = "expand-button";
+    expandButton.dataset.expanded = category.dataset.expanded === "true" ? "true" : "false";
 
-        content.append(icon, text);
-        expandButton.append(content);
+    const content = document.createElement("div");
+    Object.assign(content.style, {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+    });
 
-        expandButton.addEventListener("mouseover", () => {
-            expandButton.querySelector('.expand-text').style.fontSize = '15px';
-        });
+    const icon = document.createElement("span");
+    icon.className = "material-icons";
+    icon.textContent = "expand_more";
+    icon.style.margin = "0px";
 
-        expandButton.addEventListener("mouseout", () => {
-            expandButton.querySelector('.expand-text').style.fontSize = '0px';
-        });
+    const text = document.createElement("span");
+    text.className = "expand-text";
+    text.textContent = "Više";
+    Object.assign(text.style, {
+        fontSize: '0px',
+        transition: 'font-size 0.15s linear'
+    });
 
-        expandButton.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const expanded = expandButton.dataset.expanded === "true";
-            const newState = !expanded;
+    content.append(icon, text);
+    expandButton.append(content);
+
+    expandButton.addEventListener("mouseover", () => {
+        expandButton.querySelector('.expand-text').style.fontSize = '15px';
+    });
+
+    expandButton.addEventListener("mouseout", () => {
+        expandButton.querySelector('.expand-text').style.fontSize = '0px';
+    });
+
+    // Get all stations in this category (not just currently visible ones)
+    const allStations = Array.from(category.querySelectorAll('.radio'))
+        .filter(s => window.getComputedStyle(s).display !== 'none' || 
+                   (s.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || 
+                    window.radioPlayer.currentGenre === 'all'));
+    
+    expandButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const expanded = expandButton.dataset.expanded === "true";
+        const newState = !expanded;
+        
+        expandButton.dataset.expanded = newState.toString();
+        expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
+        expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
+        
+        // Store expansion state in category for resize handling
+        category.dataset.expanded = newState.toString();
+        
+        if (newState) {
+            // Show all stations that match current genre filter when expanded
+            allStations.forEach(station => {
+                const matchesGenre = window.radioPlayer.currentGenre === 'all' || 
+                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
+                station.style.display = matchesGenre ? "flex" : "none";
+            });
+        } else {
+            // Recalculate visibility on collapse while respecting genre filter
+            const maxHeight = window.innerWidth * 0.5;
+            let totalHeight = 0;
+            let visibleCount = 0;
             
-            expandButton.dataset.expanded = newState.toString();
-            expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
-            expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
-            
-            stations.forEach((station, index) => {
-                if (index >= CONFIG.STATION_THRESHOLD) {
-                    station.style.display = newState ? "flex" : "none";
+            allStations.forEach(station => {
+                const matchesGenre = window.radioPlayer.currentGenre === 'all' || 
+                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
+                
+                if (!matchesGenre) {
+                    station.style.display = "none";
+                    return;
+                }
+                
+                if (visibleCount < this.calculateMaxStations(stations[0])) {
+                    station.style.display = "flex";
+                    totalHeight += station.offsetHeight;
+                    visibleCount++;
+                } else {
+                    station.style.display = "none";
                 }
             });
-            
-            setTimeout(() => {
-                this.ScrollbarManager.updateAll();
-            }, 300);
-        });
+        }
+        
+        setTimeout(() => {
+            window.radioPlayer.ScrollbarManager.updateAll();
+        }, 300);
+    });
 
-        return expandButton;
-    }
+    return expandButton;
+}
 	
     // Audio Container Functions
     setupAudioContainerObserver() {
@@ -1384,6 +1352,7 @@ setupGenreCategoriesSwipe() {
     cleanupResources = () => {
         // Cleanup tooltip
 		clearTimeout(this.searchFocusTimeout);
+		window.removeEventListener('resize', this.handleResize);
         const tooltip = document.querySelector('.genre-tooltip');
         if (tooltip) {
             tooltip._scrollHandler && tooltip.removeEventListener('scroll', tooltip._scrollHandler);
