@@ -464,6 +464,7 @@ button {
     font-size: 1rem;
     border-radius: 5px;
     outline: none;
+	padding-top: 1px;
     box-sizing: border-box;
     opacity: 0;
 	transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
@@ -521,7 +522,7 @@ button {
     position: absolute;
     left: 10px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% + 1px));
     font-size: 22px;
     pointer-events: auto;
     transition: left 0.3s ease;
@@ -536,7 +537,7 @@ button {
     position: absolute;
     right: 10px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% + 1px));
     font-size: 22px;
     display: none;
     cursor: pointer;
