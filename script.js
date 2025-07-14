@@ -10,6 +10,7 @@ const CONFIG = {
 // Main Application Controller
 class RadioPlayer {
     constructor() {
+		this.changingStation = false;
         this.currentStation = null;
         this.currentGenre = 'all';
         this.lastVolume = 1;
@@ -172,24 +173,29 @@ handleStationClick(e) {
     const radio = e.target.closest('.radio');
     if (!radio || (e.type === 'touchend' && radio._touchMoved)) return;
 
-    // Stop propagation to prevent any potential parent handlers from interfering
+    // Stop all event propagation
     e.stopPropagation();
     e.preventDefault();
+    e.stopImmediatePropagation();
     
     const { name, link } = radio.dataset;
-    this.changeStation(name, link);
+    
+    // Only proceed if this is a different station
+    if (this.currentStation?.name !== name) {
+        this.changeStation(name, link);
+    }
 
     if (!radio.closest('.history-dropdown')) return;
     
-    if (e.type === 'touchend') {
-        radio.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-        }, { once: true });
-    }
+    // Prevent immediate re-triggering
+    radio.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+    }, { once: true, passive: false });
 
-    this.DropdownManager?.currentOpen === 'history' && 
+    if (this.DropdownManager?.currentOpen === 'history') {
         requestAnimationFrame(() => this.DropdownManager.keepOpen('history'));
+    }
 }
 
     handleTouchStart = (e) => {
@@ -229,48 +235,121 @@ handleTouchEnd = (e) => {
 
     // Station and Playback Functions
 async changeStation(name, link) {
-    const { audioText, audioContainer, audio } = this.elements;
-    if (audioText) {
+    // Prevent overlapping changes to same station
+    if (this.changingStation && this.currentStation?.name === name) return;
+    
+    // Set changing flag
+    this.changingStation = true;
+    
+    try {
+        const { audioText, audioContainer, audio } = this.elements;
+        
+        // Update UI immediately
         audioText.innerHTML = `<div class="station-name">${name}</div>`;
         audioText.classList.remove('has-now-playing');
         audioContainer?.classList.remove('has-now-playing');
         this.lastTitle = '';
         this.updateAudioContainerHeight();
-    }
 
-    clearInterval(this.metadataInterval);
-    this.currentStation = { name, link };
+        // Store the new station info
+        const targetStation = { name, link };
+        
+        // Clear previous metadata checks
+        clearInterval(this.metadataInterval);
+        
+        // Important: Properly reset the audio element
+        try {
+            audio.pause();
+            audio.src = '';
+            audio.load(); // Force reset
+            await new Promise(resolve => {
+                audio.onemptied = resolve;
+                setTimeout(resolve, 50); // Fallback
+            });
+        } catch (e) {
+            console.log('Audio reset error:', e);
+        }
 
-    audio.pause();
-    audio.src = link;
-    document.title = `KlikniPlay | ${name}`;
+        // Set new source and metadata
+        audio.src = link;
+        audio.preload = 'none'; // Important for streaming
+        document.title = `KlikniPlay | ${name}`;
+        
+        // Update state before attempting to play
+        this.currentStation = targetStation;
+        localStorage.setItem("lastStation", JSON.stringify({ name, link }));
+        this.updateSelectedStation(name);
+        this.updateRecentlyPlayed(name, link, 
+            document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
 
-    localStorage.setItem("lastStation", JSON.stringify({ name, link }));
-    this.updateSelectedStation(name);
-    this.updateRecentlyPlayed(name, link, document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
-    
-    const station = document.querySelector(`.radio[data-name="${name}"]`);
-    station && requestAnimationFrame(() => station.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        // Play with timeout and proper error handling
+        let playSuccess = false;
+        try {
+            await Promise.race([
+                audio.play()
+                    .then(() => { playSuccess = true; })
+                    .catch(e => { throw e; }),
+                new Promise((_, reject) => setTimeout(
+                    () => reject(new Error('Play timeout')), 
+                    3000
+                ))
+            ]);
+        } catch (e) {
+            if (playSuccess) return; // Play succeeded despite timeout
+            console.warn('Play attempt:', e.message);
+            
+            // Try one more time after short delay
+            await new Promise(resolve => setTimeout(resolve, 500));
+            try {
+                await audio.play();
+                playSuccess = true;
+            } catch (retryError) {
+                console.warn('Retry failed:', retryError.message);
+                throw retryError;
+            }
+        }
 
-    try {
-        await audio.play();
-        this.currentStation?.name === name && (await this.checkMetadata(true), this.setupNowPlayingMetadata());
+        // Only proceed if this is still the current station
+        if (this.currentStation?.name === name) {
+            // Start metadata updates
+            this.checkMetadata(true).catch(console.error);
+            this.setupNowPlayingMetadata();
+        }
+
+        // Scroll to selected station if visible
+        const station = document.querySelector(`.radio[data-name="${name}"]`);
+        station && requestAnimationFrame(() => 
+            station.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        
     } catch (e) {
-        this.handlePlayError(e);
-        setTimeout(() => this.changeStation(name, link), 1000);
+        console.error('Failed to play:', e);
+        this.updatePlayPauseButton();
+    } finally {
+        this.changingStation = false;
     }
 }
 
 async checkMetadata(force = false) {
-    if (!this.currentStation?.link || !force && Date.now() - this.lastMetadataCheck < CONFIG.METADATA_CHECK_INTERVAL) return;
+    if (!this.currentStation?.link || 
+        (!force && Date.now() - this.lastMetadataCheck < CONFIG.METADATA_CHECK_INTERVAL)) {
+        return;
+    }
     
     const tooltip = document.querySelector('.genre-tooltip');
     if (!force && tooltip && !tooltip.classList.contains('visible')) return;
     
     this.lastMetadataCheck = Date.now();
-    const title = await this.getNowPlaying(this.currentStation);
+    let title;
     
-    if (title && title !== this.lastTitle) {
+    try {
+        title = await this.getNowPlaying(this.currentStation);
+    } catch (e) {
+        console.error('Metadata check failed:', e);
+        return;
+    }
+    
+    // Only update if we're still on the same station
+    if (title && title !== this.lastTitle && this.currentStation?.link) {
         this.lastTitle = title;
         this.updateNowPlayingUI(title);
         tooltip?.classList.contains('visible') && this.updateTooltipContent();
@@ -1091,9 +1170,12 @@ createExpandButton(stations, category) {
         }, { passive: true });
     }
 
-    updateAudioContainerHeight() {
-        const { audioContainer } = this.elements;
-        if (!audioContainer) return;
+updateAudioContainerHeight() {
+    const { audioContainer } = this.elements;
+    if (!audioContainer) return;
+    
+    // Force layout calculation before changes
+    audioContainer.getBoundingClientRect();
         
         const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
         const expanded = audioContainer.classList.contains('expanded');
@@ -1107,7 +1189,11 @@ createExpandButton(stations, category) {
             audioContainer.style.height = `${targetHeight}px`;
             this.ScrollbarManager.updateAll();
         }
-    }
+		
+    requestAnimationFrame(() => {
+        this.ScrollbarManager.updateAll();
+    });
+}
 
     setupRecentlyPlayedToggle() {
         const toggleHandle = document.querySelector('#recentlyPlayedToggle .toggle-handle');
@@ -1762,16 +1848,25 @@ class ScrollbarManager {
         `;
     }
 
-    positionThumb() {
-        if (this.scrollList.scrollHeight <= this.scrollList.clientHeight) return;
-        
-        const scrollPercentage = this.scrollList.scrollTop / 
-                               (this.scrollList.scrollHeight - this.scrollList.clientHeight);
-        const thumbPosition = scrollPercentage * 
-                            (this.scrollbarTrack.clientHeight - this.scrollbarThumb.clientHeight);
-        
-        this.scrollbarThumb.style.top = `${thumbPosition}px`;
+positionThumb() {
+    if (this.scrollList.scrollHeight <= this.scrollList.clientHeight) {
+        this.scrollbarThumb.style.display = 'none';
+        return;
     }
+    
+    // Get precise container measurements
+    const trackHeight = this.scrollbarTrack.clientHeight;
+    const thumbHeight = this.scrollbarThumb.clientHeight;
+    
+    // Ensure positions are integer values to prevent 1px gaps
+    const maxTop = Math.floor(trackHeight - thumbHeight);
+    const scrollPercentage = this.scrollList.scrollTop / 
+                           (this.scrollList.scrollHeight - this.scrollList.clientHeight);
+    const thumbPosition = Math.floor(scrollPercentage * maxTop);
+    
+    // Set position with integer values
+    this.scrollbarThumb.style.top = `${thumbPosition}px`;
+}
 
     setupResizeObserver() {
         this.resizeObserver = new ResizeObserver(() => {
@@ -1784,26 +1879,27 @@ class ScrollbarManager {
             .forEach(el => this.resizeObserver.observe(el));
     }
 
-    updateTrackPosition() {
-        const audioContainer = document.querySelector('.audio-container');
-        if (!audioContainer) return;
-        
-        // Calculate heights
-        const audioContainerHeight = parseFloat(getComputedStyle(audioContainer).height);
-        const viewportHeight = window.innerHeight;
-        const scrollListTop = this.scrollList.getBoundingClientRect().top;
-        
-        // Set dimensions
-        const availableHeight = viewportHeight - scrollListTop - audioContainerHeight;
-        const finalHeight = Math.max(100, availableHeight);
-        
-        this.scrollList.style.bottom = `${audioContainerHeight}px`;
-        this.scrollList.style.maxHeight = `${finalHeight}px`;
-        this.scrollbarTrack.style.height = `${finalHeight}px`;
-        
-        this.updateThumbSize();
-        this.positionThumb();
-    }
+updateTrackPosition() {
+    const audioContainer = document.querySelector('.audio-container');
+    if (!audioContainer) return;
+    
+    // Get precise container measurements
+    const containerRect = this.scrollList.getBoundingClientRect();
+    const audioContainerRect = audioContainer.getBoundingClientRect();
+    
+    // Calculate with integer values
+    const scrollListBottom = Math.floor(document.documentElement.clientHeight - audioContainerRect.height);
+    const availableHeight = Math.floor(document.documentElement.clientHeight - containerRect.top - audioContainerRect.height);
+    const finalHeight = Math.max(100, availableHeight);
+    
+    // Set rounded values
+    this.scrollList.style.bottom = `${Math.round(audioContainerRect.height)}px`;
+    this.scrollList.style.maxHeight = `${Math.round(finalHeight)}px`;
+    this.scrollbarTrack.style.height = `${Math.round(finalHeight)}px`;
+    
+    this.updateThumbSize();
+    this.positionThumb();
+}
 
     setupAutoHide() {
         if (!this.scrollList || !this.scrollbarThumb) return;
