@@ -237,8 +237,14 @@ handleTouchEnd = (e) => {
 async changeStation(name, link) {
     if (this.changingStation) return;
     this.changingStation = true;
-    
+
     try {
+		
+        // Close the tooltip explicitly when changing stations
+        if (this.DropdownManager.currentOpen === 'tooltip') {
+            this.DropdownManager.close('tooltip');
+        }
+
         // Clear previous state
         this.lastTitle = '';
         this.elements.audioText.innerHTML = `<div class="station-name">${name}</div>`;
@@ -1014,11 +1020,11 @@ calculateMaxStations(stationElement) {
     if (!stationElement) return 5; // Default fallback
     
     const stationHeight = stationElement.offsetHeight || 50;
-    let maxHeight = window.innerWidth * 0.6; // Changed from 50vw to 40vw for better mobile experience
+    let maxHeight = window.innerWidth * 0.55;
     
-    // On mobile devices, limit to 60% of viewport height
+    // On mobile devices, limit to 70% of viewport height
     if (window.innerWidth <= 768) {
-        maxHeight = window.innerHeight * 0.8;
+        maxHeight = window.innerHeight * 0.7;
     }
     
     return Math.max(1, Math.floor(maxHeight / stationHeight));
@@ -1523,25 +1529,36 @@ class DropdownManager {
         document.addEventListener("touchend", this.handleOutsideClick, { passive: true });
     }
 
-    toggle(id, event) {
-        if (this.isOperating || performance.now() - this.lastToggleTime < 300) return;
-        this.lastToggleTime = performance.now();
-        this.isOperating = true;
+toggle(id, event) {
+    if (this.isOperating || performance.now() - this.lastToggleTime < 300) return;
+    this.lastToggleTime = performance.now();
+    this.isOperating = true;
 
-        const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
+    const dropdown = this.dropdowns[id];
+    if (!dropdown) return;
 
-        if (this.currentOpen === id) {
-            this.close(id);
-        } else {
-            this.currentOpen && this.close(this.currentOpen);
-            event.type === 'touchend' ? 
-                setTimeout(() => this.open(id), 50) : 
-                this.open(id);
-        }
+    // Store scroll position before closing
+    const currentScroll = dropdown.menu.scrollTop;
 
-        setTimeout(() => this.isOperating = false, 50);
+    if (this.currentOpen === id) {
+        this.close(id);
+    } else {
+        this.currentOpen && this.close(this.currentOpen);
+        // Schedule opening after a brief delay to prevent rendering conflicts
+        setTimeout(() => {
+            this.open(id);
+            // Restore scroll position if available
+            if (dropdown._scrollPosition) {
+                dropdown.menu.scrollTop = dropdown._scrollPosition;
+            }
+        }, 50);
     }
+
+    // Store scroll position
+    dropdown._scrollPosition = currentScroll;
+
+    setTimeout(() => this.isOperating = false, 50);
+}
 
 open(id) {
     const dropdown = this.dropdowns[id];
@@ -1552,6 +1569,9 @@ open(id) {
         opacity: '0',
         scrollTop: 0
     });
+	
+    // Reset scroll position
+    dropdown.menu.scrollTop = 0;
 
     requestAnimationFrame(() => {
         dropdown.menu.classList.add('show');
@@ -1575,37 +1595,61 @@ open(id) {
     this.currentOpen = id;
 }
 
-    close(id) {
-        const dropdown = this.dropdowns[id];
-        if (!dropdown) return;
+close(id) {
+    const dropdown = this.dropdowns[id];
+    if (!dropdown) return;
 
-        dropdown.menu.style.opacity = '0';
-        dropdown.menu.classList.remove('show', 'visible');
-        dropdown.toggle.classList.remove('active');
-        
-        setTimeout(() => {
-            if (!dropdown.menu.classList.contains('show') && 
-                !dropdown.menu.classList.contains('visible')) {
-                dropdown.menu.style.display = 'none';
-            }
-        }, 300);
-        
-        this.currentOpen = null;
-    }
+
+    
+    dropdown.menu.style.opacity = '0';
+    dropdown.menu.classList.remove('show', 'visible');
+    dropdown.toggle.classList.remove('active');
+    
+    setTimeout(() => {
+        if (!dropdown.menu.classList.contains('show') && 
+            !dropdown.menu.classList.contains('visible')) {
+            dropdown.menu.style.display = 'none';
+        }
+    }, 300);
+    
+    this.currentOpen = null;
+}
 
 setupDropdownScroll(id) {
     const dropdown = this.dropdowns[id];
     if (!dropdown.menu) return;
 
-    // First clear existing buttons
+    // Preserve scroll position during updates
+    const scrollTop = dropdown.menu.scrollTop;
+
+    // Clear existing handlers and buttons
+    if (dropdown.menu._handlersCleared) {
+        dropdown.menu.removeEventListener('wheel', dropdown.menu._wheelHandler);
+        dropdown.menu.removeEventListener('scroll', dropdown.menu._scrollHandler);
+        dropdown.menu.removeEventListener('scroll', dropdown.menu._scrollTracker);
+    }
+    
     dropdown.menu.querySelectorAll(`.${dropdown.navButtonClass}`).forEach(b => b.remove());
+
+    // Add new handlers
+    dropdown.menu._wheelHandler = (e) => {
+        e.preventDefault();
+        dropdown.menu.scrollTop += e.deltaY;
+    };
+    dropdown.menu.addEventListener('wheel', dropdown.menu._wheelHandler, { passive: false });
+
+    // Restore scroll position after content changes
+    dropdown.menu.scrollTop = scrollTop;
 
     // Calculate if we need scroll buttons AFTER content is loaded
     const checkScroll = () => {
-        const hasScroll = dropdown.menu.scrollHeight > dropdown.menu.clientHeight;
-        
-        if (hasScroll) {
-            // Create buttons only if needed
+        requestAnimationFrame(() => {
+            const hasScroll = dropdown.menu.scrollHeight > dropdown.menu.clientHeight;
+            
+            if (hasScroll) {
+                // Only create buttons if they don't exist to prevent flashing
+                if (!dropdown.menu.querySelector(`.${dropdown.navButtonClass}`)) {
+
             const createButton = (pos) => {
                 const btn = document.createElement('button');
                 btn.className = `${dropdown.navButtonClass} ${pos}`;
@@ -1618,15 +1662,20 @@ setupDropdownScroll(id) {
             dropdown.menu.prepend(topBtn);
             dropdown.menu.append(bottomBtn);
 
-            const checkVisibility = () => {
-                const { scrollTop, scrollHeight, clientHeight } = dropdown.menu;
-                const maxScroll = scrollHeight - clientHeight;
-                
-                topBtn.style.opacity = scrollTop <= 1 ? '0' : '1';
-                topBtn.style.pointerEvents = scrollTop <= 1 ? 'none' : 'auto';
-                bottomBtn.style.opacity = scrollTop >= maxScroll - 1 ? '0' : '1';
-                bottomBtn.style.pointerEvents = scrollTop >= maxScroll - 1 ? 'none' : 'auto';
-            };
+                    // Modified scroll handler with better boundary detection
+                    const checkVisibility = () => {
+                        const { scrollTop, scrollHeight, clientHeight } = dropdown.menu;
+                        const maxScroll = scrollHeight - clientHeight;
+                        const buffer = 2; // Small buffer to prevent flickering at boundaries
+                        
+                        const showTop = scrollTop > buffer;
+                        const showBottom = scrollTop < maxScroll - buffer;
+                        
+                        topBtn.style.opacity = showTop ? '1' : '0';
+                        topBtn.style.pointerEvents = showTop ? 'auto' : 'none';
+                        bottomBtn.style.opacity = showBottom ? '1' : '0';
+                        bottomBtn.style.pointerEvents = showBottom ? 'auto' : 'none';
+                    };
 
             const smoothScroll = (dir) => {
                 if (dropdown.menu._isAnimating) return;
@@ -1667,13 +1716,28 @@ setupDropdownScroll(id) {
             
             // Initial check
             checkVisibility();
-        }
+			
+            let lastScrollTime = 0;
+            dropdown.menu._scrollTracker = () => {
+                const now = Date.now();
+                if (now - lastScrollTime > 100) {
+                    checkVisibility();
+                }
+                lastScrollTime = now;
+            };
+            
+            dropdown.menu.addEventListener('scroll', dropdown.menu._scrollTracker, { passive: true });
+                }
+            }
+        });
     };
-    
-    // Wait for next frame to ensure proper measurements
-    requestAnimationFrame(() => {
+
+    // Initialize with a small delay to ensure proper measurements
+    setTimeout(() => {
         checkScroll();
-    });
+        // Force a reflow to prevent 1px shifts
+        dropdown.menu.getBoundingClientRect();
+    }, 50);
 }
 
     updateDropdownHeights() {
