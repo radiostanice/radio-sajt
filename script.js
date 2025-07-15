@@ -235,184 +235,118 @@ handleTouchEnd = (e) => {
 
     // Station and Playback Functions
 async changeStation(name, link) {
-    // Prevent overlapping changes to same station
-    if (this.changingStation && this.currentStation?.name === name) return;
-    
-    // Set changing flag
+    if (this.changingStation) return;
     this.changingStation = true;
     
     try {
-        const { audioText, audioContainer, audio } = this.elements;
-        
-        // Update UI immediately
-        audioText.innerHTML = `<div class="station-name">${name}</div>`;
-        audioText.classList.remove('has-now-playing');
-        audioContainer?.classList.remove('has-now-playing');
+        // Clear previous state
         this.lastTitle = '';
+        this.elements.audioText.innerHTML = `<div class="station-name">${name}</div>`;
+        this.elements.audioText.classList.remove('has-now-playing');
+        this.elements.audioContainer?.classList.remove('has-now-playing');
         this.updateAudioContainerHeight();
-
-        // Store the new station info
-        const targetStation = { name, link };
         
-        // Clear previous metadata checks
-        clearInterval(this.metadataInterval);
+        // Reset audio
+        this.elements.audio.pause();
+        this.elements.audio.src = '';
+        await new Promise(resolve => setTimeout(resolve, 50));
         
-        // Important: Properly reset the audio element
-        try {
-            audio.pause();
-            audio.src = '';
-            audio.load(); // Force reset
-            await new Promise(resolve => {
-                audio.onemptied = resolve;
-                setTimeout(resolve, 50); // Fallback
-            });
-        } catch (e) {
-            console.log('Audio reset error:', e);
-        }
-
-        // Set new source and metadata
-        audio.src = link;
-        audio.preload = 'none'; // Important for streaming
+        // Set new station
+        this.currentStation = { name, link };
+        this.elements.audio.src = link;
         document.title = `KlikniPlay | ${name}`;
         
-        // Update state before attempting to play
-        this.currentStation = targetStation;
-        localStorage.setItem("lastStation", JSON.stringify({ name, link }));
+        // Update UI
         this.updateSelectedStation(name);
-        this.updateRecentlyPlayed(name, link, 
-            document.querySelector(`.radio[data-name="${name}"]`)?.dataset.genre || '');
-
-        // Play with timeout and proper error handling
-        let playSuccess = false;
-        try {
-            await Promise.race([
-                audio.play()
-                    .then(() => { playSuccess = true; })
-                    .catch(e => { throw e; }),
-                new Promise((_, reject) => setTimeout(
-                    () => reject(new Error('Play timeout')), 
-                    3000
-                ))
-            ]);
-        } catch (e) {
-            if (playSuccess) return; // Play succeeded despite timeout
-            console.warn('Play attempt:', e.message);
-            
-            // Try one more time after short delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-            try {
-                await audio.play();
-                playSuccess = true;
-            } catch (retryError) {
-                console.warn('Retry failed:', retryError.message);
-                throw retryError;
-            }
-        }
-
-        // Only proceed if this is still the current station
-        if (this.currentStation?.name === name) {
-            // Start metadata updates
-            this.checkMetadata(true).catch(console.error);
-            this.setupNowPlayingMetadata();
-        }
-
-        // Scroll to selected station if visible
-        const station = document.querySelector(`.radio[data-name="${name}"]`);
-        station && requestAnimationFrame(() => 
-            station.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        this.updateRecentlyPlayed(name, link);
         
-    } catch (e) {
-        console.error('Failed to play:', e);
-        this.updatePlayPauseButton();
+        try {
+            await this.elements.audio.play();
+            
+            // Force immediate metadata check with cache busting
+            this.checkMetadata(true);
+        } catch (e) {
+            console.warn('Playback failed:', e);
+        }
     } finally {
         this.changingStation = false;
     }
 }
 
-async checkMetadata(force = false) {
-    if (!this.currentStation?.link || 
-        (!force && Date.now() - this.lastMetadataCheck < CONFIG.METADATA_CHECK_INTERVAL)) {
-        return;
-    }
+setupNowPlayingMetadata() {
+    // Clear any existing interval
+    clearInterval(this.metadataInterval);
     
-    const tooltip = document.querySelector('.genre-tooltip');
-    if (!force && tooltip && !tooltip.classList.contains('visible')) return;
+    // Immediate check first
+    this.checkMetadata(true);
     
-    this.lastMetadataCheck = Date.now();
-    let title;
-    
-    try {
-        title = await this.getNowPlaying(this.currentStation);
-    } catch (e) {
-        console.error('Metadata check failed:', e);
-        return;
-    }
-    
-    // Only update if we're still on the same station
-    if (title && title !== this.lastTitle && this.currentStation?.link) {
-        this.lastTitle = title;
-        this.updateNowPlayingUI(title);
-        tooltip?.classList.contains('visible') && this.updateTooltipContent();
-    }
+    // Then set up periodic checks
+    this.metadataInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            this.checkMetadata();
+        }
+    }, CONFIG.METADATA_CHECK_INTERVAL);
 }
 
-async getNowPlaying(station) {
-    if (!station?.link) return null;
+async checkMetadata(force = false) {
+    // Add a lock to prevent overlapping requests
+    if (this.metadataLock) return;
+    this.metadataLock = true;
     
     try {
-        const response = await this.fetchWithTimeout(`${CONFIG.METADATA_PROXY}?url=${encodeURIComponent(station.link)}`, 5000);
-        if (!response.ok) return null;
+        if (!this.currentStation?.link) return;
+        
+        // Completely bypass cache for forced checks
+        const cacheBuster = force ? `&_=${Date.now()}` : '';
+        const proxyUrl = `${CONFIG.METADATA_PROXY}?url=${encodeURIComponent(this.currentStation.link)}${cacheBuster}`;
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        
+        const response = await fetch(proxyUrl, {
+            signal: controller.signal,
+            cache: 'no-store' // Ensure browser doesn't cache either
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return;
         
         const data = await response.json();
-        const stationElement = document.querySelector(`.radio[data-name="${station.name}"]`);
         
-        if (stationElement && data.quality) {
-            const bitrate = (data.quality.bitrate || '').toString().replace(/[^\d]/g, '').replace(/^0+/, '').slice(0, 3);
-            stationElement.dataset.bitrate = bitrate ? `${bitrate}kbps` : '';
-            stationElement.dataset.format = data.quality.format || '';
+        // Enhanced metadata validation
+        if (data.success && data.title && !data.isStationName) {
+            // Update quality info
+            if (this.currentStation) {
+                const stationEl = document.querySelector(`.radio[data-name="${this.currentStation.name}"]`);
+                if (stationEl) {
+                    const bitrate = (data.quality?.bitrate || '')
+                        .toString()
+                        .replace(/[^\d]/g, '')
+                        .replace(/^0+/, '')
+                        .slice(0, 3);
+                    stationEl.dataset.bitrate = bitrate ? `${bitrate}kbps` : '';
+                    stationEl.dataset.format = data.quality?.format || '';
+                }
+            }
+            
+            // Only update if different
+            if (data.title !== this.lastTitle) {
+                this.lastTitle = data.title;
+                this.updateNowPlayingUI(data.title);
+            }
+        } else if (this.lastTitle) {
+            // Clear existing metadata if no longer valid
+            this.lastTitle = '';
+            this.updateNowPlayingUI('');
         }
-        
-        return data.success && data.title && !data.isStationName ? this.cleanMetadata(data.title) : null;
     } catch (e) {
-        console.error('Metadata fetch failed:', e);
-        return null;
+        if (e.name !== 'AbortError') {
+            console.error('Metadata check failed:', e);
+        }
+    } finally {
+        this.metadataLock = false;
     }
 }
-
-cleanMetadata(title) {
-    return title?.replace(/<\/?[^>]+(>|$)/g, '')
-        .replace(/(https?:\/\/[^\s]+)/g, '')
-        .trim()
-        .replace(/\|.*$/, '')
-        .replace(/\b(?:Radio Paradise|RP)\b/i, '') || null;
-}
-
-    fetchWithTimeout(url, timeout) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
-        return fetch(url, { signal: controller.signal })
-            .finally(() => clearTimeout(timeoutId));
-    }
-
-    isLikelyStationName(title) {
-        if (!title) return false;
-        
-        const stationPatterns = [
-            /radio\s*/i,
-            /fm\s*\d*/i,
-            /^\d+\s*[kK][hH]z/i,
-            /live\s*stream/i,
-            /webradio/i,
-            /^\w+\s*-\s*\w+$/i,
-            /^\d{2}:\d{2}/,
-            /^now playing:/i,
-            /^currently playing:/i
-        ];
-        
-        return stationPatterns.some(pattern => pattern.test(title));
-    }
-
     // UI Update Functions
 updateSelectedStation(name) {
     document.querySelectorAll(".radio").forEach(radio => {
@@ -435,40 +369,40 @@ updateSelectedStation(name) {
     });
 }
 
-    updateNowPlayingUI(title) {
-        const { audioText, audioContainer } = this.elements;
-        if (!audioText || !this.currentStation) return;
+updateNowPlayingUI(title) {
+    const { audioText, audioContainer } = this.elements;
+    if (!audioText || !this.currentStation) return;
 
-        const stationName = this.currentStation.name;
+    const stationName = this.currentStation.name;
 
-        let stationNameElement = audioText.querySelector('.station-name');
-        if (!stationNameElement) {
-            stationNameElement = document.createElement('div');
-            stationNameElement.className = 'station-name';
-            audioText.appendChild(stationNameElement);
-        }
-        stationNameElement.textContent = stationName;
-
-        let songTitleElement = audioText.querySelector('.song-title');
-        
-        if (title && !this.isLikelyStationName(title) && title !== stationName) {
-            if (!songTitleElement) {
-                songTitleElement = document.createElement('div');
-                songTitleElement.className = 'song-title';
-                audioText.insertBefore(songTitleElement, stationNameElement);
-            }
-            songTitleElement.textContent = title;
-            audioText.classList.add('has-now-playing');
-            audioContainer.classList.add('has-now-playing');
-            requestAnimationFrame(() => this.applyMarqueeEffect(songTitleElement));
-        } else if (songTitleElement) {
-            audioText.removeChild(songTitleElement);
-            audioText.classList.remove('has-now-playing');
-            audioContainer.classList.remove('has-now-playing');
-        }
-        
-        this.updateAudioContainerHeight();
+    let stationNameElement = audioText.querySelector('.station-name');
+    if (!stationNameElement) {
+        stationNameElement = document.createElement('div');
+        stationNameElement.className = 'station-name';
+        audioText.appendChild(stationNameElement);
     }
+    stationNameElement.textContent = stationName;
+
+    let songTitleElement = audioText.querySelector('.song-title');
+    
+    if (title && title !== stationName) {
+        if (!songTitleElement) {
+            songTitleElement = document.createElement('div');
+            songTitleElement.className = 'song-title';
+            audioText.insertBefore(songTitleElement, stationNameElement);
+        }
+        songTitleElement.textContent = title;
+        audioText.classList.add('has-now-playing');
+        audioContainer.classList.add('has-now-playing');
+        requestAnimationFrame(() => this.applyMarqueeEffect(songTitleElement));
+    } else if (songTitleElement) {
+        audioText.removeChild(songTitleElement);
+        audioText.classList.remove('has-now-playing');
+        audioContainer.classList.remove('has-now-playing');
+    }
+    
+    this.updateAudioContainerHeight();
+}
 
     applyMarqueeEffect(element) {
         this.removeExistingMarqueeElements();
@@ -1057,14 +991,17 @@ setupExpandableCategories() {
         const isExpanded = category.dataset.expanded === "true";
         const maxVisible = this.calculateMaxStations(stations[0]);
         
+        // Always show at least 2 stations if possible
+        const effectiveMaxVisible = Math.max(2, maxVisible);
+        
         stations.forEach((s, i) => {
-            s.style.display = (isExpanded || i < maxVisible) ? "flex" : "none";
+            s.style.display = (isExpanded || i < effectiveMaxVisible) ? "flex" : "none";
         });
         
-        if (!isExpanded && stations.length > maxVisible && !category.querySelector('.expand-button')) {
+        if (!isExpanded && stations.length > effectiveMaxVisible && !category.querySelector('.expand-button')) {
             category.append(this.createExpandButton(stations, category));
             category.classList.add("no-radius", "has-expand-button");
-        } else if (stations.length <= maxVisible) {
+        } else if (stations.length <= effectiveMaxVisible) {
             category.querySelector('.expand-button')?.remove();
             category.classList.remove("no-radius", "has-expand-button");
         }
@@ -1074,9 +1011,16 @@ setupExpandableCategories() {
 }
 
 calculateMaxStations(stationElement) {
-    if (!stationElement) return 5;
-    const stationHeight = stationElement.offsetHeight || 50; // Default fallback
-    const maxHeight = window.innerWidth * 0.5; // 50vw in pixels
+    if (!stationElement) return 5; // Default fallback
+    
+    const stationHeight = stationElement.offsetHeight || 50;
+    let maxHeight = window.innerWidth * 0.6; // Changed from 50vw to 40vw for better mobile experience
+    
+    // On mobile devices, limit to 60% of viewport height
+    if (window.innerWidth <= 768) {
+        maxHeight = window.innerHeight * 0.8;
+    }
+    
     return Math.max(1, Math.floor(maxHeight / stationHeight));
 }
 
@@ -1330,22 +1274,11 @@ loadPreferences() {
         }
     }
 
-    setupNowPlayingMetadata() {
-        clearInterval(this.metadataInterval);
-        this.metadataInterval = setInterval(() => {
-            (this.shouldUpdateTooltip() || Date.now() - this.lastMetadataCheck > 10000) && 
-            this.debounceMetadata();
-        }, 3000);
-        this.debounceMetadata(true);
-    }
-
     shouldUpdateTooltip() {
         const tooltip = document.querySelector('.genre-tooltip');
         return tooltip && tooltip.classList.contains('visible') && 
                document.visibilityState === 'visible';
     }
-
-    debounceMetadata = this.debounce((force) => this.checkMetadata(force), 500);
 
     handlePlayError = (e) => {
         console.error("Playback error:", e);
