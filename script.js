@@ -1980,7 +1980,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Register Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(registration => {
         console.log('ServiceWorker registration successful');
       })
@@ -1992,13 +1992,35 @@ if ('serviceWorker' in navigator) {
 
 // Show install prompt for PWA
 let deferredPrompt;
+const installButton = document.querySelector('.install-button') || 
+  (() => {
+    const btn = document.createElement('div');
+    btn.className = 'install-button';
+    btn.innerHTML = 'Instaliraj aplikaciju';
+    btn.style.display = 'none';
+    document.body.appendChild(btn);
+    return btn;
+  })();
+
 window.addEventListener('beforeinstallprompt', (e) => {
-  // Prevent the mini-infobar from appearing on mobile
   e.preventDefault();
-  // Stash the event so it can be triggered later
   deferredPrompt = e;
-  // Update UI to notify the user they can install the PWA
-  showInstallPromotion();
+  installButton.style.display = 'block';
+});
+
+installButton.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(`User ${outcome} the install prompt`);
+  deferredPrompt = null;
+  installButton.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  console.log('PWA was installed');
+  installButton.style.display = 'none';
+  deferredPrompt = null;
 });
 
 function showInstallPromotion() {
