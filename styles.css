@@ -2050,3 +2050,34 @@ button {
 @media (max-width: 400px) {
     .radio { width: calc(100% - 20px); }
 }
+
+/* PWA install button styles */
+.install-button {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  background-color: rgb(var(--accent-light));
+  color: #000;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Update body for standalone mode */
+@media all and (display-mode: standalone) {
+  body {
+    /* Remove the address bar space */
+    height: 100%;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+}
