@@ -1976,3 +1976,50 @@ document.addEventListener("DOMContentLoaded", () => {
     window.lastScrollTime = 0;
     window.scrollbarHideTimeout = null;
 });
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('ServiceWorker registration successful');
+      })
+      .catch(err => {
+        console.log('ServiceWorker registration failed: ', err);
+      });
+  });
+}
+
+// Show install prompt for PWA
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent the mini-infobar from appearing on mobile
+  e.preventDefault();
+  // Stash the event so it can be triggered later
+  deferredPrompt = e;
+  // Update UI to notify the user they can install the PWA
+  showInstallPromotion();
+});
+
+function showInstallPromotion() {
+  // You can customize this to show a button or banner
+  // that when clicked will call deferredPrompt.prompt()
+  const installButton = document.createElement('div');
+  installButton.className = 'install-button';
+  installButton.innerHTML = 'Instaliraj aplikaciju';
+  
+  installButton.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const choiceResult = await deferredPrompt.userChoice;
+    if (choiceResult.outcome === 'accepted') {
+      console.log('User accepted install');
+    } else {
+      console.log('User dismissed install');
+    }
+    deferredPrompt = null;
+    installButton.remove();
+  });
+  
+  document.body.appendChild(installButton);
+}
