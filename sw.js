@@ -13,7 +13,15 @@ const ASSETS_TO_CACHE = [
   '/img/okradio.png',
   '/img/radionovosti.png',
   '/img/radiokosava.png',
-  '/img/radioparadise.png'
+  '/img/radioparadise.png',
+  '/icons/favicon.ico',
+  '/icons/favicon.svg',
+  '/icons/favicon-96x96.png',
+  '/icons/apple-touch-icon.png',
+  '/icons/web-app-manifest-192x192.png',
+  '/icons/web-app-manifest-512x512.png',
+  '/icons/site.webmanifest'
+
 ];
 
 self.addEventListener('install', (event) => {
