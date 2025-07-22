@@ -1,30 +1,208 @@
 const CONFIG = {
-    DEFAULT_THEME: 'dark',
-    DEFAULT_COLOR: 'green',
+    DEFAULT_COLOR: 'green', // Only keep color default
     SCROLLBAR_HIDE_DELAY: 1500,
     COLLAPSED_HEIGHT: 155,
     METADATA_CHECK_INTERVAL: 5000,
     METADATA_PROXY: 'https://radiometadata.kosta04miletic.workers.dev',
 };
 
+// Theme and Favicon Manager
+class ThemeManager {
+    constructor() {
+        this.faviconLight = 'icons/favicon-light.svg';
+        this.faviconDark = 'icons/favicon.svg';
+        this.initTheme();
+        this.initFavicons();
+        this.setupMediaQueryListener();
+    }
+
+    setupMediaQueryListener() {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => {
+            // Only update theme if no user preference is set
+            if (!localStorage.getItem("theme")) {
+                this.updateThemeBasedOnSystem();
+            }
+            this.updateFavicon();
+        };
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', handleChange);
+        } else {
+            mediaQuery.addListener(handleChange); // Fallback
+        }
+        
+        // Initial check
+        handleChange();
+    }
+
+    updateThemeBasedOnSystem() {
+        const systemTheme = this.getSystemTheme();
+        this.applyTheme(systemTheme);
+        this.updateThemeColor(systemTheme);
+    }
+
+    initTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        const systemPreference = this.getSystemTheme();
+        
+        // Apply saved theme if exists, otherwise use system preference
+        const initialTheme = savedTheme || systemPreference;
+        
+        this.applyTheme(initialTheme);
+        this.updateThemeColor(initialTheme);
+    }
+
+    getSystemTheme() {
+        if (typeof window.matchMedia !== 'function') return 'light';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+isMediaQuerySupported() {
+    return typeof window.matchMedia === 'function';
+}
+
+    // Add this method to ThemeManager
+    changeColor(color) {
+        const colors = {
+            green: { dark: "22, 111, 69", light: "146, 244, 164" },
+            blue: { dark: "0, 79, 139", light: "190, 219, 255" },
+            yellow: { dark: "143, 124, 65", light: "255, 234, 132" },
+            red: { dark: "167, 44, 47", light: "255, 195, 195" },
+            pink: { dark: "64, 50, 102", light: "217, 206, 237" }
+        }[color] || colors.green;
+
+        document.documentElement.style.setProperty('--accent-dark', colors.dark);
+        document.documentElement.style.setProperty('--accent-light', colors.light);
+    }
+
+    initFavicons() {
+        // Remove any existing favicon elements to prevent duplicates
+        document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"]').forEach(el => el.remove());
+
+        // Create new dynamic favicon elements
+        this.faviconElement = document.createElement('link');
+        this.faviconElement.rel = 'icon';
+        this.faviconElement.id = 'dynamic-favicon';
+        document.head.appendChild(this.faviconElement);
+
+        // Create alternate for older browsers
+        this.faviconFallback = document.createElement('link');
+        this.faviconFallback.rel = 'alternate icon';
+        this.faviconFallback.href = 'icons/favicon.ico';
+        document.head.appendChild(this.faviconFallback);
+
+        this.updateFavicon();
+    }
+
+    updateFavicon() {
+        const isDark = this.shouldUseDarkMode();
+        const faviconUrl = isDark ? this.faviconLight : this.faviconDark;
+        
+        // Force update by adding timestamp to bypass cache
+        const timestamp = Date.now();
+        const cacheBuster = `?_=${timestamp}`;
+        
+        // Update main favicon (SVG)
+        this.faviconElement.href = `${faviconUrl}${cacheBuster}`;
+        this.faviconElement.type = 'image/svg+xml';
+        
+        // Update fallback (PNG)
+        const fallbackUrl = isDark ? 'icons/favicon-light-96x96.png' : 'icons/favicon-96x96.png';
+        this.faviconFallback.href = `${fallbackUrl}${cacheBuster}`;
+        
+        // Update theme-color meta tag
+        this.updateThemeColor(isDark ? 'dark' : 'light');
+    }
+
+    shouldUseDarkMode() {
+        // Check localStorage first, then system preference
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme) return savedTheme === 'dark';
+        
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    updateThemeColor(theme) {
+        const themeColor = theme === 'dark' ? '#0a0a0a' : '#ffffff';
+        let themeMeta = document.querySelector('meta[name="theme-color"]');
+        
+        if (!themeMeta) {
+            themeMeta = document.createElement('meta');
+            themeMeta.name = 'theme-color';
+            document.head.appendChild(themeMeta);
+        }
+        themeMeta.content = themeColor;
+    }
+
+    applyTheme(theme) {
+        document.body.className = `${theme}-mode`;
+    }
+
+    setupThemeListener() {
+        // Improved theme change detection
+        if (typeof window.matchMedia !== 'function') return;
+        
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleChange = () => {
+            this.updateFavicon();
+            const currentTheme = localStorage.getItem("theme");
+            
+            // Only follow system theme if no user preference exists
+            if (!currentTheme) {
+                const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+                this.applyTheme(systemTheme);
+                this.updateThemeColor(systemTheme);
+            }
+        };
+        
+        // Modern way to add listener
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', handleChange);
+        } else {
+            mediaQuery.addListener(handleChange); // Fallback
+        }
+    }
+	
+    setupColorPickers() {
+        document.querySelectorAll('.color-picker').forEach(picker => {
+            const handler = e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (picker.dataset.color) {
+                    this.changeColor(picker.dataset.color);
+                    localStorage.setItem("accentColor", picker.dataset.color);
+                    
+                    // Update active state
+                    document.querySelectorAll('.color-picker').forEach(p => 
+                        p.classList.remove('active')
+                    );
+                    picker.classList.add('active');
+                }
+            };
+            
+            picker.addEventListener('click', handler);
+            picker.addEventListener('touchend', handler, { passive: false });
+        });
+
+        // Set initial color state
+        const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
+        document.querySelector(`.color-picker[data-color="${savedColor}"]`)?.classList.add('active');
+        this.changeColor(savedColor);
+    }
+}
+
+// Initialize theme manager when DOM loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.themeManager = new ThemeManager();
+});
+
 // Main Application Controller
 class RadioPlayer {
     constructor() {
-		this.changingStation = false;
-        this.currentStation = null;
-        this.currentGenre = 'all';
-        this.lastVolume = 1;
-        this.lastTitle = '';
-        this.lastMetadataCheck = 0;
-		this.lastScrollTime = 0;
-        this.scrollbarHideTimeout = null;
-		this.handleTouchEnd = this.handleTouchEnd.bind(this);
-		this.toggleSearch = this.toggleSearch.bind(this);
-        
+        // Initialize elements FIRST
         this.elements = {
             audio: document.getElementById("audioctrl"),
-            scrollList: document.querySelector('.scroll-list'),
-            audioContainer: document.querySelector('.audio-container'),
             audioText: document.getElementById('audiotext'),
             playPauseBtn: document.getElementById('playPauseBtn'),
             volumeIcon: document.getElementById('volumeIcon'),
@@ -32,9 +210,26 @@ class RadioPlayer {
             stationSearch: document.getElementById("stationSearch"),
             clearSearch: document.getElementById("clearSearch"),
             historyDropdown: document.querySelector('.history-dropdown'),
-            searchContainer: document.querySelector('.search-container')
+            searchContainer: document.querySelector('.search-container'),
+            scrollList: document.querySelector('.scroll-list'),
+            audioContainer: document.querySelector('.audio-container')
         };
-
+        
+        // Then load preferences
+        this.loadPreferences();
+        
+        // Rest of your constructor
+        this.changingStation = false;
+        this.currentStation = null;
+        this.currentGenre = 'all';
+        this.lastVolume = 1;
+        this.lastTitle = '';
+        this.lastMetadataCheck = 0;
+        this.lastScrollTime = 0;
+        this.scrollbarHideTimeout = null;
+        this.handleTouchEnd = this.handleTouchEnd.bind(this);
+        this.toggleSearch = this.toggleSearch.bind(this);
+        
         this.init();
     }
 
@@ -735,87 +930,54 @@ updatePlayPauseButton = () => {
     }
 
     // Theme Functions
-setTheme(mode) {
-    const prefersDark = matchMedia('(prefers-color-scheme: dark)').matches;
-    const actualMode = mode || (prefersDark ? 'dark' : 'light');
-    
-    document.body.className = `${actualMode}-mode`;
-    document.documentElement.style.setProperty(
-        '--accent-color', 
-        `var(--accent-${actualMode === 'dark' ? 'light' : 'dark'})`
-    );
-    localStorage.setItem('theme', actualMode);
-
-    // Update active state
-    document.querySelectorAll('.theme-option').forEach(option => 
-        option.classList.remove('active')
-    );
-    document.querySelector(`.theme-option[data-theme="${actualMode}"]`)?.classList.add('active');
-    
-    setTimeout(() => this.ScrollbarManager.updateAll(), 50);
-}
-
-changeColor(color) {
-    const colors = {
-        green: { dark: "22, 111, 69", light: "146, 244, 164" },
-        blue: { dark: "0, 79, 139", light: "190, 219, 255" }, 
-        yellow: { dark: "143, 124, 65", light: "255, 234, 132" }, 
-        red: { dark: "167, 44, 47", light: "255, 195, 195" },
-        pink: { dark: "64, 50, 102", light: "217, 206, 237" },
-    }[color] || colors.green;
-
-    document.documentElement.style.setProperty('--accent-dark', colors.dark);
-    document.documentElement.style.setProperty('--accent-light', colors.light);
-    localStorage.setItem('accentColor', color);
-    
-    // Update active state
-    document.querySelectorAll('.color-picker').forEach(picker => 
-        picker.classList.remove('active')
-    );
-    document.querySelector(`.color-picker[data-color="${color}"]`)?.classList.add('active');
-}
-
+	
+// Updated in RadioPlayer class
 setupThemeControls() {
-    // Update theme options handlers
+    // Initialize theme manager if not already done
+    window.themeManager = window.themeManager || new ThemeManager();
+    window.themeManager.setupColorPickers();
+
+    // Set up theme options
     document.querySelectorAll('.theme-option').forEach(option => {
         const handler = e => {
             e.preventDefault();
             e.stopPropagation();
-            option.dataset.theme && this.setTheme(option.dataset.theme);
-            
-            // Update active state
-            document.querySelectorAll('.theme-option').forEach(opt => 
-                opt.classList.remove('active')
-            );
-            option.classList.add('active');
+            if (option.dataset.theme) {
+                this.setTheme(option.dataset.theme);
+                
+                // Update all theme option states
+                document.querySelectorAll('.theme-option').forEach(opt => 
+                    opt.classList.remove('active')
+                );
+                option.classList.add('active');
+            }
         };
         
         option.addEventListener('click', handler);
         option.addEventListener('touchend', handler, { passive: false });
     });
+
+    // Set initial theme state
+    const savedTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
+    document.querySelector(`.theme-option[data-theme="${savedTheme}"]`)?.classList.add('active');
+}
+
+setTheme(mode) {
+    if (mode) {
+        // If mode is explicitly set (user choice), store it
+        localStorage.setItem('theme', mode);
+    } else {
+        // If no mode specified (clearing user preference), remove the setting
+        localStorage.removeItem('theme');
+        // Revert to system theme
+        mode = window.themeManager.getSystemTheme();
+    }
     
-    // Update color picker handlers
-    document.querySelectorAll('.color-picker').forEach(picker => {
-        const handler = e => {
-            e.preventDefault();
-            e.stopPropagation();
-            if (picker.dataset.color) {
-                this.changeColor(picker.dataset.color);
-                
-                // Update active state
-                document.querySelectorAll('.color-picker').forEach(p => 
-                    p.classList.remove('active')
-                );
-                picker.classList.add('active');
-            }
-        };
-        
-        picker.addEventListener('click', handler);
-        picker.addEventListener('touchend', handler, { passive: false });
-    });
+    // Apply the theme through themeManager
+    window.themeManager?.applyTheme(mode);
+    window.themeManager?.updateThemeColor(mode);
     
-    // Set initial active states
-    this.setInitialActiveStates();
+    setTimeout(() => this.ScrollbarManager?.updateAll(), 50);
 }
 
 setInitialActiveStates() {
@@ -1235,41 +1397,54 @@ updateAudioContainerHeight() {
     }
 
 loadPreferences() {
-    const savedTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
     const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
     const savedStation = this.safeParseJSON("lastStation", {});
     
-    this.setTheme(savedTheme);
-    this.changeColor(savedColor);
+    // Initialize theme manager if needed
+    if (!window.themeManager) {
+        window.themeManager = new ThemeManager();
+    }
+    
+    // Apply saved theme (or system preference if none saved)
+    this.setTheme(localStorage.getItem("theme"));
+    
+    // Apply saved color through theme manager
+    if (window.themeManager && window.themeManager.changeColor) {
+        window.themeManager.changeColor(savedColor);
+    }
+    
     this.setInitialActiveStates();
 
-        if (savedStation.name && savedStation.link) {
-            // Update UI immediately
-            const { audioText } = this.elements;
-            audioText.innerHTML = `<div class="station-name">${savedStation.name}</div>`;
-            document.title = `KlikniPlay | ${savedStation.name}`;
-            this.updateSelectedStation(savedStation.name);
-            
-            // Set initial play/pause button state
-            this.updatePlayPauseButton();
-            
-            // Set current station but don't auto-play
-            this.currentStation = savedStation;
-            this.elements.audio.src = savedStation.link;
-            
-            // Check metadata after a short delay
-            setTimeout(() => {
-                this.checkMetadata(true);
-                this.setupNowPlayingMetadata();
-            }, 300);
-        } else {
-            document.title = "KlikniPlay";
-            this.updatePlayPauseButton();
-            
-            // Ensure empty state is handled
-            this.elements.audioText.innerHTML = `<div class="station-name">Odaberite stanicu</div>`;
-        }
+    // Initialize elements if not already done
+    if (!this.elements) {
+        this.elements = {
+            audio: document.getElementById("audioctrl"),
+            audioText: document.getElementById("audiotext")
+            // Add other element references as needed
+        };
     }
+
+    if (savedStation.name && savedStation.link) {
+        const { audioText } = this.elements;
+        audioText.innerHTML = `<div class="station-name">${savedStation.name}</div>`;
+        document.title = `KlikniPlay | ${savedStation.name}`;
+        this.updateSelectedStation(savedStation.name);
+        
+        this.updatePlayPauseButton();
+        
+        this.currentStation = savedStation;
+        this.elements.audio.src = savedStation.link;
+        
+        setTimeout(() => {
+            this.checkMetadata(true);
+            this.setupNowPlayingMetadata();
+        }, 300);
+    } else {
+        document.title = "KlikniPlay";
+        this.updatePlayPauseButton();
+        this.elements.audioText.innerHTML = `<div class="station-name">Odaberite stanicu</div>`;
+    }
+}
 
     // Utility Functions
     safeParseJSON(key, fallback) {
@@ -1972,13 +2147,16 @@ updateTrackPosition() {
 
 // Initialize the application when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
+    window.themeManager = new ThemeManager();
+	window.themeManager.setupColorPickers();
     window.radioPlayer = new RadioPlayer();
     window.lastScrollTime = 0;
     window.scrollbarHideTimeout = null;
 });
 
 // Register Service Worker
-if ('serviceWorker' in navigator) {
+// Update Service Worker registration
+if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' })
       .then(registration => {
@@ -1989,7 +2167,6 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-
 // Show install prompt for PWA
 let deferredPrompt;
 const installButton = document.querySelector('.install-button') || 

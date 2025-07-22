@@ -14,13 +14,16 @@ const ASSETS_TO_CACHE = [
   '/img/radionovosti.png',
   '/img/radiokosava.png',
   '/img/radioparadise.png',
-  '/icons/favicon.ico',
-  '/icons/favicon.svg',
-  '/icons/favicon-96x96.png',
   '/icons/apple-touch-icon.png',
   '/icons/web-app-manifest-192x192.png',
   '/icons/web-app-manifest-512x512.png',
-  '/icons/site.webmanifest'
+  '/icons/site.webmanifest',
+  '/icons/favicon.ico',
+  '/icons/favicon-light.ico',
+  '/icons/favicon.svg',
+  '/icons/favicon-light.svg',
+  '/icons/favicon-96x96.png',
+  '/icons/favicon-light-96x96.png',
 
 ];
 
@@ -38,7 +41,10 @@ self.addEventListener('fetch', (event) => {
       event.request.url.includes('stream.playradio') ||
       event.request.url.includes('streaming.tdiradio') ||
       event.request.url.includes('cast2.asurahosting') ||
-      event.request.url.includes('radioparadise')) {
+      event.request.url.includes('radioparadise') ||
+	  event.request.url.endsWith('.svg') || 
+      event.request.url.endsWith('.ico') ||
+      event.request.url.includes('favicon')) {
     return fetch(event.request);
   }
 
