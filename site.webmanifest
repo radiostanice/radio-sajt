@@ -17,5 +17,10 @@
   ],
   "theme_color": "#ffffff",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "description": "Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo",
+  "orientation": "portrait",
+  "prefer_related_applications": false
 }
