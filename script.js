@@ -2155,12 +2155,12 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Register Service Worker
-// Update Service Worker registration
+// Register Service Worker with correct scope
 if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: '/' })
+    navigator.serviceWorker.register('./sw.js', { scope: '/radio-sajt/' })
       .then(registration => {
-        console.log('ServiceWorker registration successful');
+        console.log('ServiceWorker registration successful with scope:', registration.scope);
       })
       .catch(err => {
         console.log('ServiceWorker registration failed: ', err);
@@ -2168,85 +2168,67 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
   });
 }
 
-// Improved PWA Installation Logic
-let deferredPrompt;
-const pwaInstallContainer = document.getElementById('pwaInstallContainer');
-const pwaInstallButton = document.getElementById('pwaInstallButton');
-const pwaDismissButton = document.getElementById('pwaDismissButton');
+// Simplified PWA Installation
+class PWAInstaller {
+  constructor() {
+    this.deferredPrompt = null;
+    this.installContainer = document.getElementById('pwaInstallContainer');
+    this.setupEvents();
+  }
 
-// Check if PWA is already installed (more reliable method)
-function isPWAInstalled() {
-  return window.matchMedia('(display-mode: standalone)').matches || 
-         window.navigator.standalone ||
-         document.referrer.includes('android-app://');
-}
+  setupEvents() {
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredPrompt = e;
+      this.showInstallPrompt();
+    });
 
-// Show install prompt with better timing and conditions
-function showInstallPromotion() {
-  if (!deferredPrompt || isPWAInstalled() || localStorage.getItem('pwaDismissed')) return;
-  
-  // Ensure container exists
-  if (!pwaInstallContainer) return;
-  
-  // Show after a brief delay when page is ready
-  setTimeout(() => {
-    pwaInstallContainer.classList.add('show');
-    // Automatically hide after 20 seconds if not interacted with
-    setTimeout(() => {
-      if (pwaInstallContainer.classList.contains('show')) {
-        pwaInstallContainer.classList.remove('show');
-        localStorage.setItem('pwaDismissed', 'true');
-        localStorage.setItem('pwaDismissedTimestamp', Date.now());
-      }
-    }, 20000);
-  }, 3000);
-}
+    document.getElementById('pwaInstallButton')?.addEventListener('click', () => this.install());
+    document.getElementById('pwaDismissButton')?.addEventListener('click', () => this.dismiss());
+  }
 
-// Handle installation event
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallPromotion();
-});
+  showInstallPrompt() {
+    if (this.shouldShowPrompt()) {
+      this.installContainer.classList.add('show');
+      setTimeout(() => {
+        if (this.installContainer.classList.contains('show')) {
+          this.dismiss();
+        }
+      }, 20000);
+    }
+  }
 
-// Install button click
-if (pwaInstallButton) {
-  pwaInstallButton.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
+  shouldShowPrompt() {
+    return !this.isPWAInstalled() && !localStorage.getItem('pwaDismissed');
+  }
+
+  isPWAInstalled() {
+    return window.matchMedia('(display-mode: standalone)').matches || 
+           window.navigator.standalone;
+  }
+
+  async install() {
+    if (!this.deferredPrompt) return;
     
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    this.deferredPrompt.prompt();
+    const { outcome } = await this.deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
       localStorage.setItem('pwaInstalled', 'true');
-      pwaInstallContainer.classList.remove('show');
     }
     
-    // Reset the deferred prompt variable
-    deferredPrompt = null;
-  });
-}
+    this.dismiss();
+    this.deferredPrompt = null;
+  }
 
-// Dismiss button click
-if (pwaDismissButton) {
-  pwaDismissButton.addEventListener('click', () => {
+  dismiss() {
     localStorage.setItem('pwaDismissed', 'true');
     localStorage.setItem('pwaDismissedTimestamp', Date.now());
-    pwaInstallContainer.classList.remove('show');
-  });
+    this.installContainer.classList.remove('show');
+  }
 }
 
-// Check installation status on load
-window.addEventListener('load', () => {
-  // Reset dismissal after 10 days
-  const lastDismissal = localStorage.getItem('pwaDismissedTimestamp');
-  if (lastDismissal && Date.now() - lastDismissal > 10 * 24 * 60 * 60 * 1000) {
-    localStorage.removeItem('pwaDismissed');
-    localStorage.removeItem('pwaDismissedTimestamp');
-  }
-  
-  // Show prompt if not dismissed and not installed
-  if (!isPWAInstalled() && !localStorage.getItem('pwaDismissed')) {
-    showInstallPromotion();
-  }
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  new PWAInstaller();
 });
