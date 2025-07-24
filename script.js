@@ -9,8 +9,8 @@ const CONFIG = {
 // Theme and Favicon Manager
 class ThemeManager {
     constructor() {
-        this.faviconLight = 'icons/favicon-light.svg';
-        this.faviconDark = 'icons/favicon.svg';
+        this.faviconLight = 'icons/favicon-light.svg'; // Remove this
+        this.faviconDark = 'icons/favicon.svg'; // Remove this
         this.initTheme();
         this.initFavicons();
         this.setupMediaQueryListener();
@@ -19,10 +19,6 @@ class ThemeManager {
     setupMediaQueryListener() {
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         const handleChange = () => {
-            // Only update theme if no user preference is set
-            if (!localStorage.getItem("theme")) {
-                this.updateThemeBasedOnSystem();
-            }
             this.updateFavicon();
         };
 
@@ -36,10 +32,43 @@ class ThemeManager {
         handleChange();
     }
 
-    updateThemeBasedOnSystem() {
-        const systemTheme = this.getSystemTheme();
-        this.applyTheme(systemTheme);
-        this.updateThemeColor(systemTheme);
+    initFavicons() {
+        // Remove any existing favicon elements to prevent duplicates
+        document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"]').forEach(el => el.remove());
+
+        // Create main favicon element
+        this.faviconElement = document.createElement('link');
+        this.faviconElement.rel = 'icon';
+        this.faviconElement.href = 'icons/favicon.svg';
+        document.head.appendChild(this.faviconElement);
+
+        // Create fallback for older browsers
+        this.faviconFallback = document.createElement('link');
+        this.faviconFallback.rel = 'alternate icon';
+        this.faviconFallback.href = 'icons/favicon.ico';
+        document.head.appendChild(this.faviconFallback);
+
+        this.updateFavicon();
+    }
+
+    updateFavicon() {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const faviconUrl = isDark ? 'icons/favicon-light.svg' : 'icons/favicon.svg';
+        
+        // Force update by adding timestamp to bypass cache
+        const timestamp = Date.now();
+        const cacheBuster = `?_=${timestamp}`;
+        
+        // Update main favicon (SVG)
+        this.faviconElement.href = `${faviconUrl}${cacheBuster}`;
+        this.faviconElement.type = 'image/svg+xml';
+        
+        // Update fallback (PNG)
+        const fallbackUrl = isDark ? 'icons/favicon-light-96x96.png' : 'icons/favicon-96x96.png';
+        this.faviconFallback.href = `${fallbackUrl}${cacheBuster}`;
+        
+        // Update theme-color meta tag (you can keep this if you want)
+        this.updateThemeColor(isDark ? 'dark' : 'light');
     }
 
     initTheme() {
@@ -74,45 +103,6 @@ isMediaQuerySupported() {
 
         document.documentElement.style.setProperty('--accent-dark', colors.dark);
         document.documentElement.style.setProperty('--accent-light', colors.light);
-    }
-
-    initFavicons() {
-        // Remove any existing favicon elements to prevent duplicates
-        document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"]').forEach(el => el.remove());
-
-        // Create new dynamic favicon elements
-        this.faviconElement = document.createElement('link');
-        this.faviconElement.rel = 'icon';
-        this.faviconElement.id = 'dynamic-favicon';
-        document.head.appendChild(this.faviconElement);
-
-        // Create alternate for older browsers
-        this.faviconFallback = document.createElement('link');
-        this.faviconFallback.rel = 'alternate icon';
-        this.faviconFallback.href = 'icons/favicon.ico';
-        document.head.appendChild(this.faviconFallback);
-
-        this.updateFavicon();
-    }
-
-    updateFavicon() {
-        const isDark = this.shouldUseDarkMode();
-        const faviconUrl = isDark ? this.faviconLight : this.faviconDark;
-        
-        // Force update by adding timestamp to bypass cache
-        const timestamp = Date.now();
-        const cacheBuster = `?_=${timestamp}`;
-        
-        // Update main favicon (SVG)
-        this.faviconElement.href = `${faviconUrl}${cacheBuster}`;
-        this.faviconElement.type = 'image/svg+xml';
-        
-        // Update fallback (PNG)
-        const fallbackUrl = isDark ? 'icons/favicon-light-96x96.png' : 'icons/favicon-96x96.png';
-        this.faviconFallback.href = `${fallbackUrl}${cacheBuster}`;
-        
-        // Update theme-color meta tag
-        this.updateThemeColor(isDark ? 'dark' : 'light');
     }
 
     shouldUseDarkMode() {
