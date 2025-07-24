@@ -2061,13 +2061,14 @@ button {
   padding: 15px;
   width: 280px;
   max-width: calc(100% - 30px);
-  z-index: 999999;
+  z-index: 9999;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   border: 1px solid #333;
   transform: translateY(20px);
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
 }
 
 .pwa-install-container.show {
@@ -2086,6 +2087,7 @@ button {
   margin: 0 0 15px 0;
   font-size: 1rem;
   opacity: 0.8;
+  line-height: 1.4;
 }
 
 .pwa-install-buttons {
@@ -2105,6 +2107,7 @@ button {
   cursor: pointer;
   border: none;
   transition: all 0.2s ease;
+  font-size: 0.9rem;
 }
 
 .pwa-install-button {
@@ -2119,14 +2122,35 @@ button {
 
 .pwa-install-button:hover {
   background-color: rgb(var(--accent-light));
+  transform: translateY(-1px);
 }
 
 .pwa-dismiss-button:hover {
   background-color: #444;
+  transform: translateY(-1px);
 }
 
 .pwa-install-button .material-icons,
 .pwa-dismiss-button .material-icons {
   font-size: 18px;
   margin-right: 5px;
+}
+
+/* Add backdrop blur effect when prompt is shown */
+.pwa-install-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pwa-install-container.show::before {
+  opacity: 1;
 }

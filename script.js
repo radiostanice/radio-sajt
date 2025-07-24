@@ -124,7 +124,7 @@ isMediaQuerySupported() {
     }
 
     updateThemeColor(theme) {
-        const themeColor = theme === 'dark' ? '#0a0a0a' : '#ffffff';
+        const themeColor = theme === 'dark' ? '#1d1d1d' : '#f6f6f6';
         let themeMeta = document.querySelector('meta[name="theme-color"]');
         
         if (!themeMeta) {
@@ -2167,29 +2167,42 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
       });
   });
 }
-// PWA Installation Logic
+
+// Improved PWA Installation Logic
 let deferredPrompt;
 const pwaInstallContainer = document.getElementById('pwaInstallContainer');
 const pwaInstallButton = document.getElementById('pwaInstallButton');
 const pwaDismissButton = document.getElementById('pwaDismissButton');
 
-// Check if PWA is already installed
+// Check if PWA is already installed (more reliable method)
 function isPWAInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches || 
          window.navigator.standalone ||
          document.referrer.includes('android-app://');
 }
 
-// Show install prompt
+// Show install prompt with better timing and conditions
 function showInstallPromotion() {
-  if (!isPWAInstalled() && !localStorage.getItem('pwaDismissed')) {
+  if (!deferredPrompt || isPWAInstalled() || localStorage.getItem('pwaDismissed')) return;
+  
+  // Ensure container exists
+  if (!pwaInstallContainer) return;
+  
+  // Show after a brief delay when page is ready
+  setTimeout(() => {
+    pwaInstallContainer.classList.add('show');
+    // Automatically hide after 20 seconds if not interacted with
     setTimeout(() => {
-      pwaInstallContainer.classList.add('show');
-    }, 3000); // Show after 3 seconds
-  }
+      if (pwaInstallContainer.classList.contains('show')) {
+        pwaInstallContainer.classList.remove('show');
+        localStorage.setItem('pwaDismissed', 'true');
+        localStorage.setItem('pwaDismissedTimestamp', Date.now());
+      }
+    }, 20000);
+  }, 3000);
 }
 
-// Handle installation
+// Handle installation event
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -2197,41 +2210,43 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 // Install button click
-pwaInstallButton.addEventListener('click', async () => {
-  if (deferredPrompt) {
+if (pwaInstallButton) {
+  pwaInstallButton.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
     if (outcome === 'accepted') {
       localStorage.setItem('pwaInstalled', 'true');
       pwaInstallContainer.classList.remove('show');
     }
-  }
-});
+    
+    // Reset the deferred prompt variable
+    deferredPrompt = null;
+  });
+}
 
 // Dismiss button click
-pwaDismissButton.addEventListener('click', () => {
-  localStorage.setItem('pwaDismissed', 'true');
-  pwaInstallContainer.classList.remove('show');
-});
+if (pwaDismissButton) {
+  pwaDismissButton.addEventListener('click', () => {
+    localStorage.setItem('pwaDismissed', 'true');
+    localStorage.setItem('pwaDismissedTimestamp', Date.now());
+    pwaInstallContainer.classList.remove('show');
+  });
+}
 
-// Check on load
+// Check installation status on load
 window.addEventListener('load', () => {
-  // Remove install prompt if PWA is already installed
-  if (isPWAInstalled()) {
-    pwaInstallContainer.remove();
-    localStorage.setItem('pwaInstalled', 'true');
+  // Reset dismissal after 10 days
+  const lastDismissal = localStorage.getItem('pwaDismissedTimestamp');
+  if (lastDismissal && Date.now() - lastDismissal > 10 * 24 * 60 * 60 * 1000) {
+    localStorage.removeItem('pwaDismissed');
+    localStorage.removeItem('pwaDismissedTimestamp');
   }
   
-  // Reset dismissal after 30 days
-  const lastDismissal = localStorage.getItem('pwaDismissedTimestamp');
-  if (lastDismissal && Date.now() - lastDismissal > 30 * 24 * 60 * 60 * 1000) {
-    localStorage.removeItem('pwaDismissed');
+  // Show prompt if not dismissed and not installed
+  if (!isPWAInstalled() && !localStorage.getItem('pwaDismissed')) {
+    showInstallPromotion();
   }
 });
-
-// Store dismissal time
-pwaDismissButton.addEventListener('click', () => {
-  localStorage.setItem('pwaDismissedTimestamp', Date.now());
-});
-
-// Clean up existing install button code (remove the simpler version you had)

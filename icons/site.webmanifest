@@ -17,7 +17,7 @@
   "short_name": "KlikniPlay",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#1d1d1d",
   "theme_color": "#166F45",
   "orientation": "portrait-primary",
   "description": "Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo",
