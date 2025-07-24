@@ -2167,58 +2167,71 @@ if ('serviceWorker' in navigator && window.location.protocol !== 'file:') {
       });
   });
 }
-// Show install prompt for PWA
+// PWA Installation Logic
 let deferredPrompt;
-const installButton = document.querySelector('.install-button') || 
-  (() => {
-    const btn = document.createElement('div');
-    btn.className = 'install-button';
-    btn.innerHTML = 'Instaliraj aplikaciju';
-    btn.style.display = 'none';
-    document.body.appendChild(btn);
-    return btn;
-  })();
+const pwaInstallContainer = document.getElementById('pwaInstallContainer');
+const pwaInstallButton = document.getElementById('pwaInstallButton');
+const pwaDismissButton = document.getElementById('pwaDismissButton');
 
+// Check if PWA is already installed
+function isPWAInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone ||
+         document.referrer.includes('android-app://');
+}
+
+// Show install prompt
+function showInstallPromotion() {
+  if (!isPWAInstalled() && !localStorage.getItem('pwaDismissed')) {
+    setTimeout(() => {
+      pwaInstallContainer.classList.add('show');
+    }, 3000); // Show after 3 seconds
+  }
+}
+
+// Handle installation
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
-  installButton.style.display = 'block';
+  showInstallPromotion();
 });
 
-installButton.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  console.log(`User ${outcome} the install prompt`);
-  deferredPrompt = null;
-  installButton.style.display = 'none';
-});
-
-window.addEventListener('appinstalled', () => {
-  console.log('PWA was installed');
-  installButton.style.display = 'none';
-  deferredPrompt = null;
-});
-
-function showInstallPromotion() {
-  // You can customize this to show a button or banner
-  // that when clicked will call deferredPrompt.prompt()
-  const installButton = document.createElement('div');
-  installButton.className = 'install-button';
-  installButton.innerHTML = 'Instaliraj aplikaciju';
-  
-  installButton.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
+// Install button click
+pwaInstallButton.addEventListener('click', async () => {
+  if (deferredPrompt) {
     deferredPrompt.prompt();
-    const choiceResult = await deferredPrompt.userChoice;
-    if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted install');
-    } else {
-      console.log('User dismissed install');
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      localStorage.setItem('pwaInstalled', 'true');
+      pwaInstallContainer.classList.remove('show');
     }
-    deferredPrompt = null;
-    installButton.remove();
-  });
+  }
+});
+
+// Dismiss button click
+pwaDismissButton.addEventListener('click', () => {
+  localStorage.setItem('pwaDismissed', 'true');
+  pwaInstallContainer.classList.remove('show');
+});
+
+// Check on load
+window.addEventListener('load', () => {
+  // Remove install prompt if PWA is already installed
+  if (isPWAInstalled()) {
+    pwaInstallContainer.remove();
+    localStorage.setItem('pwaInstalled', 'true');
+  }
   
-  document.body.appendChild(installButton);
-}
+  // Reset dismissal after 30 days
+  const lastDismissal = localStorage.getItem('pwaDismissedTimestamp');
+  if (lastDismissal && Date.now() - lastDismissal > 30 * 24 * 60 * 60 * 1000) {
+    localStorage.removeItem('pwaDismissed');
+  }
+});
+
+// Store dismissal time
+pwaDismissButton.addEventListener('click', () => {
+  localStorage.setItem('pwaDismissedTimestamp', Date.now());
+});
+
+// Clean up existing install button code (remove the simpler version you had)
