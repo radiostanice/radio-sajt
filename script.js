@@ -2174,6 +2174,7 @@ class PWAInstaller {
     this.deferredPrompt = null;
     this.installContainer = document.getElementById('pwaInstallContainer');
     this.setupEvents();
+    this.checkInstallStatus();
   }
 
   setupEvents() {
@@ -2183,8 +2184,20 @@ class PWAInstaller {
       this.showInstallPrompt();
     });
 
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem('pwaInstalled', 'true');
+      this.dismiss();
+    });
+
     document.getElementById('pwaInstallButton')?.addEventListener('click', () => this.install());
     document.getElementById('pwaDismissButton')?.addEventListener('click', () => this.dismiss());
+  }
+
+  checkInstallStatus() {
+    if (this.isPWAInstalled()) {
+      localStorage.setItem('pwaInstalled', 'true');
+      this.dismiss();
+    }
   }
 
   showInstallPrompt() {
@@ -2199,26 +2212,36 @@ class PWAInstaller {
   }
 
   shouldShowPrompt() {
-    return !this.isPWAInstalled() && !localStorage.getItem('pwaDismissed');
+    if (this.isPWAInstalled() || localStorage.getItem('pwaInstalled')) {
+      return false;
+    }
+    
+    // Only show once per week if dismissed
+    const lastDismissed = parseInt(localStorage.getItem('pwaDismissedTimestamp')) || 0;
+    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    return lastDismissed < oneWeekAgo;
   }
 
   isPWAInstalled() {
     return window.matchMedia('(display-mode: standalone)').matches || 
-           window.navigator.standalone;
+           window.navigator.standalone ||
+           document.referrer.includes('android-app://');
   }
 
   async install() {
     if (!this.deferredPrompt) return;
     
-    this.deferredPrompt.prompt();
-    const { outcome } = await this.deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      localStorage.setItem('pwaInstalled', 'true');
+    try {
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      
+      console.log(`User ${outcome} the install prompt`);
+      // Don't set pwaInstalled here - wait for appinstalled event
+    } catch (err) {
+      console.error('Install failed:', err);
+    } finally {
+      this.deferredPrompt = null;
     }
-    
-    this.dismiss();
-    this.deferredPrompt = null;
   }
 
   dismiss() {
@@ -2227,8 +2250,3 @@ class PWAInstaller {
     this.installContainer.classList.remove('show');
   }
 }
-
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  new PWAInstaller();
-});

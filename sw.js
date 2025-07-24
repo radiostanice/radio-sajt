@@ -1,4 +1,4 @@
-// sw.js
+// Updated sw.js
 const CACHE_NAME = 'klikniplay-v1';
 const BASE_PATH = '/radio-sajt/';
 const ASSETS_TO_CACHE = [
@@ -6,31 +6,23 @@ const ASSETS_TO_CACHE = [
   BASE_PATH + 'index.html',
   BASE_PATH + 'styles.css',
   BASE_PATH + 'script.js',
-  BASE_PATH + '/img/klikniplay_icon.svg',
-  BASE_PATH + '/img/naxi.png',
-  BASE_PATH + '/img/radios.png',
-  BASE_PATH + '/img/playradio.png',
-  BASE_PATH + '/img/tdiradio.png',
-  BASE_PATH + '/img/okradio.png',
-  BASE_PATH + '/img/radionovosti.png',
-  BASE_PATH + '/img/radiokosava.png',
-  BASE_PATH + '/img/radioparadise.png',
-  BASE_PATH + '/icons/apple-touch-icon.png',
-  BASE_PATH + '/icons/web-app-manifest-192x192.png',
-  BASE_PATH + '/icons/web-app-manifest-512x512.png',
-  BASE_PATH + '/icons/site.webmanifest',
-  BASE_PATH + '/icons/favicon.ico',
-  BASE_PATH + '/icons/favicon-light.ico',
-  BASE_PATH + '/icons/favicon.svg',
-  BASE_PATH + '/icons/favicon-light.svg',
-  BASE_PATH + '/icons/favicon-96x96.png',
-  BASE_PATH + '/icons/favicon-light-96x96.png',
+  BASE_PATH + 'img/naxi.png',
+  BASE_PATH + 'img/radios.png',
+  BASE_PATH + 'img/playradio.png',
+  BASE_PATH + 'img/tdiradio.png',
+  BASE_PATH + 'img/okradio.png',
+  BASE_PATH + 'img/radionovosti.png',
+  BASE_PATH + 'img/radiokosava.png',
+  BASE_PATH + 'img/radioparadise.png',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .then((cache) => {
+        return cache.addAll(ASSETS_TO_CACHE.map(url => new Request(url, {cache: 'reload'})))
+                   .catch(err => console.log('Failed to cache:', err));
+      })
       .then(() => self.skipWaiting())
   );
 });
