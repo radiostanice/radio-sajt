@@ -2152,6 +2152,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.radioPlayer = new RadioPlayer();
     window.lastScrollTime = 0;
     window.scrollbarHideTimeout = null;
+	window.pwaInstaller = new PWAInstaller();
 });
 
 // Register Service Worker
@@ -2173,24 +2174,41 @@ class PWAInstaller {
   constructor() {
     this.deferredPrompt = null;
     this.installContainer = document.getElementById('pwaInstallContainer');
+    
+    // Add these checks to ensure elements exist
+    if (!this.installContainer) {
+      console.warn('PWA install container not found');
+      return;
+    }
+    
     this.setupEvents();
     this.checkInstallStatus();
   }
 
   setupEvents() {
     window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('beforeinstallprompt event fired');
       e.preventDefault();
       this.deferredPrompt = e;
       this.showInstallPrompt();
     });
 
     window.addEventListener('appinstalled', () => {
+      console.log('App was installed');
       localStorage.setItem('pwaInstalled', 'true');
       this.dismiss();
     });
 
-    document.getElementById('pwaInstallButton')?.addEventListener('click', () => this.install());
-    document.getElementById('pwaDismissButton')?.addEventListener('click', () => this.dismiss());
+    const installBtn = document.getElementById('pwaInstallButton');
+    const dismissBtn = document.getElementById('pwaDismissButton');
+    
+    if (installBtn) {
+      installBtn.addEventListener('click', () => this.install());
+    }
+    
+    if (dismissBtn) {
+      dismissBtn.addEventListener('click', () => this.dismiss());
+    }
   }
 
   checkInstallStatus() {
