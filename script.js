@@ -9,8 +9,6 @@ const CONFIG = {
 // Theme and Favicon Manager
 class ThemeManager {
     constructor() {
-        this.faviconLight = 'icons/favicon-light.svg'; // Remove this
-        this.faviconDark = 'icons/favicon.svg'; // Remove this
         this.initTheme();
         this.initFavicons();
         this.setupMediaQueryListener();
