@@ -1,5 +1,6 @@
 const CONFIG = {
-    DEFAULT_COLOR: 'green', // Only keep color default
+    DEFAULT_COLOR: 'green',
+	DEFAULT_THEME: 'system',
     SCROLLBAR_HIDE_DELAY: 1500,
     COLLAPSED_HEIGHT: 155,
     METADATA_CHECK_INTERVAL: 5000,
@@ -9,87 +10,116 @@ const CONFIG = {
 // Theme and Favicon Manager
 class ThemeManager {
     constructor() {
-        this.initTheme();
-        this.initFavicons();
+        this.faviconElement = null;
+        this.faviconFallback = null;
+        this.mediaQuery = null;
         this.setupMediaQueryListener();
+        this.initFavicons();
+        this.initTheme();
     }
 
-    setupMediaQueryListener() {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            this.updateFavicon();
-        };
+    // Initialize theme based on user preference or system setting
+    initTheme() {
+        // Clear any existing body classes first
+        document.body.className = document.body.className
+            .replace(/\b(light|dark)-mode\b/g, '').trim();
+        
+        const savedTheme = localStorage.getItem("theme") || CONFIG.DEFAULT_THEME;
+        const systemTheme = this.getSystemTheme();
 
-        if (typeof mediaQuery.addEventListener === 'function') {
-            mediaQuery.addEventListener('change', handleChange);
+        // Apply the appropriate theme
+        if (savedTheme === 'system' || !savedTheme) {
+            this.applyTheme(systemTheme);
         } else {
-            mediaQuery.addListener(handleChange); // Fallback
+            this.applyTheme(savedTheme);
         }
         
-        // Initial check
-        handleChange();
+        this.updateThemeColor();
     }
 
-    initFavicons() {
-        // Remove any existing favicon elements to prevent duplicates
-        document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"]').forEach(el => el.remove());
+    // Setup media query listener for system theme changes
+    setupMediaQueryListener() {
+        if (typeof window.matchMedia !== 'function') return;
+        
+        // Remove previous listener if exists
+        if (this.mediaQuery) {
+            this.mediaQuery.removeEventListener('change', this.handleSystemThemeChange);
+        }
+        
+        this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.handleSystemThemeChange = this.handleSystemThemeChange.bind(this);
+        this.mediaQuery.addEventListener('change', this.handleSystemThemeChange);
+    }
 
-        // Create main favicon element
+    handleSystemThemeChange = (e) => {
+        // Update favicon when system theme changes, regardless of site theme
+        this.updateFavicon();
+        
+        // Only change site theme if user hasn't set an explicit preference
+        const currentTheme = localStorage.getItem("theme");
+        if (!currentTheme || currentTheme === 'system') {
+            this.applyTheme(e.matches ? 'dark' : 'light');
+            this.updateThemeColor();
+        }
+    }
+
+    // Initialize favicon elements
+    initFavicons() {
+        // Clean up existing favicons to prevent duplicates
+        const existingFavicons = [
+            ...document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"]')
+        ];
+        existingFavicons.forEach(el => el.remove());
+
+        // Create main SVG favicon
         this.faviconElement = document.createElement('link');
         this.faviconElement.rel = 'icon';
-        this.faviconElement.href = 'icons/favicon.svg';
+        this.faviconElement.type = 'image/svg+xml';
         document.head.appendChild(this.faviconElement);
 
-        // Create fallback for older browsers
+        // Create fallback PNG favicon
         this.faviconFallback = document.createElement('link');
         this.faviconFallback.rel = 'alternate icon';
-        this.faviconFallback.href = 'icons/favicon.ico';
         document.head.appendChild(this.faviconFallback);
 
         this.updateFavicon();
     }
 
+    // Update favicon based on system (browser/device) theme only
     updateFavicon() {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const faviconUrl = isDark ? 'icons/favicon-light.svg' : 'icons/favicon.svg';
+        const isDark = this.getSystemTheme() === 'dark'; // Always check system theme
+        const timestamp = Date.now(); // Cache buster
         
-        // Force update by adding timestamp to bypass cache
-        const timestamp = Date.now();
-        const cacheBuster = `?_=${timestamp}`;
+        // SVG favicon (primary)
+        const svgIcon = isDark ? 'icons/favicon-light.svg' : 'icons/favicon.svg';
+        this.faviconElement.href = `${svgIcon}?v=${timestamp}`;
         
-        // Update main favicon (SVG)
-        this.faviconElement.href = `${faviconUrl}${cacheBuster}`;
-        this.faviconElement.type = 'image/svg+xml';
-        
-        // Update fallback (PNG)
-        const fallbackUrl = isDark ? 'icons/favicon-light-96x96.png' : 'icons/favicon-96x96.png';
-        this.faviconFallback.href = `${fallbackUrl}${cacheBuster}`;
-        
-        // Update theme-color meta tag (you can keep this if you want)
-        this.updateThemeColor(isDark ? 'dark' : 'light');
+        // PNG fallback
+        const pngIcon = isDark ? 'icons/favicon-light-96x96.png' : 'icons/favicon-96x96.png';
+        this.faviconFallback.href = `${pngIcon}?v=${timestamp}`;
     }
 
-    initTheme() {
-        const savedTheme = localStorage.getItem("theme");
-        const systemPreference = this.getSystemTheme();
-        
-        // Apply saved theme if exists, otherwise use system preference
-        const initialTheme = savedTheme || systemPreference;
-        
-        this.applyTheme(initialTheme);
-        this.updateThemeColor(initialTheme);
+    // Apply theme to document
+    applyTheme(theme) {
+        document.body.className = document.body.className
+            .replace(/\b(light|dark)-mode\b/g, '')
+            .trim() + ` ${theme}-mode`;
     }
 
-    getSystemTheme() {
-        if (typeof window.matchMedia !== 'function') return 'light';
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    // Update theme color meta tag
+    updateThemeColor(theme = this.getCurrentTheme()) {
+        const color = theme === 'dark' ? '#1d1d1d' : '#f6f6f6';
+        
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'theme-color';
+            document.head.appendChild(meta);
+        }
+        meta.content = color;
     }
 
-isMediaQuerySupported() {
-    return typeof window.matchMedia === 'function';
-}
-
-    // Add this method to ThemeManager
+    // Change accent color
     changeColor(color) {
         const colors = {
             green: { dark: "22, 111, 69", light: "146, 244, 164" },
@@ -97,75 +127,64 @@ isMediaQuerySupported() {
             yellow: { dark: "143, 124, 65", light: "255, 234, 132" },
             red: { dark: "167, 44, 47", light: "255, 195, 195" },
             pink: { dark: "64, 50, 102", light: "217, 206, 237" }
-        }[color] || colors.green;
+        };
+        
+        const selected = colors[color] || colors[CONFIG.DEFAULT_COLOR];
+        document.documentElement.style.setProperty('--accent-dark', selected.dark);
+        document.documentElement.style.setProperty('--accent-light', selected.light);
+    }
 
-        document.documentElement.style.setProperty('--accent-dark', colors.dark);
-        document.documentElement.style.setProperty('--accent-light', colors.light);
+    // Set theme explicitly (light/dark/system)
+    setTheme(theme) {
+        if (theme) {
+            localStorage.setItem('theme', theme);
+        } else {
+            localStorage.removeItem('theme');
+            theme = 'system';
+        }
+        
+        // Apply the theme immediately
+        if (theme === 'system') {
+            this.applyTheme(this.getSystemTheme());
+        } else {
+            this.applyTheme(theme);
+        }
+        
+        this.updateThemeColor();
+        // Don't update favicon here as it should only respond to system theme changes
+    }
+
+    // Helper methods
+    getSystemTheme() {
+        return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    getCurrentTheme() {
+        const savedTheme = localStorage.getItem("theme");
+        if (!savedTheme || savedTheme === 'system') {
+            return this.getSystemTheme();
+        }
+        return savedTheme;
     }
 
     shouldUseDarkMode() {
-        // Check localStorage first, then system preference
-        const savedTheme = localStorage.getItem("theme");
-        if (savedTheme) return savedTheme === 'dark';
-        
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return this.getCurrentTheme() === 'dark';
     }
 
-    updateThemeColor(theme) {
-        const themeColor = theme === 'dark' ? '#1d1d1d' : '#f6f6f6';
-        let themeMeta = document.querySelector('meta[name="theme-color"]');
-        
-        if (!themeMeta) {
-            themeMeta = document.createElement('meta');
-            themeMeta.name = 'theme-color';
-            document.head.appendChild(themeMeta);
-        }
-        themeMeta.content = themeColor;
-    }
-
-    applyTheme(theme) {
-        document.body.className = `${theme}-mode`;
-    }
-
-    setupThemeListener() {
-        // Improved theme change detection
-        if (typeof window.matchMedia !== 'function') return;
-        
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            this.updateFavicon();
-            const currentTheme = localStorage.getItem("theme");
-            
-            // Only follow system theme if no user preference exists
-            if (!currentTheme) {
-                const systemTheme = mediaQuery.matches ? 'dark' : 'light';
-                this.applyTheme(systemTheme);
-                this.updateThemeColor(systemTheme);
-            }
-        };
-        
-        // Modern way to add listener
-        if (typeof mediaQuery.addEventListener === 'function') {
-            mediaQuery.addEventListener('change', handleChange);
-        } else {
-            mediaQuery.addListener(handleChange); // Fallback
-        }
-    }
-	
+    // Setup color picker controls
     setupColorPickers() {
         document.querySelectorAll('.color-picker').forEach(picker => {
             const handler = e => {
                 e.preventDefault();
                 e.stopPropagation();
+                
                 if (picker.dataset.color) {
                     this.changeColor(picker.dataset.color);
                     localStorage.setItem("accentColor", picker.dataset.color);
                     
-                    // Update active state
-                    document.querySelectorAll('.color-picker').forEach(p => 
-                        p.classList.remove('active')
-                    );
-                    picker.classList.add('active');
+                    document.querySelectorAll('.color-picker').forEach(p => {
+                        p.classList.toggle('active', p === picker);
+                    });
                 }
             };
             
@@ -173,10 +192,13 @@ isMediaQuerySupported() {
             picker.addEventListener('touchend', handler, { passive: false });
         });
 
-        // Set initial color state
+        // Initialize active state
         const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
-        document.querySelector(`.color-picker[data-color="${savedColor}"]`)?.classList.add('active');
-        this.changeColor(savedColor);
+        const activePicker = document.querySelector(`.color-picker[data-color="${savedColor}"]`);
+        if (activePicker) {
+            activePicker.classList.add('active');
+            this.changeColor(savedColor);
+        }
     }
 }
 
