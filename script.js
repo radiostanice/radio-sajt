@@ -1046,7 +1046,7 @@ setInitialActiveStates() {
                 </div>
                 <div class="tooltip-section">
                     <strong class="quality-title">Kvalitet</strong>
-                    <div class="quality-info">
+                    <div class="quality-info-empty">
                         <span>Nepoznato</span>
                     </div>
                 </div>

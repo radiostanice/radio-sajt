@@ -382,16 +382,42 @@ button {
 	margin: 0 10px;
 }
 
-#klikniplaymain .cls-1 {
+#klikniplaymain .cls-1,
+#klikniplaymain #text1 {
 	fill: #f5f5f5;
 }
 
-.light-mode #klikniplaymain .cls-1 {
+.light-mode #klikniplaymain .cls-1,
+.light-mode #klikniplaymain #text1 {
 	fill: var(--accent-color);
 }
 
 .light-mode .logo {
 	background-color: rgba(255,255,255,1);
+}
+
+.light-mode .pwa-install-button .material-icons,
+.light-mode .pwa-install-button {
+  color: #fff;
+}
+
+.light-mode .pwa-install-container {
+  background-color: #f6f6f6;
+}
+
+.light-mode .pwa-install-button:hover {
+  box-shadow: inset 0 0 0 2px #f6f6f6;
+}
+
+.light-mode .pwa-dismiss-button {
+	background-color: #f6f6f6;
+	color: #000;
+	border-color: var(--border-color);
+}
+
+.light-mode .pwa-dismiss-button:hover {
+  background-color: rgba(var(--red-light), 0.3);
+  border-color: rgb(var(--red-dark));
 }
 
 /* ============ */
@@ -1524,10 +1550,20 @@ button {
 	vertical-align: middle;
 }
 
+.quality-info-empty .material-icons,
 .quality-info .material-icons {
 	vertical-align: middle;
 	font-size: 16px;
 	margin: 0 -2px 3px -6px;
+}
+
+.quality-info-empty {
+	border: 2px solid var(--border-color);
+	border-radius: 20px;
+	margin: 10px;
+	padding: 8px 10px;
+	background-color: #171717;
+	vertical-align: middle;
 }
 
 .format {
@@ -2053,26 +2089,25 @@ button {
 
 /* PWA Install Prompt Styles */
 .pwa-install-container {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
   width: 320px;
+  transform: translateX(50%) translateY(50%);
+  position: fixed;
+  bottom: calc(50% - 50px);
+  right: 50%;
   max-width: calc(100% - 40px);
-  background: rgba(26, 26, 26, 0.95);
+  background: #1d1d1d;
   border-radius: 12px;
   padding: 20px;
   z-index: 9999; /* Higher than everything */
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  transform: translateY(30px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
   opacity: 0;
   visibility: hidden;
   transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .pwa-install-container.show {
-  transform: translateY(0);
+  bottom: 50%;
   opacity: 1;
   visibility: visible;
 }
@@ -2081,18 +2116,18 @@ button {
   margin: 0 0 5px 0;
   font-size: 1.25rem;
   color: var(--accent-color);
+  font-weight: 800;
 }
 
 .pwa-install-content p {
   margin: 0 0 15px 0;
   font-size: 1rem;
-  opacity: 0.8;
+  opacity: 0.85;
   line-height: 1.4;
 }
 
 .pwa-install-buttons {
   display: flex;
-  gap: 10px;
 }
 
 .pwa-install-button,
@@ -2101,11 +2136,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 15px;
-  border-radius: 8px;
+  padding: 10px;
+  border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
   transition: all 0.2s ease;
   font-size: 0.9rem;
 }
@@ -2113,44 +2147,33 @@ button {
 .pwa-install-button {
   background-color: var(--accent-color);
   color: #000;
+  margin-right: 15px;
+  border: 2px solid var(--accent-color);
 }
 
 .pwa-dismiss-button {
-  background-color: #333;
+  background-color: #222;
   color: #fff;
+  border: 2px solid #555;
 }
 
 .pwa-install-button:hover {
-  background-color: rgb(var(--accent-light));
-  transform: translateY(-1px);
+  box-shadow: inset 0 0 0 2px #222;
+  border-radius: 20px;
 }
 
 .pwa-dismiss-button:hover {
-  background-color: #444;
-  transform: translateY(-1px);
+  background-color: rgba(var(--red-dark), 0.3);
+  border-color: rgb(var(--red-light));
 }
 
-.pwa-install-button .material-icons,
+.pwa-install-button .material-icons {
+  font-size: 18px;
+  margin-right: 4px;
+  color: #000;
+}
+
 .pwa-dismiss-button .material-icons {
   font-size: 18px;
-  margin-right: 5px;
-}
-
-/* Add backdrop blur effect when prompt is shown */
-.pwa-install-container::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(2px);
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.pwa-install-container.show::before {
-  opacity: 1;
+  margin-right: 4px;
 }
