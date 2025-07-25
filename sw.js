@@ -1,5 +1,5 @@
 // Updated sw.js
-const CACHE_NAME = 'klikniplay-v3';
+const CACHE_NAME = 'klikniplay-v4';
 const BASE_PATH = '/radio-sajt/';
 const ASSETS_TO_CACHE = [
   BASE_PATH,
