@@ -2200,8 +2200,7 @@ class PWAInstaller {
       this.deferredPrompt = e;
       this.showInstallPrompt();
       
-      // Log installability for debugging
-      this.logInstallability();
+      this.logInstallability().catch(console.error);
     });
 
     window.addEventListener('appinstalled', () => {
@@ -2223,28 +2222,32 @@ class PWAInstaller {
     this.hasListener = true;
   }
 
-  logInstallability() {
-    // Debugging function to check PWA criteria
-    if (!window.getInstallStatus) {
-      window.getInstallStatus = async () => {
-        const relatedApps = await navigator.getInstalledRelatedApps();
-        return {
-          isPWAInstalled: this.isPWAInstalled(),
-          isProtocolSecure: window.location.protocol === 'https:',
-          isServiceWorkerRegistered: !!navigator.serviceWorker.controller,
-          hasManifest: !!document.querySelector('link[rel="manifest"]'),
-          isUserEngaged: (() => {
-            // Chrome requires user interaction before showing install prompt
-            return window.matchMedia('(display-mode: browser)').matches;
-          })(),
-          relatedApps: relatedApps
-        };
+  async logInstallability() {
+    try {
+      const status = {
+        isPWAInstalled: this.isPWAInstalled(),
+        isProtocolSecure: window.location.protocol === 'https:',
+        isServiceWorkerRegistered: !!navigator.serviceWorker.controller,
+        hasManifest: !!document.querySelector('link[rel="manifest"]'),
+        isUserEngaged: window.matchMedia('(display-mode: browser)').matches,
+        supportsInstallRelatedApps: 'getInstalledRelatedApps' in navigator
       };
-    }
-    
-    window.getInstallStatus().then(status => {
+
+      // Only try to get related apps if supported
+      if (status.supportsInstallRelatedApps) {
+        try {
+          status.relatedApps = await navigator.getInstalledRelatedApps();
+        } catch (e) {
+          status.relatedAppsError = e.message;
+        }
+      }
+
       console.log('Installability status:', status);
-    });
+      return status;
+    } catch (e) {
+      console.error('Error checking installability:', e);
+      throw e;
+    }
   }
 
   checkInstallStatus() {
@@ -2266,17 +2269,14 @@ class PWAInstaller {
   }
 
   shouldShowPrompt() {
-    // Don't show if already installed
     if (this.isPWAInstalled() || localStorage.getItem('pwaInstalled')) {
       return false;
     }
     
-    // Show max once per session unless dismissed
     if (sessionStorage.getItem('pwaPromptShown')) {
       return false;
     }
     
-    // Check if last dismissal was more than a week ago
     const lastDismissed = parseInt(localStorage.getItem('pwaDismissedTimestamp')) || 0;
     const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
     return lastDismissed < oneWeekAgo;

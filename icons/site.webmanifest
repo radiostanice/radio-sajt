@@ -7,7 +7,7 @@
   "orientation": "portrait-primary",
   "description": "Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo",
   "background_color": "#222222",
-  "theme_color": "#222222",
+  "theme_color": "#ffffff",
   "icons": [
     {
       "src": "favicon-144x144.png",
