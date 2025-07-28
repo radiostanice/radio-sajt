@@ -128,6 +128,7 @@ button {
 
 .light-mode .genre-tooltip-item,
 .light-mode .quality-info,
+.light-mode .quality-info-empty,
 .light-mode .theme-option {
     background-color: #fefefe;
     color: #000000;
@@ -1550,7 +1551,6 @@ button {
 	vertical-align: middle;
 }
 
-.quality-info-empty .material-icons,
 .quality-info .material-icons {
 	vertical-align: middle;
 	font-size: 16px;
