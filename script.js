@@ -122,11 +122,14 @@ class ThemeManager {
     // Change accent color
     changeColor(color) {
         const colors = {
-            green: { dark: "22, 111, 69", light: "146, 244, 164" },
-            blue: { dark: "0, 79, 139", light: "190, 219, 255" },
-            yellow: { dark: "143, 124, 65", light: "255, 234, 132" },
-            red: { dark: "167, 44, 47", light: "255, 195, 195" },
-            pink: { dark: "64, 50, 102", light: "217, 206, 237" }
+            green: { dark: "38, 106, 74", light: "172, 242, 200" },
+            blue: { dark: "64, 95, 144", light: "214, 227, 255" },
+            yellow: { dark: "143, 124, 65", light: "255, 224, 132" },
+            red: { dark: "167, 44, 47", light: "255, 200, 200" },
+			violet: { dark: "93, 87, 145", light: "228,223,255" },
+            pink: { dark: "132, 70, 141", light: "255, 214, 243" },
+			bluealt: { dark: "0, 99, 155", light: "206, 229, 255" },
+			greenalt: { dark: "59, 106, 28", light: "187, 242, 148" }
         };
         
         const selected = colors[color] || colors[CONFIG.DEFAULT_COLOR];

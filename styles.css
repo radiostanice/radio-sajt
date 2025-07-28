@@ -2,23 +2,32 @@
 /* ROOT & VARIABLES */
 /* ================ */
 :root {
-    --accent-dark: 22, 111, 69;
-    --accent-light: 146, 244, 164;
+    --accent-dark: 38, 106, 74;
+    --accent-light: 172, 242, 200;
     
-    --green-dark: 22, 111, 69;
-    --green-light: 146, 244, 164;
+    --green-dark: 38, 106, 74;
+    --green-light: 172, 242, 200;
 
-    --blue-dark: 0, 79, 139;
-    --blue-light: 190, 219, 255;
+    --blue-dark: 64, 95, 144;
+    --blue-light: 214, 227, 255;
     
     --yellow-dark: 143, 124, 65;
-    --yellow-light: 255, 234, 132;
+    --yellow-light: 255, 224, 132;
     
     --red-dark: 167, 44, 47;
-    --red-light: 255, 195, 195;
+    --red-light: 255, 200, 200;
 	
-	--pink-dark: 64, 50, 102;
-    --pink-light: 217, 206, 237;
+	--violet-dark: 93, 87, 145;
+	--violet-light: 228,223,255;
+	
+	--pink-dark: 132, 70, 141;
+    --pink-light: 255, 214, 243;
+	
+    --bluealt-dark: 0, 99, 155;
+    --bluealt-light: 206, 229, 255;
+	
+	--greenalt-dark: 59, 106, 28;
+    --greenalt-light: 187, 242, 148;
 }
 
 /* ========== */
@@ -1634,9 +1643,12 @@ button {
 }
 
 /* Section Styling */
-.theme-section, 
-.color-section {
+.theme-section {
   padding-bottom: 15px;
+}
+
+.color-section {
+  padding-bottom: 7px;
 }
 
 .theme-section__title {
@@ -1655,9 +1667,9 @@ button {
     align-items: center;
     font-weight: 600;
 	font-size: 1.125rem;
-    margin-bottom: 15px;
 	background-color: rgba(var(--accent-dark), 0.15);
 	color: var(--accent-color);
+	margin-bottom: 15px;
 }
 
 .theme-options {
@@ -1731,7 +1743,7 @@ button {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 0px 6px;
+    margin-bottom: 8px;
     cursor: pointer;
     border: none;
 	transition: transform 0.1s linear;
@@ -1788,8 +1800,20 @@ button {
     background: linear-gradient(135deg, rgb(var(--red-light)), rgb(var(--red-dark)));
 }
 
+.color-picker--violet {
+    background: linear-gradient(135deg, rgb(var(--violet-light)), rgb(var(--violet-dark)));
+}
+
 .color-picker--pink {
     background: linear-gradient(135deg, rgb(var(--pink-light)), rgb(var(--pink-dark)));
+}
+
+.color-picker--bluealt {
+    background: linear-gradient(135deg, rgb(var(--bluealt-light)), rgb(var(--bluealt-dark)));
+}
+
+.color-picker--greenalt {
+    background: linear-gradient(135deg, rgb(var(--greenalt-light)), rgb(var(--greenalt-dark)));
 }
 
 /* ============ */
