@@ -124,12 +124,14 @@ class ThemeManager {
         const colors = {
             green: { dark: "38, 106, 74", light: "172, 242, 200" },
             blue: { dark: "64, 95, 144", light: "214, 227, 255" },
-            yellow: { dark: "143, 124, 65", light: "255, 224, 132" },
+            yellow: { dark: "116, 100, 52", light: "255, 240, 138" }, 
             red: { dark: "167, 44, 47", light: "255, 200, 200" },
 			violet: { dark: "93, 87, 145", light: "228,223,255" },
-            pink: { dark: "132, 70, 141", light: "255, 214, 243" },
+			greenalt: { dark: "59, 106, 28", light: "187, 242, 148" },
 			bluealt: { dark: "0, 99, 155", light: "206, 229, 255" },
-			greenalt: { dark: "59, 106, 28", light: "187, 242, 148" }
+			cyan: { dark: "0, 145, 145", light: "206, 255, 255" },
+			orange: { dark: "202, 75, 0", light: "255, 221, 185" }, 
+			pink: { dark: "132, 70, 141", light: "255, 214, 243" }
         };
         
         const selected = colors[color] || colors[CONFIG.DEFAULT_COLOR];
