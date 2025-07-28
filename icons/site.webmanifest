@@ -1,17 +1,31 @@
 {
-  "icons": [
-    {
-      "src": "web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
-  ],
   "name": "KlikniPlay",
   "short_name": "KlikniPlay",
   "start_url": "/radio-sajt/",
+  "scope": "/radio-sajt/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "description": "Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo",
-  "background_color": "#222222"
+  "background_color": "#222222",
+  "theme_color": "#222222",
+  "icons": [
+    {
+      "src": "icons/favicon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
