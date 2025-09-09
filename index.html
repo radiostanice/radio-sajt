@@ -1,145 +1,180 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="sr" itemscope itemtype="https://schema.org/WebApplication">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover">
-	<meta name="description" content="Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo. Naxi, Radio S, Play Radio i druge. Brz player bez reklama i registracije. Pusti svoju omiljenu muziku sada!">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="KlikniPlay">
+    <meta name="description" content="Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo. Naxi, Radio S, Play Radio i druge. Brz player bez reklama i registracije. Pusti svoju omiljenu muziku sada!">
+    <meta name="keywords" content="online radio, srpski radio, balkanski radio, slušaj radio online, radio stanice srbija, srpski radio online, balkanske radio stanice, naxi radio online, radio s live">
+    <meta name="author" content="KlikniPlay">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://kosta04miletic.github.io/radio-sajt/">
+    <meta property="og:title" content="KlikniPlay - Slušaj Radio Online 2025 Srpske & Balkanske Stanice Uživo">
+    <meta property="og:description" content="Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo. Naxi, Radio S, Play Radio i druge. Brz player bez reklama i registracije.">
+    <meta property="og:image" content="https://kosta04miletic.github.io/radio-sajt/icons/icon512_rounded.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://kosta04miletic.github.io/radio-sajt/">
+    <meta property="twitter:title" content="KlikniPlay - Slušaj Radio Online 2025 Srpske & Balkanske Stanice Uživo">
+    <meta property="twitter:description" content="Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo. Naxi, Radio S, Play Radio i druge. Brz player bez reklama i registracije.">
+    <meta property="twitter:image" content="https://kosta04miletic.github.io/radio-sajt/icons/icon512_rounded.png">
 
-<!-- iOS specific meta tags -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="KlikniPlay" />
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="KlikniPlay">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="KlikniPlay">
+    <meta name="msapplication-TileColor" content="#1d1d1d">
+    <meta name="msapplication-config" content="icons/browserconfig.xml">
 
-<!-- Favicon Configuration -->
-<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-<link rel="manifest" href="icons/site.webmanifest" crossorigin="use-credentials">
+    <!-- Favicon Configuration -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="manifest" href="icons/site.webmanifest" crossorigin="use-credentials">
 
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz@24;40;48&wght@400&FILL@0&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz@24;40;48&wght@400&FILL@0&display=swap" rel="stylesheet"></noscript>
+    
     <title>KlikniPlay - Slušaj Radio Online 2025 Srpske & Balkanske Stanice Uživo</title>
 	<script type="application/ld+json">
 {
-  "@context": "https://schema.org",
-  "@type": "RadioStation",
-  "name": "KlikniPlay - Online Radio Player",
-  "description": "Slušajte srpske i balkanske radio stanice online",
-  "applicationCategory": "EntertainmentApplication",
-  "operatingSystem": "Web Browser",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "USD"
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "reviewCount": "250"
-  },
-  "genre": ["pop", "rock", "folk", "hip hop", "electronic"]
-  "keywords": "online radio, srpski radio, balkanski radio, slušaj radio online, radio stanice srbija, srpski radio online, balkanske radio stanice, naxi radio online, radio s live"
+	 "@context": "https://schema.org",
+	 "@type": "WebApplication",
+	 "name": "KlikniPlay - Online Radio Player",
+	 "description": "Slušajte srpske i balkanske radio stanice online",
+	 "url": "https://kosta04miletic.github.io/radio-sajt/",
+	 "applicationCategory": "EntertainmentApplication",
+	 "operatingSystem": "Web Browser",
+	 "browserRequirements": "Requires JavaScript. Requires HTML5.",
+	 "offers": {
+	   "@type": "Offer",
+	   "price": "0",
+	   "priceCurrency": "USD"
+	 },
+	 "aggregateRating": {
+	   "@type": "AggregateRating",
+	   "ratingValue": "4.8",
+	   "reviewCount": "250"
+	 },
+	 "genre": ["pop", "rock", "folk", "hip hop", "electronic"],
+	 "keywords": "online radio, srpski radio, balkanski radio, slušaj radio online, radio stanice srbija, srpski radio online, balkanske radio stanice, naxi radio online, radio s live",
+	 "author": {
+	   "@type": "Organization",
+	   "name": "KlikniPlay"
+	 },
+	 "inLanguage": "sr"
 }
 	</script>
 </head>
 <body>
-    <div class="header">
+    <header class="header" role="banner">
         <div class="logo">
-<?xml version="1.0" encoding="UTF-8"?>
-<svg id="klikniplaymain" data-name="klikniplaymain" viewBox="0 0 366.96 77.702" width="366.96" height="77.702" version="1.1" xmlns="http://www.w3.org/2000/svg">
- <path class="cls-1" d="m63.436 28.644-45.012-26.516c-2.3952-1.4423-4.8621-2.1276-7.4008-2.1276-3.0086 0-5.6192 0.95937-7.8055 2.9434-2.1276 1.9187-3.2175 4.3857-3.2175 7.2638v57.288c0 2.8781 1.0899 5.3451 3.2175 7.2573 2.1863 1.9905 4.7968 2.9499 7.8055 2.9499 2.5387 0 5.0057-0.68526 7.4008-2.1276 5.2916-3.1077 10.556-6.5836 15.912-9.8398-2.6971-5.8875-4.0512-8.4627-6.334-13.354-0.79446 0.40644-4.9973 4.5119-8.6566 8.0736-0.8745 0.79534-1.0295 1.0617-2.1033 1.8495-0.44112 0.32361-0.96451 0.0739-0.97365-0.42107-0.25947-14.061-0.68407-32.65-0.73508-45.758-0.01495-1.767-0.05475-1.8256 0.0092-2.3773 0.06451-0.4686 0.32263-0.55467 0.69914-0.4081 0.64414 0.35 1.0313 0.73837 2.2843 1.8349 11.262 10.113 22.09 20.721 33.432 30.745 0.79174 0.65483 0.95384 0.76773 1.3241 1.2715 0.17234 0.23451 0.05111 0.51386-0.12487 0.60737-0.47083 0.2502-1.1984 0.18511-1.941 0.21584-6.3559 0.04508-11.414 0.5229-13.837 0.7574 2.5655 5.5633 3.5258 6.6811 6.0392 11.989h0.0068c6.853-3.8112 13.318-7.7601 20.01-11.702 4.3139-2.5322 6.5067-5.9585 6.5067-10.214s-2.1928-7.6684-6.5067-10.201z"/>
- <path id="text1" d="m93.215 36.947 10.88-1.28q5.376 5.696 9.6 10.176t6.848 7.168q0 2.432-1.6 3.84-1.6 1.344-3.712 1.344-2.304 0-3.776-1.152t-2.816-2.688zm11.136 3.392-12.416 0.576 20.096-22.528q3.648 0 5.312 1.472 1.664 1.408 1.664 3.328 0 1.472-0.768 2.816-0.704 1.28-2.368 2.816zm-16.448-9.92h9.728v27.072q-0.576 0.192-1.856 0.384t-2.624 0.192q-2.88 0-4.096-1.024-1.152-1.088-1.152-3.584zm9.728 12.288h-9.728v-24.064q0.64-0.128 1.92-0.32 1.344-0.192 2.56-0.192 2.816 0 4.032 0.96t1.216 3.648zm28.352-2.048 9.536 0.192v16.64q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm9.536 5.12-9.536-0.192v-29.696q0.64-0.192 1.792-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm7.4547-27.776q0-2.176 1.472-3.648 1.536-1.472 3.84-1.472 2.368 0 3.84 1.472t1.472 3.648q0 2.112-1.472 3.648t-3.84 1.536q-2.304 0-3.84-1.536-1.472-1.536-1.472-3.648zm0.576 22.656h9.472v16.832q-0.576 0.192-1.728 0.32-1.152 0.192-2.496 0.192-2.752 0-4.032-0.96-1.216-0.96-1.216-3.456zm9.472 4.928h-9.472v-18.368q0.576-0.192 1.728-0.384 1.216-0.192 2.56-0.192 2.752 0 3.968 0.96 1.216 0.896 1.216 3.52zm21.376-0.32-6.848-4.352 14.464-14.592q2.88 0.064 4.608 1.344 1.792 1.28 1.792 3.2 0 1.664-1.152 3.008-1.152 1.28-3.52 3.328zm-6.464-3.008 7.552-3.328 14.144 13.696q-0.256 2.56-1.536 4.032-1.28 1.408-3.648 1.408-1.728 0-3.2-0.832-1.408-0.896-3.008-2.88zm-7.104-1.664 9.472 0.192v16.704q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96-1.216-0.96-1.216-3.456zm9.472 5.12-9.472-0.192v-29.632q0.576-0.192 1.728-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm54.272-8.064v6.016h-9.536v-5.696q0-2.368-1.408-3.456-1.344-1.152-3.584-1.152-1.6 0-2.944 0.448-1.344 0.384-2.432 0.96v8.896h-9.472v-9.984q0-1.6 0.64-2.624 0.704-1.088 1.984-1.92 2.048-1.408 5.248-2.304 3.2-0.96 7.04-0.96 6.912 0 10.688 3.072 3.776 3.008 3.776 8.704zm-29.376 3.072h9.472v16.768q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96-1.216-0.96-1.216-3.456zm19.84 0h9.536v16.768q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm16.64-22.72q0-2.176 1.472-3.648 1.536-1.472 3.84-1.472 2.368 0 3.84 1.472t1.472 3.648q0 2.112-1.472 3.648t-3.84 1.536q-2.304 0-3.84-1.536-1.472-1.536-1.472-3.648zm0.576 22.656h9.472v16.832q-0.576 0.192-1.728 0.32-1.152 0.192-2.496 0.192-2.752 0-4.032-0.96-1.216-0.96-1.216-3.456zm9.472 4.928h-9.472v-18.368q0.576-0.192 1.728-0.384 1.216-0.192 2.56-0.192 2.752 0 3.968 0.96 1.216 0.896 1.216 3.52zm18.176-8.192h3.84q3.264 0 5.12-1.536 1.92-1.536 1.92-4.416t-1.792-4.352-5.184-1.472q-1.152 0-2.112 0.064-0.896 0.064-1.792 0.192zm4.48 7.68h-14.144v-22.912q0-1.216 0.704-1.92t1.856-1.088q2.112-0.768 5.056-1.088t5.312-0.32q8.64 0 13.056 3.712 4.48 3.648 4.48 9.984 0 4.096-1.984 7.168-1.92 3.072-5.568 4.8-3.648 1.664-8.768 1.664zm-14.144-4.288h9.728v16.704q-0.576 0.192-1.856 0.32-1.28 0.192-2.624 0.192-2.88 0-4.096-1.024-1.152-1.024-1.152-3.584zm36.48-0.128 9.536 0.192v16.64q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm9.536 5.12-9.536-0.192v-29.696q0.64-0.192 1.792-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm20.352 5.696q1.472 0 2.88-0.256 1.472-0.32 2.112-0.704v-6.144l-5.376 0.512q-2.176 0.128-3.456 0.896t-1.28 2.304 1.216 2.496q1.216 0.896 3.904 0.896zm-0.384-25.6q6.656 0 10.624 2.816 3.968 2.752 3.968 8.576v14.528q0 1.6-0.832 2.624-0.832 0.96-2.112 1.664-1.92 1.152-4.8 1.792-2.816 0.704-6.464 0.704-6.528 0-10.432-2.56-3.84-2.56-3.84-7.616 0-4.352 2.688-6.656 2.688-2.368 8-2.88l8.512-0.896v-0.768q0-2.176-1.728-3.136-1.664-0.96-4.8-0.96-2.432 0-4.8 0.576-2.304 0.576-4.16 1.344-0.768-0.512-1.344-1.536-0.512-1.088-0.512-2.24 0-2.688 2.944-3.904 1.856-0.768 4.288-1.088 2.496-0.384 4.8-0.384zm26.24 24.064q-1.024-2.112-2.24-5.12-1.152-3.008-2.432-7.104t-2.752-9.472q0.832-0.832 2.112-1.408 1.344-0.64 2.88-0.64 1.984 0 3.264 0.832t1.92 3.136q1.472 4.672 2.944 9.28t3.008 9.28h0.256q1.088-2.88 2.176-6.528 1.152-3.648 2.112-7.488 0.96-3.904 1.664-7.488 0.896-0.448 1.92-0.704 1.024-0.32 2.112-0.32 1.984 0 3.392 0.896 1.472 0.832 1.472 2.88 0 1.792-0.576 4.416-0.512 2.624-1.408 5.696-0.896 3.008-2.112 6.208-1.216 3.136-2.56 6.08-1.28 2.944-2.624 5.312-3.456 6.016-6.4 8.96-2.88 3.008-5.76 3.008-2.304 0-3.84-1.408-1.472-1.408-1.792-3.584 1.408-1.152 2.88-2.688 1.472-1.472 2.816-3.2 1.344-1.664 2.368-3.328-1.088-0.32-2.24-1.408t-2.56-4.096z" aria-label="KlikniPlay"/>
-</svg>
+            <svg id="klikniplaymain" data-name="klikniplaymain" viewBox="0 0 366.96 77.702" width="366.96" height="77.702" version="1.1" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KlikniPlay Logo">
+                <path class="cls-1" d="m63.436 28.644-45.012-26.516c-2.3952-1.4423-4.8621-2.1276-7.4008-2.1276-3.0086 0-5.6192 0.95937-7.8055 2.9434-2.1276 1.9187-3.2175 4.3857-3.2175 7.2638v57.288c0 2.8781 1.0899 5.3451 3.2175 7.2573 2.1863 1.9905 4.7968 2.9499 7.8055 2.9499 2.5387 0 5.0057-0.68526 7.4008-2.1276 5.2916-3.1077 10.556-6.5836 15.912-9.8398-2.6971-5.8875-4.0512-8.4627-6.334-13.354-0.79446 0.40644-4.9973 4.5119-8.6566 8.0736-0.8745 0.79534-1.0295 1.0617-2.1033 1.8495-0.44112 0.32361-0.96451 0.0739-0.97365-0.42107-0.25947-14.061-0.68407-32.65-0.73508-45.758-0.01495-1.767-0.05475-1.8256 0.0092-2.3773 0.06451-0.4686 0.32263-0.55467 0.69914-0.4081 0.64414 0.35 1.0313 0.73837 2.2843 1.8349 11.262 10.113 22.09 20.721 33.432 30.745 0.79174 0.65483 0.95384 0.76773 1.3241 1.2715 0.17234 0.23451 0.05111 0.51386-0.12487 0.60737-0.47083 0.2502-1.1984 0.18511-1.941 0.21584-6.3559 0.04508-11.414 0.5229-13.837 0.7574 2.5655 5.5633 3.5258 6.6811 6.0392 11.989h0.0068c6.853-3.8112 13.318-7.7601 20.01-11.702 4.3139-2.5322 6.5067-5.9585 6.5067-10.214s-2.1928-7.6684-6.5067-10.201z"/>
+                <path id="text1" d="m93.215 36.947 10.88-1.28q5.376 5.696 9.6 10.176t6.848 7.168q0 2.432-1.6 3.84-1.6 1.344-3.712 1.344-2.304 0-3.776-1.152t-2.816-2.688zm11.136 3.392-12.416 0.576 20.096-22.528q3.648 0 5.312 1.472 1.664 1.408 1.664 3.328 0 1.472-0.768 2.816-0.704 1.28-2.368 2.816zm-16.448-9.92h9.728v27.072q-0.576 0.192-1.856 0.384t-2.624 0.192q-2.88 0-4.096-1.024-1.152-1.088-1.152-3.584zm9.728 12.288h-9.728v-24.064q0.64-0.128 1.92-0.32 1.344-0.192 2.56-0.192 2.816 0 4.032 0.96t1.216 3.648zm28.352-2.048 9.536 0.192v16.64q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm9.536 5.12-9.536-0.192v-29.696q0.64-0.192 1.792-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm7.4547-27.776q0-2.176 1.472-3.648 1.536-1.472 3.84-1.472 2.368 0 3.84 1.472t1.472 3.648q0 2.112-1.472 3.648t-3.84 1.536q-2.304 0-3.84-1.536-1.472-1.536-1.472-3.648zm0.576 22.656h9.472v16.832q-0.576 0.192-1.728 0.32-1.152 0.192-2.496 0.192-2.752 0-4.032-0.96-1.216-0.96-1.216-3.456zm9.472 4.928h-9.472v-18.368q0.576-0.192 1.728-0.384 1.216-0.192 2.56-0.192 2.752 0 3.968 0.96 1.216 0.896 1.216 3.52zm21.376-0.32-6.848-4.352 14.464-14.592q2.88 0.064 4.608 1.344 1.792 1.28 1.792 3.2 0 1.664-1.152 3.008-1.152 1.28-3.52 3.328zm-6.464-3.008 7.552-3.328 14.144 13.696q-0.256 2.56-1.536 4.032-1.28 1.408-3.648 1.408-1.728 0-3.2-0.832-1.408-0.896-3.008-2.88zm-7.104-1.664 9.472 0.192v16.704q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96-1.216-0.96-1.216-3.456zm9.472 5.12-9.472-0.192v-29.632q0.576-0.192 1.728-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm54.272-8.064v6.016h-9.536v-5.696q0-2.368-1.408-3.456-1.344-1.152-3.584-1.152-1.6 0-2.944 0.448-1.344 0.384-2.432 0.96v8.896h-9.472v-9.984q0-1.6 0.64-2.624 0.704-1.088 1.984-1.92 2.048-1.408 5.248-2.304 3.2-0.96 7.04-0.96 6.912 0 10.688 3.072 3.776 3.008 3.776 8.704zm-29.376 3.072h9.472v16.768q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96-1.216-0.96-1.216-3.456zm19.84 0h9.536v16.768q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm16.64-22.72q0-2.176 1.472-3.648 1.536-1.472 3.84-1.472 2.368 0 3.84 1.472t1.472 3.648q0 2.112-1.472 3.648t-3.84 1.536q-2.304 0-3.84-1.536-1.472-1.536-1.472-3.648zm0.576 22.656h9.472v16.832q-0.576 0.192-1.728 0.32-1.152 0.192-2.496 0.192-2.752 0-4.032-0.96-1.216-0.96-1.216-3.456zm9.472 4.928h-9.472v-18.368q0.576-0.192 1.728-0.384 1.216-0.192 2.56-0.192 2.752 0 3.968 0.96 1.216 0.896 1.216 3.52zm18.176-8.192h3.84q3.264 0 5.12-1.536 1.92-1.536 1.92-4.416t-1.792-4.352-5.184-1.472q-1.152 0-2.112 0.064-0.896 0.064-1.792 0.192zm4.48 7.68h-14.144v-22.912q0-1.216 0.704-1.92t1.856-1.088q2.112-0.768 5.056-1.088t5.312-0.32q8.64 0 13.056 3.712 4.48 3.648 4.48 9.984 0 4.096-1.984 7.168-1.92 3.072-5.568 4.8-3.648 1.664-8.768 1.664zm-14.144-4.288h9.728v16.704q-0.576 0.192-1.856 0.32-1.28 0.192-2.624 0.192-2.88 0-4.096-1.024-1.152-1.024-1.152-3.584zm36.48-0.128 9.536 0.192v16.64q-0.64 0.192-1.792 0.32-1.152 0.192-2.496 0.192-2.688 0-3.968-0.96t-1.28-3.456zm9.536 5.12-9.536-0.192v-29.696q0.64-0.192 1.792-0.384t2.496-0.192q2.752 0 3.968 0.96 1.28 0.96 1.28 3.52zm20.352 5.696q1.472 0 2.88-0.256 1.472-0.32 2.112-0.704v-6.144l-5.376 0.512q-2.176 0.128-3.456 0.896t-1.28 2.304 1.216 2.496q1.216 0.896 3.904 0.896zm-0.384-25.6q6.656 0 10.624 2.816 3.968 2.752 3.968 8.576v14.528q0 1.6-0.832 2.624-0.832 0.96-2.112 1.664-1.92 1.152-4.8 1.792-2.816 0.704-6.464 0.704-6.528 0-10.432-2.56-3.84-2.56-3.84-7.616 0-4.352 2.688-6.656 2.688-2.368 8-2.88l8.512-0.896v-0.768q0-2.176-1.728-3.136-1.664-0.96-4.8-0.96-2.432 0-4.8 0.576-2.304 0.576-4.16 1.344-0.768-0.512-1.344-1.536-0.512-1.088-0.512-2.24 0-2.688 2.944-3.904 1.856-0.768 4.288-1.088 2.496-0.384 4.8-0.384zm26.24 24.064q-1.024-2.112-2.24-5.12-1.152-3.008-2.432-7.104t-2.752-9.472q0.832-0.832 2.112-1.408 1.344-0.64 2.88-0.64 1.984 0 3.264 0.832t1.92 3.136q1.472 4.672 2.944 9.28t3.008 9.28h0.256q1.088-2.88 2.176-6.528 1.152-3.648 2.112-7.488 0.96-3.904 1.664-7.488 0.896-0.448 1.92-0.704 1.024-0.32 2.112-0.32 1.984 0 3.392 0.896 1.472 0.832 1.472 2.88 0 1.792-0.576 4.416-0.512 2.624-1.408 5.696-0.896 3.008-2.112 6.208-1.216 3.136-2.56 6.08-1.28 2.944-2.624 5.312-3.456 6.016-6.4 8.96-2.88 3.008-5.76 3.008-2.304 0-3.84-1.408-1.472-1.408-1.792-3.584 1.408-1.152 2.88-2.688 1.472-1.472 2.816-3.2 1.344-1.664 2.368-3.328-1.088-0.32-2.24-1.408t-2.56-4.096z" aria-label="KlikniPlay"/>
+            </svg>
         </div>
-        <div class="search-container">
-            <span id="Search" class="material-icons search-icon">search</span>
-            <input type="text" id="stationSearch" placeholder="Pretražite...">
-            <span id="clearSearch" class="material-icons close">close</span>
-        </div>
-    </div>
-<div class="scroll-list">
+        <nav class="search-container" role="search" aria-label="Pretraži radio stanice">
+            <span id="Search" class="material-icons search-icon" aria-hidden="true">search</span>
+            <input type="text" id="stationSearch" placeholder="Pretražite..." aria-label="Pretraži radio stanice">
+            <span id="clearSearch" class="material-icons close" aria-hidden="true">close</span>
+        </nav>
+    </header>
+    <main class="scroll-list" role="main">
 
-    <div class="category">
-	<div class="highlighted" style="background: none;">
-        <span id="category-icon" class="material-icons">filter_list</span>
-		<h1>Žanrovi</h1>
-    </div>
-	</div>
-    <div class="genre-buttons-wrapper">
-    <div class="genre-buttons">
-        <button class="genre-button active" data-genre="all">
-            <span class="material-icons">queue_music</span>
-            Sve
-        </button>
-		<button class="genre-button" data-genre="top">
-            <span class="material-icons">leaderboard</span>
-            Top
-        </button>
-		<button class="genre-button" data-genre="hiphop">
-            <span class="material-icons">mic</span>
-            Hip Hop
-        </button>
-		<button class="genre-button" data-genre="rock">
-            <span class="material-icons">rocket</span>
-            Rock
-        </button>
-		<button class="genre-button" data-genre="zabavna">
-            <span class="material-icons">auto_awesome</span>
-            Zabavna
-        </button>
-		<button class="genre-button" data-genre="narodna">
-            <span class="material-icons">nature_people</span>
-            Narodna
-        </button>
-        <button class="genre-button" data-genre="exyu">
-            <span class="material-icons">language</span>
-            Ex-Yu
-        </button>
-		<button class="genre-button" data-genre="strana">
-            <span class="material-icons">public</span>
-            Strana
-        </button>
-        <button class="genre-button" data-genre="pop">
-            <span class="material-icons">mic_external_on</span>
-            Pop
-        </button>
-		<button class="genre-button" data-genre="kids">
-            <span class="material-icons">child_care</span>
-            Kids
-        </button>
-		<button class="genre-button" data-genre="classical">
-            <span class="material-icons">piano</span>
-            Classical
-        </button>
-        <button class="genre-button" data-genre="chill">
-            <span class="material-icons">air</span>
-            Chill
-        </button>
-		<button class="genre-button" data-genre="house">
-            <span class="material-icons">cottage</span>
-            House
-        </button>
-		<button class="genre-button" data-genre="dance">
-            <span class="material-icons">celebration</span>
-            Dance
-        </button>
-        <button class="genre-button" data-genre="metal">
-            <span class="material-icons">flash_on</span>
-            Metal
-        </button>
-        <button class="genre-button" data-genre="techno">
-            <span class="material-icons">speaker</span>
-            Techno
-        </button>
-    </div>
-</div>
-	<div class="category">
-	<div class="highlighted">
-		<img src="img/naxi.png" alt="Naxi Radio logo - Slušajte Naxi radio stanice online"/>
-		<h1>Naxi Radio</h1> 
-	</div>
-    </div>
-    <div class="category-container">
+    <section class="category" aria-labelledby="genres-heading">
+        <div class="highlighted" style="background: none;">
+            <span id="category-icon" class="material-icons" aria-hidden="true">filter_list</span>
+            <h2 id="genres-heading">Žanrovi</h2>
+        </div>
+    </section>
+    <nav class="genre-buttons-wrapper" role="navigation" aria-label="Filtriranje po žanrovima">
+        <div class="genre-buttons">
+            <button class="genre-button active" data-genre="all" aria-pressed="true">
+                <span class="material-icons" aria-hidden="true">queue_music</span>
+                Sve
+            </button>
+            <button class="genre-button" data-genre="top" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">leaderboard</span>
+                Top
+            </button>
+            <button class="genre-button" data-genre="hiphop" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">mic</span>
+                Hip Hop
+            </button>
+            <button class="genre-button" data-genre="rock" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">rocket</span>
+                Rock
+            </button>
+            <button class="genre-button" data-genre="zabavna" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">auto_awesome</span>
+                Zabavna
+            </button>
+            <button class="genre-button" data-genre="narodna" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">nature_people</span>
+                Narodna
+            </button>
+            <button class="genre-button" data-genre="exyu" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">language</span>
+                Ex-Yu
+            </button>
+            <button class="genre-button" data-genre="strana" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">public</span>
+                Strana
+            </button>
+            <button class="genre-button" data-genre="pop" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">mic_external_on</span>
+                Pop
+            </button>
+            <button class="genre-button" data-genre="kids" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">child_care</span>
+                Kids
+            </button>
+            <button class="genre-button" data-genre="classical" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">piano</span>
+                Classical
+            </button>
+            <button class="genre-button" data-genre="chill" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">air</span>
+                Chill
+            </button>
+            <button class="genre-button" data-genre="house" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">cottage</span>
+                House
+            </button>
+            <button class="genre-button" data-genre="dance" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">celebration</span>
+                Dance
+            </button>
+            <button class="genre-button" data-genre="metal" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">flash_on</span>
+                Metal
+            </button>
+            <button class="genre-button" data-genre="techno" aria-pressed="false">
+                <span class="material-icons" aria-hidden="true">speaker</span>
+                Techno
+            </button>
+        </div>
+    </nav>
+    <section class="category" aria-labelledby="naxi-heading">
+        <div class="highlighted">
+            <img src="img/naxi.png" alt="Naxi Radio logo - Slušajte Naxi radio stanice online" loading="lazy"/>
+            <h2 id="naxi-heading">Naxi Radio</h2>
+        </div>
+    </section>
+    <div class="category-container" role="group" aria-labelledby="naxi-heading">
         <div class="radio" data-name="Naxi Radio" data-link="https://naxi128.streaming.rs:9152/;*.mp3" data-genre="top,pop,rock,zabavna"><div class="radio-text">Naxi Radio</div></div>
         <div class="radio" data-name="Naxi Hype" data-link="https://naxidigital-hype128ssl.streaming.rs:8272/;*.mp3" data-genre="hiphop,pop,zabavna"><div class="radio-text">Naxi Hype</div></div>
         <div class="radio" data-name="Naxi Rock" data-link="https://naxidigital-rock128ssl.streaming.rs:8182/;*.mp3" data-genre="rock,metal,strana"><div class="radio-text">Naxi Rock</div></div>
@@ -378,138 +413,143 @@
 		<span class="material-icons">search_off</span>
 		<p>Nema rezultata</p>
 	</div>
-</div>
+    </main>
 
-<div class="audio-container">
-<div id="recentlyPlayedToggle" class="recently-played-toggle">
-    <div class="toggle-handle"></div>
-    <div class="toggle-buttons">
-        <div class="segmented-button-group">
-            <button id="historyBtn" class="segmented-button history-btn">
-                <span class="material-icons">history</span>
-                <span>Istorija</span>
-            </button>
-            <button class="segmented-button info-icon">
-                <span class="material-icons">info</span>
-                <span>Info</span>
-            </button>
-            <button class="segmented-button theme-toggle">
-                <span class="material-icons theme-icon">dark_mode</span>
-                <span>Tema</span>
-            </button>
-        </div>
+    <aside class="audio-container" role="complementary" aria-label="Audio player i kontrole">
+        <div id="recentlyPlayedToggle" class="recently-played-toggle">
+            <div class="toggle-handle" aria-label="Otvori/zatvori dodatne opcije" aria-expanded="false"></div>
+            <div class="toggle-buttons">
+                <div class="segmented-button-group" role="group" aria-label="Opcije playera">
+                    <button id="historyBtn" class="segmented-button history-btn" aria-label="Prikaži istoriju slušanja">
+                        <span class="material-icons" aria-hidden="true">history</span>
+                        <span>Istorija</span>
+                    </button>
+                    <button class="segmented-button info-icon" aria-label="Prikaži informacije o stanici">
+                        <span class="material-icons" aria-hidden="true">info</span>
+                        <span>Info</span>
+                    </button>
+                    <button class="segmented-button theme-toggle" aria-label="Promeni temu">
+                        <span class="material-icons theme-icon" aria-hidden="true">dark_mode</span>
+                        <span>Tema</span>
+                    </button>
+                </div>
 
-<!-- Info Dropdown Container -->
-        <div class="genre-tooltip"></div>
+                <!-- Info Dropdown Container -->
+                <div class="genre-tooltip" role="tooltip" aria-hidden="true"></div>
 
-<!-- Theme Dropdown Container -->
-<div class="theme-dropdown">
-  <div class="theme-dropdown__menu">
-    <!-- Theme Section -->
-    <div class="theme-section">
-      <h3 class="theme-section__title">Tema</h3>
-      <div class="theme-options">
-        <button type="button" class="theme-option" data-theme="dark" aria-label="Dark Theme">
-          <span class="material-icons dark_mode">dark_mode</span>
-          <span class="theme-option__text">Tamna</span>
-        </button>
-        <button type="button" class="theme-option" data-theme="light" aria-label="Light Theme">
-          <span class="material-icons light_mode">light_mode</span>
-          <span class="theme-option__text">Svetla</span>
-        </button>
-      </div>
-    </div>
-    
-    <!-- Color Section -->
-    <div class="color-section">
-      <h3 class="color-section__title">Boja</h3>
-      <div class="color-picker__grid">
-        <button type="button" class="color-picker color-picker--green" data-color="green" aria-label="Green Color">
-          <span class="color-picker__check"></span>
-        </button>
-        <button type="button" class="color-picker color-picker--blue" data-color="blue" aria-label="Blue Color">
-          <span class="color-picker__check"></span>
-        </button>
-        <button type="button" class="color-picker color-picker--yellow" data-color="yellow" aria-label="Yellow Color">
-          <span class="color-picker__check"></span>
-        </button>
-        <button type="button" class="color-picker color-picker--red" data-color="red" aria-label="Red Color">
-          <span class="color-picker__check"></span>
-        </button>
-		<button type="button" class="color-picker color-picker--violet" data-color="violet" aria-label="Violet Color">
-          <span class="color-picker__check"></span>
-        </button>
-		<button type="button" class="color-picker color-picker--greenalt" data-color="greenalt" aria-label="Green Alternative Color">
-          <span class="color-picker__check"></span>
-        </button>
-		<button type="button" class="color-picker color-picker--bluealt" data-color="bluealt" aria-label="Blue Alternative Color">
-          <span class="color-picker__check"></span>
-        </button>
-		<button type="button" class="color-picker color-picker--cyan" data-color="cyan" aria-label="Cyan Color">
-          <span class="color-picker__check"></span>
-        </button>
-        <button type="button" class="color-picker color-picker--orange" data-color="orange" aria-label="Orange Color">
-          <span class="color-picker__check"></span>
-        </button>
-		<button type="button" class="color-picker color-picker--pink" data-color="pink" aria-label="Pink Color">
-          <span class="color-picker__check"></span>
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-</div>
-    
-    <!-- History Dropdown Container -->
-    <div id="historyDropdown" class="history-dropdown">
-        <div class="recently-played-title">
-           
-            <span>Nedavno slušano</span>
-        </div>
-        <div class="recently-played-wrapper">
-            <div class="history-nav-button left">
-                <span class="material-icons">chevron_left</span>
+                <!-- Theme Dropdown Container -->
+                <div class="theme-dropdown">
+                    <div class="theme-dropdown__menu" role="menu" aria-hidden="true">
+                        <!-- Theme Section -->
+                        <div class="theme-section">
+                            <h3 class="theme-section__title">Tema</h3>
+                            <div class="theme-options" role="group" aria-label="Izbor teme">
+                                <button type="button" class="theme-option" data-theme="dark" aria-label="Tamna tema" role="menuitem">
+                                    <span class="material-icons dark_mode" aria-hidden="true">dark_mode</span>
+                                    <span class="theme-option__text">Tamna</span>
+                                </button>
+                                <button type="button" class="theme-option" data-theme="light" aria-label="Svetla tema" role="menuitem">
+                                    <span class="material-icons light_mode" aria-hidden="true">light_mode</span>
+                                    <span class="theme-option__text">Svetla</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Color Section -->
+                        <div class="color-section">
+                            <h3 class="color-section__title">Boja</h3>
+                            <div class="color-picker__grid" role="group" aria-label="Izbor boje">
+                                <button type="button" class="color-picker color-picker--green" data-color="green" aria-label="Zelena boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--blue" data-color="blue" aria-label="Plava boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--yellow" data-color="yellow" aria-label="Žuta boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--red" data-color="red" aria-label="Crvena boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--violet" data-color="violet" aria-label="Ljubičasta boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--greenalt" data-color="greenalt" aria-label="Alternativna zelena boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--bluealt" data-color="bluealt" aria-label="Alternativna plava boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--cyan" data-color="cyan" aria-label="Cijan boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--orange" data-color="orange" aria-label="Narandžasta boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                                <button type="button" class="color-picker color-picker--pink" data-color="pink" aria-label="Roze boja" role="menuitem">
+                                    <span class="color-picker__check" aria-hidden="true"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="recently-played-stations"></div>
-            <div class="history-nav-button right">
-                <span class="material-icons">chevron_right</span>
+            
+            <!-- History Dropdown Container -->
+            <div id="historyDropdown" class="history-dropdown" role="menu" aria-hidden="true">
+                <div class="recently-played-title">
+                    <span>Nedavno slušano</span>
+                </div>
+                <div class="recently-played-wrapper">
+                    <button class="history-nav-button left" aria-label="Skroluj levo">
+                        <span class="material-icons" aria-hidden="true">chevron_left</span>
+                    </button>
+                    <div class="recently-played-stations" role="list" aria-label="Lista nedavno slušanih stanica"></div>
+                    <button class="history-nav-button right" aria-label="Skroluj desno">
+                        <span class="material-icons" aria-hidden="true">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Audio Player Content -->
+        <div class="audio-wrapper">
+            <div class="audio-title-container">
+                <h1><span class="audio-title" id="audiotext">Izaberite stanicu</span></h1>
+            </div>
+            <div id="audioPlayer" class="audio-player" role="region" aria-label="Audio player kontrole">
+                <div id="playPauseBtn" aria-label="Pusti/zaustavi reprodukciju">
+                    <span class="material-icons" aria-hidden="true">play_arrow</span>
+                </div>
+                <div class="audio-controls">
+                    <div id="volumeIcon" class="material-icons volume-icon" aria-label="Uključi/isključi zvuk">volume_up</div>
+                    <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.01" value="1" aria-label="Kontrola jačine zvuka">
+                </div>
+                <audio id="audioctrl" preload="none"></audio>
+            </div>
+        </div>
+    </aside>
+
+    <div id="pwaInstallContainer" class="pwa-install-container" role="dialog" aria-labelledby="pwa-title" aria-hidden="true">
+        <div class="pwa-install-content">
+            <h3 id="pwa-title">Instaliraj KlikniPlay</h3>
+            <p>Dodaj aplikaciju na svoj početni ekran za najbolje iskustvo</p>
+            <div class="pwa-install-buttons">
+                <button id="pwaInstallButton" class="pwa-install-button" aria-label="Instaliraj aplikaciju">
+                    <span class="material-icons" aria-hidden="true">get_app</span>Instaliraj
+                </button>
+                <button id="pwaDismissButton" class="pwa-dismiss-button" aria-label="Odbaci instalaciju">
+                    <span class="material-icons" aria-hidden="true">close</span>Ne sada
+                </button>
             </div>
         </div>
     </div>
-</div>
-    <!-- Audio Player Content -->
-    <div class="audio-wrapper">
-        <div class="audio-title-container">
-            <h1><span class="audio-title" id="audiotext">Izaberite stanicu</span></h1>
-        </div>
-        <div id="audioPlayer" class="audio-player">
-            <button id="playPauseBtn">
-                <span class="material-icons">play_arrow</span>
-            </button>
-            <div class="audio-controls">
-                <span id="volumeIcon" class="material-icons volume-icon">volume_up</span>
-                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="1" step="0.01" value="1">
-            </div>
-            <audio id="audioctrl"></audio>
-        </div>
-    </div>
-</div>
 
-<div id="pwaInstallContainer" class="pwa-install-container">
-  <div class="pwa-install-content">
-    <h3>Instaliraj KlikniPlay</h3>
-    <p>Dodaj aplikaciju na svoj početni ekran za najbolje iskustvo</p>
-    <div class="pwa-install-buttons">
-      <button id="pwaInstallButton" class="pwa-install-button">
-        <span class="material-icons">get_app</span>Instaliraj
-      </button>
-      <button id="pwaDismissButton" class="pwa-dismiss-button">
-        <span class="material-icons">close</span>Ne sada
-      </button>
+    <div class="no-results" role="status" aria-live="polite">
+        <span class="material-icons" aria-hidden="true">search_off</span>
+        <p>Nema rezultata</p>
     </div>
-  </div>
-</div>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

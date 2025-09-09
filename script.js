@@ -390,10 +390,9 @@ handleStationClick(e) {
     
     const { name, link } = radio.dataset;
     
-    // Only proceed if this is a different station
-    if (this.currentStation?.name !== name) {
-        this.changeStation(name, link);
-    }
+    // Always allow station changes - remove the blocking check
+    // This allows users to switch stations immediately without waiting
+    this.changeStation(name, link);
 
     if (!radio.closest('.history-dropdown')) return;
     
@@ -445,46 +444,51 @@ handleTouchEnd = (e) => {
 
     // Station and Playback Functions
 async changeStation(name, link) {
-    if (this.changingStation) return;
+    // Allow immediate station switching by removing the blocking check
+    // and canceling any ongoing station change
+    if (this.changingStation) {
+        // Cancel the previous change by clearing the flag
+        this.changingStation = false;
+    }
+    
     this.changingStation = true;
 
     try {
-		
         // Close the tooltip explicitly when changing stations
         if (this.DropdownManager.currentOpen === 'tooltip') {
             this.DropdownManager.close('tooltip');
         }
 
-        // Clear previous state
+        // Clear previous state immediately
         this.lastTitle = '';
         this.elements.audioText.innerHTML = `<div class="station-name">${name}</div>`;
         this.elements.audioText.classList.remove('has-now-playing');
         this.elements.audioContainer?.classList.remove('has-now-playing');
         this.updateAudioContainerHeight();
         
-        // Reset audio
+        // Reset audio immediately without waiting
         this.elements.audio.pause();
         this.elements.audio.src = '';
-        await new Promise(resolve => setTimeout(resolve, 50));
         
-        // Set new station
+        // Set new station immediately
         this.currentStation = { name, link };
         this.elements.audio.src = link;
         document.title = `KlikniPlay | ${name}`;
         
-        // Update UI
+        // Update UI immediately
         this.updateSelectedStation(name);
         this.updateRecentlyPlayed(name, link);
         
-        try {
-            await this.elements.audio.play();
-            
+        // Start playback without blocking
+        this.elements.audio.play().then(() => {
             // Force immediate metadata check with cache busting
             this.checkMetadata(true);
-        } catch (e) {
+        }).catch(e => {
             console.warn('Playback failed:', e);
-        }
+        });
+        
     } finally {
+        // Release the lock immediately after setting up the new station
         this.changingStation = false;
     }
 }
@@ -579,6 +583,13 @@ updateSelectedStation(name) {
             } else {
                 equalizer.className = "equalizer animate";
             }
+
+            // Autoscroll to the selected station
+            radio.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'nearest'
+            });
         } else {
             radio.querySelector(".equalizer")?.remove();
         }

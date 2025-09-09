@@ -39,17 +39,11 @@
 /* ========== */
 /* TYPOGRAPHY */
 /* ========== */
-@font-face {
-    font-family: 'Material Icons';
-    src: url('fonts/MaterialIcons-Regular.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-}
-
 .material-icons {
-    font-family: 'Material Icons';
-	font-weight: normal;
+    font-family: 'Material Symbols Outlined', sans-serif;
+	font-weight: 400;
     font-style: normal;
+    font-display: swap;
     color: #ffffff;
     font-size: 24px;
     display: inline-block;
@@ -454,13 +448,10 @@ button {
     height: 44px;
     width: 44px;
     margin-right: 15px;
-    transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
-    -moz-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
-    -webkit-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
-    -o-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
-    -ms-transition: width 0.2s ease, border-radius 0.2s linear, box-shadow 0.2s linear, border-color 0.2s linear;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     cursor: pointer;
+    will-change: width, border-radius;
 }
 
 .search-container.active {
@@ -487,11 +478,8 @@ button {
 	padding-top: 2px;
     box-sizing: border-box;
     opacity: 0;
-	transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -moz-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -webkit-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -o-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -ms-transition: background-color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+	transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: background-color;
 }
 
 .search-container.active input {
@@ -531,11 +519,8 @@ button {
 .search-container:focus-within {
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1);
     border-color: var(--accent-color) !important;
-	transition: border-color 0.2s linear;
-    -moz-transition: border-color 0.2s linear;
-    -webkit-transition: border-color 0.2s linear;
-    -o-transition: border-color 0.2s linear;
-    -ms-transition: border-color 0.2s linear;
+	transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: border-color;
 }
 
 #Search {
@@ -640,11 +625,8 @@ button {
     z-index: 100;
     pointer-events: auto;
     background-color: transparent;
-	transition: bottom 0.2s linear;
-    -moz-transition: bottom 0.2s linear;
-    -webkit-transition: bottom 0.2s linear;
-    -o-transition: bottom 0.2s linear;
-    -ms-transition: bottom 0.2s linear;
+	transition: bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: bottom;
 }
 
 .scrollbar-thumb {
@@ -653,11 +635,8 @@ button {
     width: 3px;
     background-color: #6a6a6a;
     border-radius: 4px;
-    transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
-	-moz-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
-    -webkit-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
-    -o-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
-    -ms-transition: width 0.2s linear, background-color 0.2s linear, opacity 0.2s linear;
+    transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: width, background-color, opacity;
     pointer-events: auto;
 	touch-action: none;
 	opacity: 0;
@@ -734,11 +713,8 @@ button {
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 600;
-    transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
-	-moz-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
-    -webkit-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
-    -o-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
-    -ms-transition: color 0.2s linear, background-color 0.2s linear, box-shadow 0.2s linear;
+    transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: color, background-color, box-shadow;
     margin: 0 5px;
     min-width: 71px;
     height: 70px;
@@ -766,11 +742,8 @@ button {
 .genre-button.active {
     background-color: rgba(var(--accent-dark), 0.8);
 	box-shadow: inset 0px 0px 5px 0px rgb(var(--accent-light));
-    transition: all 0.2s linear;
-	-moz-transition: all 0.2s linear;
-    -webkit-transition: all 0.2s linear;
-    -o-transition: all 0.2s linear;
-    -ms-transition: all 0.2s linear;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: background-color, box-shadow;
 }
 
 .genre-button.active:hover {
@@ -793,11 +766,8 @@ button {
     -moz-box-pack: center;
     align-items: center;
     justify-content: center;
-	transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
-    -moz-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
-    -webkit-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
-    -o-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
-    -ms-transition: border-right 0.2s linear, border-left 0.2s linear, box-shadow 0.2s linear, color 0.2s linear;
+	transition: border-right 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-left 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: border-color, box-shadow, color;
 }
 
 .genre-nav-button.left {
@@ -838,11 +808,8 @@ button {
     text-align: center;
     z-index: 100;
     border: none;
-	transition: height 0.2s linear, opacity 0.2s linear;
-    -moz-transition: height 0.2s linear, opacity 0.2s linear;
-    -webkit-transition: height 0.2s linear, opacity 0.2s linear;
-    -o-transition: height 0.2s linear, opacity 0.2s linear;
-    -ms-transition: height 0.2s linear, opacity 0.2s linear;
+	transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: height, opacity;
     will-change: height, opacity;
 	display: flex;
     flex-direction: column;
@@ -1004,11 +971,8 @@ button {
     justify-content: space-between;
     margin: 5px 0px 20px 0px;
     transform: none;
-	transition: border-radius 0.2s linear, border-color 0.2s linear;
-    -moz-transition: border-radius 0.2s linear, border-color 0.2s linear;
-    -webkit-transition: border-radius 0.1s linear, border-color 0.2s linear;
-    -o-transition: border-radius 0.1s linear, border-color 0.2s linear;
-    -ms-transition: border-radius 0.2s linear, border-color 0.2s linear;
+	transition: border-radius 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: border-radius, border-color;
 }
 
 .audio-player:hover {
@@ -1038,11 +1002,8 @@ button {
     cursor: pointer;
     border-radius: 18px;
     background-color: rgb(var(--accent-dark));
-    transition: box-shadow 0.2s linear, border-radius 0.05s linear;
-    -moz-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
-    -webkit-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
-    -o-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
-    -ms-transition: box-shadow 0.2s linear, border-radius 0.05s linear;
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.05s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: box-shadow, border-radius;
 }
 
 .audio-controls.play-mode,
@@ -1067,11 +1028,8 @@ button {
     border-radius: 18px;
     height: 50px;
     width: 125px;
-    transition: box-shadow 0.2s linear, border-radius 0.1s linear;
-    -moz-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
-    -webkit-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
-    -o-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
-    -ms-transition: box-shadow 0.2s linear, border-radius 0.1s linear;
+    transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-radius 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: box-shadow, border-radius;
 }
 
 .audio-controls:hover {
@@ -1137,7 +1095,8 @@ button {
     cursor: pointer;
     position: relative;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-	transition: all 0.2s linear;
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: transform;
 }
 
 .volume-slider::-moz-range-thumb:hover {
@@ -1161,7 +1120,8 @@ button {
     border: 3px solid rgb(var(--accent-light));
     cursor: pointer;
     box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-	transition: all 0.2s linear;
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: transform;
 }
 
 .volume-slider::-ms-thumb:hover {
@@ -1182,11 +1142,8 @@ button {
     left: 0;
     width: 100%;
     overflow: hidden;
-    transition: height 0.2s linear;
-    -moz-transition: height 0.2s linear;
-    -webkit-transition: height 0.2s linear;
-    -o-transition: height 0.2s linear;
-    -ms-transition: height 0.2s linear;
+    transition: height 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: height;
     z-index: 110;
     display: flex;
     flex-direction: column;
@@ -1199,11 +1156,8 @@ button {
     justify-content: center;
     cursor: pointer;
 	border-top: 1px solid var(--border-color);
-	transition: border-bottom 0.2s linear;
-    -moz-transition: border-bottom 0.2s linear;
-    -webkit-transition: border-bottom 0.2s linear;
-    -o-transition: border-bottom 0.2s linear;
-    -ms-transition: border-bottom 0.2s linear;
+	transition: border-bottom 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: border-bottom;
 	border-radius: 20px 20px 0 0;
 	box-shadow: 20px 0px 0px #0a0a0a, -20px 0px 0px #0a0a0a;
 	touch-action: manipulation;
@@ -1222,7 +1176,8 @@ button {
 	margin: 5px 0;
     background: #6a6a6a;
     border-radius: 2px;
-    transition: all 0.2s linear;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+       will-change: transform;
     -moz-transition: all 0.2s linear;
     -webkit-transition: all 0.2s linear;
     -o-transition: all 0.2s linear;
@@ -1250,11 +1205,8 @@ button {
     font-size: 1rem;
     font-weight: 400;
     margin: 0;
-	transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
-    -moz-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
-    -webkit-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
-    -o-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
-    -ms-transition: background-color 0.2s linear, color 0.2s linear, box-shadow 0.2s linear;
+	transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: background-color, color, box-shadow;
 }
 
 .segmented-button:hover {
@@ -1273,21 +1225,15 @@ button {
     width: 18px;
     height: 18px;
     line-height: 18px;
-	transition: color 0.2s linear;
-    -moz-transition: color 0.2s linear;
-    -webkit-transition: color 0.2s linear;
-    -o-transition: color 0.2s linear;
-    -ms-transition: color 0.2s linear;
+	transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: color;
 }
 
 .segmented-button-group .segmented-button.active {
     border-color: var(--accent-color);
 	z-index: 2;
-	transition: border-color 0.2s linear;
-    -moz-transition: border-color 0.2s linear;
-    -webkit-transition: border-color 0.2s linear;
-    -o-transition: border-color 0.2s linear;
-    -ms-transition: border-color 0.2s linear;
+	transition: border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: border-color;
 }
 
 .segmented-button-group {
@@ -1703,11 +1649,8 @@ button {
     background-color: #171717;
 	color: #ffffff;
     font-size: 1rem;
-	transition: color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -moz-transition: color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -webkit-transition: color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -o-transition: color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
-    -ms-transition: color 0.2s linear, border-color 0.2s linear, box-shadow 0.2s linear;
+	transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: color, border-color, box-shadow;
 }
 
 .theme-option:not(:first-child) {
@@ -1757,11 +1700,8 @@ button {
     margin-bottom: 8px;
     cursor: pointer;
     border: none;
-	transition: transform 0.1s linear;
-    -moz-transition: transform 0.1s linear;
-    -webkit-transition: transform 0.1s linear;
-    -o-transition: transform 0.1s linear;
-    -ms-transition: transform 0.1s linear;
+	transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: transform;
 }
 
 .color-picker:hover {
@@ -1774,11 +1714,8 @@ button {
 }
 
 .color-picker.active {
-	transition: box-shadow 0.7s linear, border 0.3s linear;
-    -moz-transition: box-shadow 0.7s linear, border 0.3s linear;
-    -webkit-transition: box-shadow 0.7s linear, border 0.3s linear;
-    -o-transition: box-shadow 0.7s linear, border 0.3s linear;
-    -ms-transition: box-shadow 0.7s linear, border 0.3s linear;
+	transition: box-shadow 0.7s cubic-bezier(0.4, 0, 0.2, 1), border 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	   will-change: box-shadow, border;
 	border: 2px solid #ffffff;
 }
 
@@ -1865,7 +1802,7 @@ button {
     background-color: #171717;
     font-size: 1rem;
     cursor: pointer;
-	height: 45px;
+	height: 46px;
     width: calc(20% - 20px);
     margin: 5px;
     border: 1px solid #333;
@@ -2084,20 +2021,22 @@ button {
     height: 7px;
     background-color: var(--accent-color);
 	opacity: 0.6;
-    transition: background-color 0.2s linear;
-	-moz-transition: background-color 0.2s linear;
-    -webkit-transition: background-color 0.2s linear;
-    -o-transition: background-color 0.2s linear;
-    -ms-transition: background-color 0.2s linear;
-    animation: equalizer 0.9s infinite ease-in-out;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: equalizer 0.9s infinite cubic-bezier(0.4, 0, 0.6, 1);
     transform-origin: bottom;
-	will-change: transform;
-	border-radius: 1px 1px 0 0;
+ will-change: transform;
+ border-radius: 1px 1px 0 0;
+    backface-visibility: hidden;
+    perspective: 1000px;
 }
 
 @keyframes equalizer {
-    0%, 100% { transform: translateZ(0) scaleY(0.4); }
-    50% { transform: translateZ(0) scaleY(1); }
+    0%, 100% {
+        transform: translate3d(0, 0, 0) scaleY(0.4);
+    }
+    50% {
+        transform: translate3d(0, 0, 0) scaleY(1);
+    }
 }
 
 .equalizer.animate div:nth-child(7n+1) { animation-delay: 0s; }
