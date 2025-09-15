@@ -166,6 +166,7 @@ button {
 .light-mode .category-container {
 	background-color: #ffffff;
 	border-color: #cfcfcf;
+    border-top-color: rgba(var(--accent-dark), 0.4);
 }
 
 .light-mode .expand-button {
@@ -192,6 +193,7 @@ button {
 .light-mode .genre-buttons-wrapper {
 	background-color: #ffffff;
 	border-color: #cfcfcf;
+    border-top: 1px solid rgba(var(--accent-dark), 0.4);
 }
 
 .light-mode .expand-button {
@@ -321,11 +323,12 @@ button {
 .light-mode .quality-title,
 .light-mode .genre-title {
 	background-color: rgba(var(--accent-light), 0.1);
+    border-bottom-color: rgba(var(--accent-dark), 0.5);
 }
 
 .light-mode .category {
 	background-color: rgba(var(--accent-light), 0.1);
-	border-color: #cfcfcf;
+    border-color: rgba(var(--accent-dark), 0.4);
 }
 
 .light-mode .audio-container.expanded .toggle-handle {
@@ -675,7 +678,8 @@ button {
     background-color: #0e0e0e;
     padding: 10px;
     overflow: hidden;
-	border: 2px solid #2a2a2a;
+	border: 1px solid #2a2a2a;
+    border-top: 1px solid rgba(var(--accent-dark), 0.3);
 }
 
 .genre-buttons {
@@ -1392,9 +1396,10 @@ button {
     padding: 10px 5px 5px 10px;
     display: flex;
     align-items: center;
+    justify-content: center;
     font-weight: 600;
 	font-size: 1.25rem;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(var(--accent-light), 0.2);
 	background-color: rgba(var(--accent-dark), 0.15);
 	color: var(--accent-color);
 }
@@ -1481,12 +1486,12 @@ button {
 .genre-title {
     display: block;
     padding: 10px 10px 5px 10px;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
 	font-weight: 600;
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 1px solid rgba(var(--accent-light), 0.2);
 	margin: 0;
 	margin-bottom: 10px;
-	text-align: left;
+	text-align: center;
 	background-color: rgba(var(--accent-dark), 0.15);
 	color: var(--accent-color);
 }
@@ -1495,12 +1500,12 @@ button {
 	border-top: 1px solid var(--border-color);
 	display: block;
     padding: 10px 10px 5px 10px;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
 	font-weight: 600;
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 1px solid rgba(var(--accent-light), 0.2);
 	margin: 0;
 	margin-bottom: 10px;
-	text-align: left;
+	text-align: center;
 	background-color: rgba(var(--accent-dark), 0.15);
 	color: var(--accent-color);
 }
@@ -1606,12 +1611,12 @@ button {
 }
 
 .theme-section__title {
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid rgba(var(--accent-light), 0.2);
 }
 
 .color-section__title {
 	border-top: 1px solid var(--border-color);
-	border-bottom: 1px solid var(--border-color);
+	border-bottom: 1px solid rgba(var(--accent-light), 0.2);
 }
 
 .theme-section__title,
@@ -1619,8 +1624,9 @@ button {
     padding: 10px 5px 5px 10px;
     display: flex;
     align-items: center;
+    justify-content: center;
     font-weight: 600;
-	font-size: 1.25rem;
+	font-size: 1.2rem;
 	background-color: rgba(var(--accent-dark), 0.15);
 	color: var(--accent-color);
 	margin-bottom: 15px;
@@ -1785,7 +1791,8 @@ button {
     padding: 8px;
     max-width: calc(100% - 30px);
     box-sizing: border-box;
-	border: 2px solid #2a2a2a;
+	border: 1px solid #2a2a2a;
+    border-top: 1px solid rgba(var(--accent-dark), 0.3);
 }
 
 .radio {
@@ -1883,7 +1890,7 @@ button {
 	border-radius: 10px 10px 0 0;
 	padding: 0;
 	margin: 35px 15px 0px 15px;
-	border: 2px solid #2a2a2a;
+	border: 1px solid rgba(var(--accent-dark), 0.3);
 	border-bottom: none;
 }
 
@@ -1940,13 +1947,13 @@ button {
     align-items: center;
     position: absolute;
     background-color: #0e0e0e;
-    width: calc(100% + 4px);
+    width: calc(100% + 2px);
     height: 30px;
     border-radius: 0px 0px 8px 8px;
-    border: 2px solid #2a2a2a;
+    border: 1px solid #2a2a2a;
 	border-top: none;
     bottom: -30px;
-    left: -2px;
+    left: -1px;
 	right: 0;
     cursor: pointer;
     color: #ffffff;
