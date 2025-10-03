@@ -1,6 +1,6 @@
 // Updated sw.js
-const CACHE_NAME = 'klikniplay-v5';
-const BASE_PATH = '/radio-sajt/';
+const CACHE_NAME = 'klikniplay-v6';
+const BASE_PATH = '/';
 const ASSETS_TO_CACHE = [
   BASE_PATH,
   BASE_PATH + 'index.html',
@@ -49,7 +49,7 @@ self.addEventListener('fetch', (event) => {
       event.request.url.includes('streaming.tdiradio') ||
       event.request.url.includes('cast2.asurahosting') ||
       event.request.url.includes('radioparadise') ||
-	  event.request.url.endsWith('.svg') || 
+	    event.request.url.endsWith('.svg') || 
       event.request.url.endsWith('.ico') ||
       event.request.url.includes('favicon')) {
     return fetch(event.request);

@@ -1,8 +1,8 @@
 {
   "name": "KlikniPlay",
   "short_name": "KlikniPlay",
-  "start_url": "/radio-sajt/",
-  "scope": "/radio-sajt/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "description": "Besplatno slušanje preko 100 srpskih i balkanskih radio stanica uživo",
