@@ -1922,7 +1922,7 @@ button {
 }
 
 .expand-button[data-expanded="false"]:hover {
-	border-bottom: 2px solid var(--accent-color);
+	border-bottom-color: var(--accent-color);
     box-shadow: none;
 }
 
@@ -1931,7 +1931,7 @@ button {
 }
 
 .expand-button[data-expanded="true"]:hover {
-	border-bottom: 2px solid var(--accent-color);
+	border-bottom-color: var(--accent-color);
 }
 
 /* ============ */
@@ -1963,8 +1963,8 @@ button {
     transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     animation: equalizer 0.9s infinite cubic-bezier(0.4, 0, 0.6, 1);
     transform-origin: bottom;
- will-change: transform;
- border-radius: 1px 1px 0 0;
+    will-change: transform;
+    border-radius: 1px 1px 0 0;
     backface-visibility: hidden;
     perspective: 1000px;
 }
@@ -2018,7 +2018,7 @@ button {
   background: #1a1a1a;
   border-radius: 12px;
   padding: 20px;
-  z-index: 9999; /* Higher than everything */
+  z-index: 9999;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   border: 1px solid var(--border-color);
   opacity: 0;

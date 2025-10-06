@@ -1,5 +1,5 @@
 // Updated sw.js
-const CACHE_NAME = 'klikniplay-v6';
+const CACHE_NAME = 'klikniplay-v7';
 const BASE_PATH = '/';
 const ASSETS_TO_CACHE = [
   BASE_PATH,
