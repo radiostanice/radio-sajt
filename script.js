@@ -387,15 +387,13 @@ handleStationClick(e) {
     e.stopPropagation();
     e.preventDefault();
     e.stopImmediatePropagation();
-    
+
     const { name, link } = radio.dataset;
-    
-    // Always allow station changes - remove the blocking check
-    // This allows users to switch stations immediately without waiting
+
     this.changeStation(name, link);
 
     if (!radio.closest('.history-dropdown')) return;
-    
+
     // Prevent immediate re-triggering
     radio.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -444,10 +442,7 @@ handleTouchEnd = (e) => {
 
     // Station and Playback Functions
 async changeStation(name, link) {
-    // Allow immediate station switching by removing the blocking check
-    // and canceling any ongoing station change
     if (this.changingStation) {
-        // Cancel the previous change by clearing the flag
         this.changingStation = false;
     }
     
@@ -572,7 +567,7 @@ updateSelectedStation(name) {
     document.querySelectorAll(".radio").forEach(radio => {
         const isSelected = radio.dataset.name === name;
         radio.classList.toggle("selected", isSelected);
-        
+
         if (isSelected) {
             let equalizer = radio.querySelector(".equalizer");
             if (!equalizer) {
@@ -914,41 +909,41 @@ updatePlayPauseButton = () => {
     loadRecentlyPlayed() {
         const container = document.querySelector('.recently-played-stations');
         if (!container) return;
-        
+
         container.scrollTop = 0;
         const recentlyPlayed = this.safeParseJSON('recentlyPlayed', []);
         const uniqueStations = [...new Map(recentlyPlayed.map(item => [item.link, item])).values()];
-        
+
         container.innerHTML = recentlyPlayed.length ? '' : '<div class="empty-message">Nema nedavno slušanih stanica...</div>';
         container.style.flexDirection = 'column';
         container.style.overflowY = 'auto';
-        
+
         uniqueStations.forEach(station => {
             const radio = document.createElement('div');
             radio.className = 'radio';
             if (station.name === (this.currentStation?.name || this.safeParseJSON("lastStation", {}).name)) {
                 radio.classList.add('selected');
             }
-            
+
             Object.assign(radio.dataset, {
                 name: station.name,
                 link: station.link,
                 genre: station.genre || ''
             });
-            
+
             const radioText = document.createElement('div');
             radioText.className = 'radio-text';
             radioText.textContent = station.name;
             radio.appendChild(radioText);
-            
+
             radio.addEventListener('click', e => {
                 e.stopPropagation();
                 this.changeStation(station.name, station.link);
             });
-            
+
             container.appendChild(radio);
         });
-        
+
         if (this.currentStation?.name) {
             const historyStation = container.querySelector(`.radio[data-name="${this.currentStation.name}"]`);
             historyStation?.classList.contains('selected') && this.updateSelectedStation(this.currentStation.name);
@@ -956,7 +951,6 @@ updatePlayPauseButton = () => {
     }
 
     // Theme Functions
-	
 // Updated in RadioPlayer class
 setupThemeControls() {
     // Initialize theme manager if not already done
@@ -1162,156 +1156,156 @@ setInitialActiveStates() {
     }
 
     // Expandable Categories
-setupExpandableCategories() {
-    if (this.elements.stationSearch.value.trim()) {
-        document.querySelectorAll('.expand-button').forEach(btn => btn.remove());
-        return;
-    }
-
-    document.querySelectorAll(".category-container").forEach(category => {
-        const stations = [...category.querySelectorAll(".radio")].filter(s => 
-            window.getComputedStyle(s).display !== "none" && 
-            (this.currentGenre === 'all' || 
-             s.dataset.genre?.split(',').includes(this.currentGenre))
-        );
-        
-        if (stations.length === 0) {
-            category.style.display = "none";
-            const title = category.previousElementSibling;
-            title?.classList.contains("category") && (title.style.display = "none");
+    setupExpandableCategories() {
+        if (this.elements.stationSearch.value.trim()) {
+            document.querySelectorAll('.expand-button').forEach(btn => btn.remove());
             return;
         }
-        
-        const isExpanded = category.dataset.expanded === "true";
-        const maxVisible = this.calculateMaxStations(stations[0]);
-        
-        // Always show at least 2 stations if possible
-        const effectiveMaxVisible = Math.max(2, maxVisible);
-        
-        stations.forEach((s, i) => {
-            s.style.display = (isExpanded || i < effectiveMaxVisible) ? "flex" : "none";
+
+        document.querySelectorAll(".category-container").forEach(category => {
+            const stations = [...category.querySelectorAll(".radio")].filter(s =>
+            window.getComputedStyle(s).display !== "none" &&
+            (this.currentGenre === 'all' ||
+            s.dataset.genre?.split(',').includes(this.currentGenre))
+            );
+
+            if (stations.length === 0) {
+                category.style.display = "none";
+                const title = category.previousElementSibling;
+                title?.classList.contains("category") && (title.style.display = "none");
+                return;
+            }
+
+            const isExpanded = category.dataset.expanded === "true";
+            const maxVisible = this.calculateMaxStations(stations[0]);
+
+            // Always show at least 2 stations if possible
+            const effectiveMaxVisible = Math.max(2, maxVisible);
+
+            stations.forEach((s, i) => {
+                s.style.display = (isExpanded || i < effectiveMaxVisible) ? "flex" : "none";
+            });
+
+            if (!isExpanded && stations.length > effectiveMaxVisible && !category.querySelector('.expand-button')) {
+                category.append(this.createExpandButton(stations, category));
+                category.classList.add("no-radius", "has-expand-button");
+            } else if (stations.length <= effectiveMaxVisible) {
+                category.querySelector('.expand-button')?.remove();
+                category.classList.remove("no-radius", "has-expand-button");
+            }
         });
-        
-        if (!isExpanded && stations.length > effectiveMaxVisible && !category.querySelector('.expand-button')) {
-            category.append(this.createExpandButton(stations, category));
-            category.classList.add("no-radius", "has-expand-button");
-        } else if (stations.length <= effectiveMaxVisible) {
-            category.querySelector('.expand-button')?.remove();
-            category.classList.remove("no-radius", "has-expand-button");
-        }
-    });
-    
-    setTimeout(() => this.ScrollbarManager?.updateAll(), 10);
-}
 
-calculateMaxStations(stationElement) {
-    if (!stationElement) return 5; // Default fallback
-    
-    const stationHeight = stationElement.offsetHeight || 50;
-    let maxHeight = window.innerWidth * 0.55;
-    
-    // On mobile devices, limit to 70% of viewport height
-    if (window.innerWidth <= 768) {
-        maxHeight = window.innerHeight * 0.7;
+        setTimeout(() => this.ScrollbarManager?.updateAll(), 10);
     }
-    
-    return Math.max(1, Math.floor(maxHeight / stationHeight));
-}
 
-createExpandButton(stations, category) {
-    const expandButton = document.createElement("button");
-    expandButton.className = "expand-button";
-    expandButton.dataset.expanded = category.dataset.expanded === "true" ? "true" : "false";
+    calculateMaxStations(stationElement) {
+        if (!stationElement) return 5; // Default fallback
 
-    const content = document.createElement("div");
-    Object.assign(content.style, {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center"
-    });
+        const stationHeight = stationElement.offsetHeight || 50;
+        let maxHeight = window.innerWidth * 0.55;
 
-    const icon = document.createElement("span");
-    icon.className = "material-icons";
-    icon.textContent = "expand_more";
-    icon.style.margin = "0px";
-
-    const text = document.createElement("span");
-    text.className = "expand-text";
-    text.textContent = "Više";
-    Object.assign(text.style, {
-        fontSize: '0px',
-        transition: 'font-size 0.15s linear'
-    });
-
-    content.append(icon, text);
-    expandButton.append(content);
-
-    expandButton.addEventListener("mouseover", () => {
-        expandButton.querySelector('.expand-text').style.fontSize = '15px';
-    });
-
-    expandButton.addEventListener("mouseout", () => {
-        expandButton.querySelector('.expand-text').style.fontSize = '0px';
-    });
-
-    // Get all stations in this category (not just currently visible ones)
-    const allStations = Array.from(category.querySelectorAll('.radio'))
-        .filter(s => window.getComputedStyle(s).display !== 'none' || 
-                   (s.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || 
-                    window.radioPlayer.currentGenre === 'all'));
-    
-    expandButton.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const expanded = expandButton.dataset.expanded === "true";
-        const newState = !expanded;
-        
-        expandButton.dataset.expanded = newState.toString();
-        expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
-        expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
-        
-        // Store expansion state in category for resize handling
-        category.dataset.expanded = newState.toString();
-        
-        if (newState) {
-            // Show all stations that match current genre filter when expanded
-            allStations.forEach(station => {
-                const matchesGenre = window.radioPlayer.currentGenre === 'all' || 
-                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
-                station.style.display = matchesGenre ? "flex" : "none";
-            });
-        } else {
-            // Recalculate visibility on collapse while respecting genre filter
-            const maxHeight = window.innerWidth * 0.5;
-            let totalHeight = 0;
-            let visibleCount = 0;
-            
-            allStations.forEach(station => {
-                const matchesGenre = window.radioPlayer.currentGenre === 'all' || 
-                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
-                
-                if (!matchesGenre) {
-                    station.style.display = "none";
-                    return;
-                }
-                
-                if (visibleCount < this.calculateMaxStations(stations[0])) {
-                    station.style.display = "flex";
-                    totalHeight += station.offsetHeight;
-                    visibleCount++;
-                } else {
-                    station.style.display = "none";
-                }
-            });
+        // On mobile devices, limit to 70% of viewport height
+        if (window.innerWidth <= 768) {
+            maxHeight = window.innerHeight * 0.7;
         }
-        
-        setTimeout(() => {
-            window.radioPlayer.ScrollbarManager.updateAll();
-        }, 300);
-    });
 
-    return expandButton;
-}
-	
+        return Math.max(1, Math.floor(maxHeight / stationHeight));
+    }
+
+    createExpandButton(stations, category) {
+        const expandButton = document.createElement("button");
+        expandButton.className = "expand-button";
+        expandButton.dataset.expanded = category.dataset.expanded === "true" ? "true" : "false";
+
+        const content = document.createElement("div");
+        Object.assign(content.style, {
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+        });
+
+        const icon = document.createElement("span");
+        icon.className = "material-icons";
+        icon.textContent = "expand_more";
+        icon.style.margin = "0px";
+
+        const text = document.createElement("span");
+        text.className = "expand-text";
+        text.textContent = "Više";
+        Object.assign(text.style, {
+            fontSize: '0px',
+            transition: 'font-size 0.15s linear'
+        });
+
+        content.append(icon, text);
+        expandButton.append(content);
+
+        expandButton.addEventListener("mouseover", () => {
+            expandButton.querySelector('.expand-text').style.fontSize = '15px';
+        });
+
+        expandButton.addEventListener("mouseout", () => {
+            expandButton.querySelector('.expand-text').style.fontSize = '0px';
+        });
+
+        // Get all stations in this category (not just currently visible ones)
+        const allStations = Array.from(category.querySelectorAll('.radio'))
+        .filter(s => window.getComputedStyle(s).display !== 'none' ||
+        (s.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) ||
+        window.radioPlayer.currentGenre === 'all'));
+
+        expandButton.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const expanded = expandButton.dataset.expanded === "true";
+            const newState = !expanded;
+
+            expandButton.dataset.expanded = newState.toString();
+            expandButton.querySelector('.material-icons').textContent = newState ? "expand_less" : "expand_more";
+            expandButton.querySelector('.expand-text').textContent = newState ? "Manje" : "Više";
+
+            // Store expansion state in category for resize handling
+            category.dataset.expanded = newState.toString();
+
+            if (newState) {
+                // Show all stations that match current genre filter when expanded
+                allStations.forEach(station => {
+                    const matchesGenre = window.radioPlayer.currentGenre === 'all' ||
+                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
+                    station.style.display = matchesGenre ? "flex" : "none";
+                });
+            } else {
+                // Recalculate visibility on collapse while respecting genre filter
+                const maxHeight = window.innerWidth * 0.5;
+                let totalHeight = 0;
+                let visibleCount = 0;
+
+                allStations.forEach(station => {
+                    const matchesGenre = window.radioPlayer.currentGenre === 'all' ||
+                    (station.dataset.genre?.split(',').includes(window.radioPlayer.currentGenre) || false);
+
+                    if (!matchesGenre) {
+                        station.style.display = "none";
+                        return;
+                    }
+
+                    if (visibleCount < this.calculateMaxStations(stations[0])) {
+                        station.style.display = "flex";
+                        totalHeight += station.offsetHeight;
+                        visibleCount++;
+                    } else {
+                        station.style.display = "none";
+                    }
+                });
+            }
+
+            setTimeout(() => {
+                window.radioPlayer.ScrollbarManager.updateAll();
+            }, 300);
+        });
+
+        return expandButton;
+    }
+
     // Audio Container Functions
     setupAudioContainerObserver() {
         this.audioContainerObserver = new ResizeObserver(() => this.ScrollbarManager.updateAll());
@@ -1349,30 +1343,31 @@ createExpandButton(stations, category) {
         }, { passive: true });
     }
 
-updateAudioContainerHeight() {
-    const { audioContainer } = this.elements;
-    if (!audioContainer) return;
-    
-    // Force layout calculation before changes
-    audioContainer.getBoundingClientRect();
-        
-        const currentHeight = parseFloat(getComputedStyle(audioContainer).height);
-        const expanded = audioContainer.classList.contains('expanded');
+    // Optimized updateAudioContainerHeight function
+    updateAudioContainerHeight() {
+        const { audioContainer } = this.elements;
+        if (!audioContainer) return;
+
+        const computedStyle = getComputedStyle(audioContainer);
+        const currentHeight = parseFloat(computedStyle.height);
+        const isExpanded = audioContainer.classList.contains('expanded');
         const hasMetadata = audioContainer.classList.contains('has-now-playing');
-        
-        const targetHeight = expanded ? 
-            (hasMetadata ? 240 : 220) : 
-            (hasMetadata ? 175 : 155);
-        
+
+        // Determine target height based on state
+        const targetHeight = isExpanded ?
+        (hasMetadata ? 240 : 220) :
+        (hasMetadata ? 175 : 155);
+
+        // Only proceed with writes if the height actually needs to change
         if (Math.abs(currentHeight - targetHeight) > 1) {
+            // BATCH WRITES SECOND
             audioContainer.style.height = `${targetHeight}px`;
-            this.ScrollbarManager.updateAll();
+
+            requestAnimationFrame(() => {
+                this.ScrollbarManager?.updateAll();
+            });
         }
-		
-    requestAnimationFrame(() => {
-        this.ScrollbarManager.updateAll();
-    });
-}
+    }
 
     setupRecentlyPlayedToggle() {
         const toggleHandle = document.querySelector('#recentlyPlayedToggle .toggle-handle');
@@ -1422,55 +1417,55 @@ updateAudioContainerHeight() {
         setTimeout(() => this.ScrollbarManager.updateAll(), 500);
     }
 
-loadPreferences() {
-    const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
-    const savedStation = this.safeParseJSON("lastStation", {});
-    
-    // Initialize theme manager if needed
-    if (!window.themeManager) {
-        window.themeManager = new ThemeManager();
-    }
-    
-    // Apply saved theme (or system preference if none saved)
-    this.setTheme(localStorage.getItem("theme"));
-    
-    // Apply saved color through theme manager
-    if (window.themeManager && window.themeManager.changeColor) {
-        window.themeManager.changeColor(savedColor);
-    }
-    
-    this.setInitialActiveStates();
+    loadPreferences() {
+        const savedColor = localStorage.getItem("accentColor") || CONFIG.DEFAULT_COLOR;
+        const savedStation = this.safeParseJSON("lastStation", {});
 
-    // Initialize elements if not already done
-    if (!this.elements) {
-        this.elements = {
-            audio: document.getElementById("audioctrl"),
-            audioText: document.getElementById("audiotext")
-            // Add other element references as needed
-        };
-    }
+        // Initialize theme manager if needed
+        if (!window.themeManager) {
+            window.themeManager = new ThemeManager();
+        }
 
-    if (savedStation.name && savedStation.link) {
-        const { audioText } = this.elements;
-        audioText.innerHTML = `<div class="station-name">${savedStation.name}</div>`;
-        document.title = `KlikniPlay | ${savedStation.name}`;
-        this.updateSelectedStation(savedStation.name);
-        
-        this.updatePlayPauseButton();
-        
-        this.currentStation = savedStation;
-        this.elements.audio.src = savedStation.link;
-        
-        setTimeout(() => {
-            this.checkMetadata(true);
-            this.setupNowPlayingMetadata();
-        }, 300);
-    } else {
-        document.title = "KlikniPlay";
-        this.updatePlayPauseButton();
-        this.elements.audioText.innerHTML = `<div class="station-name">Odaberite stanicu</div>`;
+        // Apply saved theme (or system preference if none saved)
+        this.setTheme(localStorage.getItem("theme"));
+
+        // Apply saved color through theme manager
+        if (window.themeManager && window.themeManager.changeColor) {
+            window.themeManager.changeColor(savedColor);
+        }
+
+        this.setInitialActiveStates();
+
+        // Initialize elements if not already done
+        if (!this.elements) {
+            this.elements = {
+                audio: document.getElementById("audioctrl"),
+                audioText: document.getElementById("audiotext")
+                // Add other element references as needed
+            };
+        }
+
+        if (savedStation.name && savedStation.link) {
+            const { audioText } = this.elements;
+            audioText.innerHTML = `<div class="station-name">${savedStation.name}</div>`;
+            document.title = `KlikniPlay | ${savedStation.name}`;
+            this.updateSelectedStation(savedStation.name);
+
+            this.updatePlayPauseButton();
+
+            this.currentStation = savedStation;
+            this.elements.audio.src = savedStation.link;
+
+            setTimeout(() => {
+                this.checkMetadata(true);
+                this.setupNowPlayingMetadata();
+            }, 300);
+        } else {
+            document.title = "KlikniPlay";
+            this.updatePlayPauseButton();
+            this.elements.audioText.innerHTML = `<div class="station-name">Odaberite stanicu</div>`;
+        }
     }
-}
 
     // Utility Functions
     safeParseJSON(key, fallback) {
@@ -1531,17 +1526,17 @@ loadPreferences() {
             rightButton.style.display = scrollLeft >= maxScroll - 1 ? 'none' : 'flex';
         }
 
-   function smoothScroll(direction) {
-       const scrollAmount = genreButtons.clientWidth * 0.6;
-       const start = genreButtons.scrollLeft;
-       const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
-       const target = direction === 'left' 
-           ? Math.max(0, start - scrollAmount)
-           : Math.min(start + scrollAmount, maxScroll);
+        function smoothScroll(direction) {
+            const scrollAmount = genreButtons.clientWidth * 0.6;
+            const start = genreButtons.scrollLeft;
+            const maxScroll = genreButtons.scrollWidth - genreButtons.clientWidth;
+            const target = direction === 'left'
+            ? Math.max(0, start - scrollAmount)
+            : Math.min(start + scrollAmount, maxScroll);
 
-       // Set position
-       genreButtons.scrollLeft = target;
-   }
+            // Set position
+            genreButtons.scrollLeft = target;
+        }
 
         // Event listeners
         leftButton.addEventListener('click', () => smoothScroll('left'));
@@ -1561,61 +1556,61 @@ loadPreferences() {
         checkOverflow();
     }
 
-setupGenreCategoriesSwipe() {
-    const genreWrapper = document.querySelector('.genre-buttons-wrapper');
-    if (!genreWrapper) return;
-    
-    const genreButtons = genreWrapper.querySelector('.genre-buttons');
-    if (!genreButtons) return;
+    setupGenreCategoriesSwipe() {
+        const genreWrapper = document.querySelector('.genre-buttons-wrapper');
+        if (!genreWrapper) return;
 
-    let touchStartX = 0;
-    let isSwiping = false;
-    let scrollLeftStart = 0;
-    
-    genreButtons.addEventListener('touchstart', function(e) {
-        // Only handle horizontal swipes when we're at scroll boundaries
-        if (genreButtons.scrollLeft > 0 && 
-            genreButtons.scrollLeft < genreButtons.scrollWidth - genreButtons.clientWidth) {
-            return;
-        }
-        
-        touchStartX = e.changedTouches[0].screenX;
-        scrollLeftStart = genreButtons.scrollLeft;
-        isSwiping = true;
-        
-        // Preserve native scrolling behavior by not preventing default
-        genreButtons.style.overscrollBehaviorX = 'contain';
-    }, { passive: true });
+        const genreButtons = genreWrapper.querySelector('.genre-buttons');
+        if (!genreButtons) return;
 
-    genreButtons.addEventListener('touchmove', function(e) {
-        if (!isSwiping) return;
-        const touchEndX = e.changedTouches[0].screenX;
-        const diff = touchStartX - touchEndX;
-        
-        // For horizontal swiping at boundaries only
-        if ((scrollLeftStart <= 0 && diff < 0) || 
-            (scrollLeftStart >= genreButtons.scrollWidth - genreButtons.clientWidth && diff > 0)) {
-            e.preventDefault();
+        let touchStartX = 0;
+        let isSwiping = false;
+        let scrollLeftStart = 0;
+
+        genreButtons.addEventListener('touchstart', function(e) {
+            // Only handle horizontal swipes when we're at scroll boundaries
+            if (genreButtons.scrollLeft > 0 &&
+                genreButtons.scrollLeft < genreButtons.scrollWidth - genreButtons.clientWidth) {
+                return;
+                }
+
+                touchStartX = e.changedTouches[0].screenX;
+            scrollLeftStart = genreButtons.scrollLeft;
+            isSwiping = true;
+
+            // Preserve native scrolling behavior by not preventing default
+            genreButtons.style.overscrollBehaviorX = 'contain';
+        }, { passive: true });
+
+        genreButtons.addEventListener('touchmove', function(e) {
+            if (!isSwiping) return;
+            const touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+
+            // For horizontal swiping at boundaries only
+            if ((scrollLeftStart <= 0 && diff < 0) ||
+                (scrollLeftStart >= genreButtons.scrollWidth - genreButtons.clientWidth && diff > 0)) {
+                e.preventDefault();
             genreButtons.scrollLeft = scrollLeftStart + diff;
             genreButtons.style.scrollBehavior = 'auto';
-        }
-    }, { passive: false });
+                }
+        }, { passive: false });
 
-    genreButtons.addEventListener('touchend', function() {
-        isSwiping = false;
-        genreButtons.style.scrollBehavior = 'smooth';
-        
-        // Update buttons visibility
-        setTimeout(() => {
-            const buttons = genreWrapper.querySelectorAll('.genre-nav-button');
-            if (buttons.length) {
-                buttons[0].style.display = genreButtons.scrollLeft <= 1 ? 'none' : 'flex';
-                buttons[1].style.display = genreButtons.scrollLeft >= 
+        genreButtons.addEventListener('touchend', function() {
+            isSwiping = false;
+            genreButtons.style.scrollBehavior = 'smooth';
+
+            // Update buttons visibility
+            setTimeout(() => {
+                const buttons = genreWrapper.querySelectorAll('.genre-nav-button');
+                if (buttons.length) {
+                    buttons[0].style.display = genreButtons.scrollLeft <= 1 ? 'none' : 'flex';
+                    buttons[1].style.display = genreButtons.scrollLeft >=
                     (genreButtons.scrollWidth - genreButtons.clientWidth - 1) ? 'none' : 'flex';
-            }
-        }, 100);
-    }, { passive: true });
-}
+                }
+            }, 100);
+        }, { passive: true });
+    }
 
     // Scrollbar Manager
     cleanupResources = () => {
